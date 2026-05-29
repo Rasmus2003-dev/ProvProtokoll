@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>Körprovsresultat - Mall</title>
+</head>
+<body style="font-family: Arial, sans-serif; color: #000; margin: 0; padding: 0;">
+    <div class="resultContainer" style="width: 100%; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #fff;">
+        <div>
+            <table style="width:100%">
+                <tbody>
+                    <tr>
+                        <td width="195" style="vertical-align: top; width: 195px">
+                            <!-- Ersätt med er logotyp (Base-64 rekommenderas om den ska exporteras till PDF konsekvent) -->
+                            <img class="logo" src="LÄGG_TILL_ER_LOGO_URL_HÄR" style="width: 195px; height: auto;">
+                        </td>
+                        <td></td>
+                        <td style="vertical-align: top; text-align: right;">
+                            <div class="print">
+                                <a href="javascript:window.print()" style="color: #c40000; font-weight: bold; text-decoration: none;">Skriv ut</a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="3">
+                            <div style="margin-top: 30px;">
+                                <h1 style="font-size: 24px; margin-bottom: 5px;">Körprovsresultat</h1>
+                                <table class="infoTable" style="width: 100%; margin-top: 15px; border-spacing: 0;">
+                                    <tbody>
+                                        <tr>
+                                            <td style="padding: 5px 0 15px 0; width: 50%;">
+                                                <div class="resultHeaderLabel" style="font-size: 11px; font-weight: bold; color: #555; margin-bottom: 2px;">Namn:</div>
+                                                {{KANDIDAT_NAMN}}
+                                            </td>
+                                            <td style="padding: 5px 0 15px 0; width: 50%;">
+                                                <div class="resultHeaderLabel" style="font-size: 11px; font-weight: bold; color: #555; margin-bottom: 2px;">Personnummer:</div>
+                                                {{PERSONNUMMER}}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 5px 0 15px 0;">
+                                                <div class="resultHeaderLabel" style="font-size: 11px; font-weight: bold; color: #555; margin-bottom: 2px;">Provtyp:</div>
+                                                {{PROVTYP}}
+                                            </td>
+                                            <td style="padding: 5px 0 15px 0;">
+                                                <div class="resultHeaderLabel" style="font-size: 11px; font-weight: bold; color: #555; margin-bottom: 2px;">Provdatum:</div>
+                                                {{PROVDATUM}}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 5px 0 15px 0;" colspan="2">
+                                                <div class="resultHeaderLabel" style="font-size: 11px; font-weight: bold; color: #555; margin-bottom: 2px;">Provförrättare:</div>
+                                                {{INSPEKTOR_NAMN}}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <br>
+        <div style="font-size: 14px;">
+            <b>Behörighetsinformation</b><br>
+            {{BEHORIGHETS_INFORMATION}}
+        </div>
+        <br>
+        <div class="resultBody" style="font-size: 14px;">
+            <table style="border-spacing: 0; width: 100%;">
+                <tbody>
+                    <tr>
+                        <td style="padding: 5px 0;"><b>Prov</b></td>
+                        <td style="padding: 5px 0;"><b>Resultat</b></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 5px 50px 5px 0;">Körning</td>
+                        <td style="padding: 5px 0;">
+                            {{KORNING_RESULTAT}}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 5px 50px 5px 0;">Säkerhetskontroll</td>
+                        <td style="padding: 5px 0;">
+                            {{SAKERHETSKONTROLL_RESULTAT}}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <br>
+            <div>
+                Detta beslut får enligt 8 kap. 2 § körkortslagen (1998:488) inte överklagas.
+                <br>
+                Här ser du ditt resultat inom provets olika ämnesområden.
+            </div>
+            <br>
+            <h2 style="color: {{HUVUD_RESULTAT_FARG}}; font-size: 20px; font-weight: bold; margin-bottom: 10px;">
+                {{HUVUD_RESULTAT_TEXT}}
+            </h2>
+            
+            <!-- ============================================== -->
+            <!-- DENNA DEL VISAS BARA OM PROVET ÄR UNDERKÄNT  -->
+            <!-- ============================================== -->
+            <div id="UnderkandSektion" style="display: {{VISA_OM_UNDERKANT}};">
+                <b>Grundorsak till underkännandet är:</b><br>
+                <div style="border: 3px #C0504D solid; margin-bottom: 10px; padding: 5px; margin-top: 5px;">
+                    <div style="margin-bottom: 10px;">{{GRUNDORSAK_OMRADE}}</div>
+                    Din körning visar brister i att:
+                    <ul style="margin-top: 0; padding-left: 20px;">
+                        <li>{{GRUNDORSAK_BRIST_1}}</li>
+                    </ul>
+                </div>
+
+                <div style="margin-top: 15px;"><b>Detta får konsekvenser på: </b></div>
+                <div style="border: 3px #F79646 solid; margin-bottom: 10px; padding: 5px; margin-top: 5px;">
+                    <div style="margin-bottom: 10px;">{{KONSEKVENS_OMRADE}}</div>
+                    Din körning visar brister i att:
+                    <ul style="margin-top: 0; padding-left: 20px;">
+                        <li>{{KONSEKVENS_BRIST_1}}</li>
+                        <li>{{KONSEKVENS_BRIST_2}}</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <span><b>Brister har visat sig i följande situationer:</b></span>
+                    <ul style="margin-top: 0; padding-left: 20px;">
+                        <li>{{SITUATION_1}}</li>
+                        <li>{{SITUATION_2}}</li>
+                    </ul>
+
+                    <div style="margin-top: 10px; margin-bottom: 10px;">
+                        {{INGRIPANDE_TEXT}}
+                    </div>
+                </div>
+            </div>
+            <!-- ============================================== -->
+            
+            <br>
+            <span><b>Följande provinnehåll har ingått i ditt körprov:</b></span>
+            <ul style="margin-top: 0; padding-left: 20px;">
+                <li>{{MOMENT_1}}</li>
+                <li>{{MOMENT_2}}</li>
+                <li>{{MOMENT_3}}</li>
+            </ul>
+
+            <p style="margin-top: 50px;">
+                {{SLUT_MEDDELANDE}}
+            </p>
+        </div>
+    </div>
+</body>
+</html>

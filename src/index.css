@@ -1,0 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+  
+  /* Primary brand colors - Professional red */
+  --color-primary: #D42220;
+  --color-primary-dark: #b51d1b;
+  
+  /* Backgrounds & Cards - Clean Utility */
+  --color-background: #ffffff;
+  --color-card: #ffffff;
+  
+  /* Status */
+  --color-success: #12b76a;
+  --color-success-dark: #027a48;
+  --color-danger: #D42220;
+  --color-danger-dark: #b51d1b;
+  --color-warning: #f79009;
+  --color-warning-dark: #dc6803;
+  
+  /* Layout colors */
+  --color-border: #e4e4e7;
+  --color-text-main: #000000;
+  --color-text-muted: #555555;
+  
+  /* Radii - Flat */
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+}
+
+body {
+  @apply bg-background text-text-main font-sans text-base antialiased selection:bg-primary/20;
+  overscroll-behavior-y: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Stop full page scroll, let internal containers scroll */
+  height: 100vh; /* Fallback */
+  height: 100dvh;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+h1, h2, h3, h4, h5, h6, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* Custom shadow for premium feel - FLAT */
+.shadow-premium {
+  box-shadow: none;
+}
+
+.shadow-premium-hover {
+  box-shadow: none;
+}
+
+.glass {
+  background: #ffffff;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.bg-card {
+  background-color: var(--color-card);
+}
+
+.border-border {
+  border-color: var(--color-border);
+}
+
+.bg-background {
+  background-color: var(--color-background);
+}
+
+.text-text-main {
+  color: var(--color-text-main);
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+@keyframes scanLaser {
+  0% { top: 0%; }
+  100% { top: 100%; }
+}
+
+.animate-scan-laser {
+  animation: scanLaser 1.8s ease-in-out infinite alternate;
+}
+
+
+
