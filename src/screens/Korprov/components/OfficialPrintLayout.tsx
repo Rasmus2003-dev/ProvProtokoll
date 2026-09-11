@@ -369,18 +369,6 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
             )}
           </div>
         )}
-
-        <div className="translate">
-          <br />
-          <a 
-            href={`https://translate.google.se/#sv/en/${translateResultText}`} 
-            target="_blank" 
-            rel="noreferrer"
-            style={{ color: '#0066cc', textDecoration: 'underline', fontSize: '12px' }}
-          >
-            Translation
-          </a>
-        </div>
       </div>
     </div>
   );

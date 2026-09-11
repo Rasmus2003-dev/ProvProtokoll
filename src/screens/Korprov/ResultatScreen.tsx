@@ -278,7 +278,7 @@ export function ResultatScreen() {
             <div className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm overflow-hidden">
               <div className="border-b border-gray-100 dark:border-white/5 bg-gradient-to-r from-gray-50 via-white to-white dark:from-slate-900/40 dark:to-slate-950/20 py-3.5 px-5 flex items-center gap-2.5">
                 <span className="w-1.5 h-4 bg-orange-500 rounded-full shrink-0" />
-                <span className="font-black text-gray-950 dark:text-gray-200 text-xs uppercase tracking-widest">Ingripande</span>
+                <span className="font-black text-gray-950 dark:text-gray-200 text-xs uppercase tracking-widest">Ingripande har förekommit</span>
               </div>
               <div className="p-5">
                 <div className="grid grid-cols-2 gap-3.5">
@@ -293,7 +293,7 @@ export function ResultatScreen() {
                     onClick={() => updateResult('interventionOccurred', true)}
                     variant="danger"
                   >
-                    Ja (Risk)
+                    Ja
                   </OptionButton>
                 </div>
               </div>
@@ -318,7 +318,7 @@ export function ResultatScreen() {
                     onClick={() => updateResult('testAborted', true)}
                     variant="danger"
                   >
-                    Ja (Avbrutet)
+                    Ja
                   </OptionButton>
                 </div>
               </div>
@@ -330,11 +330,7 @@ export function ResultatScreen() {
           <div className="bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-white/10 rounded-xl shadow-sm overflow-hidden mt-6">
             <div className="border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-900/40 py-4 px-5">
               <h3 className="text-[11px] font-black text-slate-900 dark:text-slate-100 uppercase tracking-widest flex items-center gap-2.5">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
-                </span>
-                Sammanställd Beslutssummering (Preliminära brister & avvikelser)
+                Beslutssummering
               </h3>
             </div>
             
@@ -343,7 +339,7 @@ export function ResultatScreen() {
               {/* Row 1: Brister i kompetensområden */}
               <div className="space-y-3">
                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                  Brister har visat sig i:
+                  Resultat:
                 </h4>
                 
                 {state.result.drivingResult !== 'Underkänt' && state.result.safetyCheckResult !== 'Underkänt' ? (
@@ -353,10 +349,13 @@ export function ResultatScreen() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <span className="font-semibold tracking-tight">Inga registrerade kompetensbrister för närvarande. Båda provdelarna är godkända.</span>
+                    <span className="font-bold text-sm">Provet är godkänt.</span>
                   </div>
                 ) : (
                   <div className="space-y-3">
+                    <div className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
+                      <span>✗</span> Provet är underkänt.
+                    </div>
                     {/* Driving deficiencies */}
                     {state.result.drivingResult === 'Underkänt' && (
                       <div className="space-y-3">
@@ -449,40 +448,27 @@ export function ResultatScreen() {
               </div>
 
               {/* Row 2: Ingripande */}
-              <div className="pt-5 border-t border-slate-100 dark:border-white/5 space-y-3">
+              <div className="pt-5 border-t border-slate-100 dark:border-white/5 space-y-2">
                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                  Ingripande under provets gång:
+                  Ingripande har förekommit:
                 </h4>
                 
                 {state.result.interventionOccurred ? (
-                  <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/40 p-4 rounded-xl space-y-2 shadow-sm">
-                    <div className="font-black text-[11px] uppercase tracking-wider flex items-center gap-2 text-red-700 dark:text-red-400">
-                      <div className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                      </div>
-                      Ja — Ingripande har förekommit!
-                    </div>
-                    <div className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
-                      Säkerhetsrisk eller inspektörsåtgärd identifierad. Detta markerar en allvarlig avvikelse som kommer att framhävas i det slutgiltiga förarprovsprotokollet.
-                    </div>
+                  <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/40 p-3 rounded-xl shadow-sm text-xs font-bold text-red-700 dark:text-red-400 flex items-center gap-2">
+                    <span>⚠️</span> Ja — Ingripande har förekommit.
                   </div>
                 ) : (
-                  <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-4 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 leading-relaxed shadow-sm flex items-start gap-2.5">
-                     <span className="text-slate-400 shrink-0">✓</span>
-                     Nej — Inga fysiska eller verbala ingripanden krävdes för att garantera trafiksäkerheten.
+                  <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-3 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 shadow-sm flex items-center gap-2">
+                    <span className="text-slate-400">✓</span> Nej — Inget ingripande har förekommit.
                   </div>
                 )}
               </div>
 
               {/* Row 3: Avbrutet */}
               {state.result.testAborted && (
-                <div className="pt-5 border-t border-slate-100 dark:border-white/5 space-y-3 animate-fade-in">
-                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-red-600 dark:text-red-400 flex items-center gap-1.5">
-                    🚨 Avbrutet prov i förtid
-                  </h4>
-                  <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/40 text-red-800 dark:text-red-300 p-4 rounded-xl text-xs font-medium leading-relaxed shadow-sm">
-                    Körprovet avbröts under färd av säkerhetsskäl och därmed stannades all ytterligare prövning omedelbart.
+                <div className="pt-4 border-t border-slate-100 dark:border-white/5 space-y-2 animate-fade-in">
+                  <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/40 text-red-800 dark:text-red-300 p-3 rounded-xl text-xs font-bold shadow-sm flex items-center gap-2">
+                    <span>🚨</span> Ja — Provet har avbrutits i förtid.
                   </div>
                 </div>
               )}
