@@ -1,0 +1,5 @@
+{
+  "name": "Digitalt Provprotokoll",
+  "description": "Det moderniserade systemet för hantering och kvalitetssäkring av körprov och teoriprov hos Trafikverket.",
+  "requestFramePermissions": ["geolocation"]
+}
