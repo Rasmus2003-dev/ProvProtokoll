@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { Question, ALL_MOCK_QUESTIONS, buildTestQuestions } from '../data/mockQuestions';
 import { RoadSign, SceneIllustration } from '../components/RoadSigns';
+import { autoCategorizeQuestion } from '../lib/db';
 
 // Shared Interface for Candidate
 export interface TheoryCandidate {
@@ -1255,7 +1256,19 @@ export function TeoriprovScreen() {
             <form onSubmit={handleAddQuestionSubmit} className="p-4 sm:p-6 space-y-4 sm:max-h-[80vh] overflow-y-auto flex-1">
               
               <div>
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Ämnesområde (TSFS 2012:41)</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Ämnesområde (TSFS 2012:41)</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const detected = autoCategorizeQuestion(newQuestion.question, newQuestion.options);
+                      setNewQuestion(prev => ({ ...prev, categoryId: detected }));
+                    }}
+                    className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    ✨ Auto-kategorisera från text
+                  </button>
+                </div>
                 <select 
                   value={newQuestion.categoryId}
                   onChange={e => setNewQuestion({...newQuestion, categoryId: Number(e.target.value)})}
@@ -1273,9 +1286,13 @@ export function TeoriprovScreen() {
                 <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Fråga (Text)</label>
                 <textarea 
                   value={newQuestion.question}
-                  onChange={e => setNewQuestion({...newQuestion, question: e.target.value})}
+                  onChange={e => {
+                    const text = e.target.value;
+                    const autoCat = autoCategorizeQuestion(text, newQuestion.options);
+                    setNewQuestion(prev => ({ ...prev, question: text, categoryId: autoCat }));
+                  }}
                   className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-lg px-4 py-2 text-sm text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 h-20 resize-none"
-                  placeholder="Skriv frågetexten här..."
+                  placeholder="Skriv frågetexten här (kategori identifieras automatiskt)..."
                   required
                 />
               </div>

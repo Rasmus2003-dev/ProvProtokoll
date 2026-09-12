@@ -26,6 +26,7 @@ import {
 } from '../data/mockQuestions';
 import { THEORY_TESTS } from './TeoriprovScreen';
 import { RoadSign, PostombudOption, SceneIllustration } from '../components/RoadSigns';
+import { miniDb } from '../lib/db';
 
 export { RoadSign, PostombudOption, SceneIllustration };
 
@@ -275,11 +276,12 @@ export function ElevProvScreen() {
     const cleanPnr = pnrInput.replace(/\D/g, '');
     let candidateRecord: TheoryCandidate | null = null;
 
-    // Check inside shared list first
+    // 1. Check inside shared theory candidates list
     const saved = localStorage.getItem('theory_candidates_list');
+    let list: TheoryCandidate[] = [];
     if (saved) {
       try {
-        const list: TheoryCandidate[] = JSON.parse(saved);
+        list = JSON.parse(saved);
         const found = list.find(c => c.pnr.replace(/\D/g, '') === cleanPnr);
         if (found) {
           candidateRecord = found;
@@ -287,9 +289,51 @@ export function ElevProvScreen() {
       } catch (err) {}
     }
 
-    // Only allow logging in if explicitly added/assigned by examiner
+    // 2. Check mini SQL database
     if (!candidateRecord) {
-      setLoginError('Det finns inget tilldelat prov för detta personnummer. Kontakta din provledare.');
+      const dbUser = miniDb.selectUsers().find(u => u.personalNumber.replace(/\D/g, '') === cleanPnr);
+      if (dbUser) {
+        candidateRecord = {
+          id: dbUser.id,
+          name: dbUser.name,
+          pnr: dbUser.personalNumber,
+          auth: dbUser.authClass || 'B',
+          status: 'waiting',
+          bench: Number(dbUser.bench) || Math.floor(Math.random() * 24) + 1,
+          assignedTestId: `${dbUser.authClass || 'B'}_STANDARD`,
+          result: '',
+          score: 0,
+          maxScore: 65,
+          progress: 0,
+          timeRemaining: 3000
+        };
+        list.push(candidateRecord);
+        localStorage.setItem('theory_candidates_list', JSON.stringify(list));
+      }
+    }
+
+    // 3. Fallback: If user enters a name and valid pnr, auto-create candidate record
+    if (!candidateRecord && studentName.trim().length >= 2 && cleanPnr.length >= 8) {
+      candidateRecord = {
+        id: 'cand-' + Date.now(),
+        name: studentName.trim(),
+        pnr: pnrInput.trim(),
+        auth: 'B',
+        status: 'waiting',
+        bench: Math.floor(Math.random() * 24) + 1,
+        assignedTestId: 'B_STANDARD',
+        result: '',
+        score: 0,
+        maxScore: 65,
+        progress: 0,
+        timeRemaining: 3000
+      };
+      list.push(candidateRecord);
+      localStorage.setItem('theory_candidates_list', JSON.stringify(list));
+    }
+
+    if (!candidateRecord) {
+      setLoginError('Det finns inget tilldelat prov för detta personnummer. Ange ditt fullständiga namn och personnummer för att registrera prov.');
       return;
     }
 
@@ -303,7 +347,7 @@ export function ElevProvScreen() {
     setIsLoggedIn(true);
   };
 
-  // Procedural Builder utilizing shared module function with candidate seed
+  // Procedural Builder utilizing shared module function with randomized seed per attempt
   const buildTestQuestions = (testId: string) => {
     let customQs: Question[] = [];
     const customSaved = localStorage.getItem('custom_questions_pool');
@@ -312,7 +356,10 @@ export function ElevProvScreen() {
         customQs = JSON.parse(customSaved) || [];
       } catch (e) {}
     }
-    const seed = activeCandidate?.id || localStorage.getItem('current_candidate_id') || pnrInput || undefined;
+    // Randomize uniquely per candidate test attempt using timestamp and random salt
+    const attemptSalt = Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+    const candidateId = activeCandidate?.id || localStorage.getItem('current_candidate_id') || pnrInput || 'elev';
+    const seed = `${candidateId}_${attemptSalt}`;
     return buildTestQuestionsShared(testId, customQs, seed);
   };
 

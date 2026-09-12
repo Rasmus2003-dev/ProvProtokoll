@@ -129,6 +129,136 @@ class MiniSqlDb {
     }
     return { affectedRows: 0, status: 'OK' };
   }
+
+  // Question database helpers
+  public getQuestionsForTest(testId: string, customQuestions?: any[], seed?: string) {
+    return buildTestQuestions(testId, customQuestions, seed);
+  }
+
+  public autoCategorizeQuestion(text: string, options: string[] = []): number {
+    return autoCategorizeQuestion(text, options);
+  }
 }
+
+// Auto-categorize question based on Swedish traffic keywords
+// 1: Fordonskännedom & manövrering, 2: Miljö, 3: Trafiksäkerhet, 4: Trafikregler, 5: Personliga förutsättningar
+export function autoCategorizeQuestion(text: string, options: string[] = []): number {
+  const content = (text + ' ' + options.join(' ')).toLowerCase();
+
+  // Category 2: Miljö (Eco-driving, emissions, fuel, AdBlue, catalysator)
+  if (
+    content.includes('miljö') ||
+    content.includes('sparsam körning') ||
+    content.includes('eco-driving') ||
+    content.includes('ecodriving') ||
+    content.includes('bränsleförbrukning') ||
+    content.includes('koldioxid') ||
+    content.includes('co2') ||
+    content.includes('avgas') ||
+    content.includes('adblue') ||
+    content.includes('katalysator') ||
+    content.includes('partikelfilter') ||
+    content.includes('nox')
+  ) {
+    return 2;
+  }
+
+  // Category 5: Personliga förutsättningar (Trötthet, alkohol, droger, sömn, stress, kör- och vilotider)
+  if (
+    content.includes('trötthet') ||
+    content.includes('alkohol') ||
+    content.includes('promille') ||
+    content.includes('droger') ||
+    content.includes('narkotika') ||
+    content.includes('medicin') ||
+    content.includes('sömn') ||
+    content.includes('stress') ||
+    content.includes('synskärpa') ||
+    content.includes('reaktionssträcka') ||
+    content.includes('reaktionstid') ||
+    content.includes('psykolog') ||
+    content.includes('grupptryck') ||
+    content.includes('kör- och vilotider') ||
+    content.includes('dygnsvila') ||
+    content.includes('veckovila') ||
+    content.includes('körtid') ||
+    content.includes('vilotid') ||
+    content.includes('ergonomi')
+  ) {
+    return 5;
+  }
+
+  // Category 1: Fordonskännedom & manövrering (Bromsar, tryckluft, däck, koppling, motor, vikter, el, vätskor)
+  if (
+    content.includes('tryckluft') ||
+    content.includes('bromsar') ||
+    content.includes('bromssystem') ||
+    content.includes('katastrofbroms') ||
+    content.includes('fjäderbroms') ||
+    content.includes('färdbroms') ||
+    content.includes('däck') ||
+    content.includes('mönsterdjup') ||
+    content.includes('bult') ||
+    content.includes('bygelkoppling') ||
+    content.includes('vändskiva') ||
+    content.includes('duomatic') ||
+    content.includes('lufttryck') ||
+    content.includes('boggi') ||
+    content.includes('boggie') ||
+    content.includes('kultryck') ||
+    content.includes('bruttovikt') ||
+    content.includes('totalvikt') ||
+    content.includes('tjänstevikt') ||
+    content.includes('axeltryck') ||
+    content.includes('dolly') ||
+    content.includes('motorolja') ||
+    content.includes('kylarvätska') ||
+    content.includes('strålkastare') ||
+    content.includes('spolarvätska') ||
+    content.includes('styrning') ||
+    content.includes('servostyrning') ||
+    content.includes('säkring') ||
+    content.includes('abs-broms')
+  ) {
+    return 1;
+  }
+
+  // Category 3: Trafiksäkerhet (Halka, mörker, säkerhetsavstånd, barn, olycka, bälte, hastighet, lastsäkring)
+  if (
+    content.includes('halka') ||
+    content.includes('halkigt') ||
+    content.includes('snö') ||
+    content.includes('is') ||
+    content.includes('vinterväglag') ||
+    content.includes('vattenplaning') ||
+    content.includes('mörkerkörning') ||
+    content.includes('sikt') ||
+    content.includes('nedsatt sikt') ||
+    content.includes('säkerhetsavstånd') ||
+    content.includes('tresekundersregeln') ||
+    content.includes('bromssträcka') ||
+    content.includes('stoppsträcka') ||
+    content.includes('bilbälte') ||
+    content.includes('barnstol') ||
+    content.includes('krockkudde') ||
+    content.includes('airbag') ||
+    content.includes('lastsäkring') ||
+    content.includes('spännband') ||
+    content.includes('överfallssurrning') ||
+    content.includes('tipprisk') ||
+    content.includes('olycka') ||
+    content.includes('varningstriangel') ||
+    content.includes('hjärt-lungräddning') ||
+    content.includes('fällkniv') ||
+    content.includes('jackknif')
+  ) {
+    return 3;
+  }
+
+  // Category 4: Trafikregler (Vägmärken, högerregel, företräde, cirkulationsplats, parkering, motorväg, buss)
+  return 4;
+}
+
+import { buildTestQuestions } from '../data/mockQuestions';
 
 export const miniDb = new MiniSqlDb();
