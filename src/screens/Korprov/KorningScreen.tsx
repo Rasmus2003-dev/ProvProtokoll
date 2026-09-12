@@ -147,9 +147,7 @@ export function KorningScreen() {
               ? prev.result.safetyCheckFailure.primaryCause 
               : { area: 'Fordonskännedom', deficiencies: [] },
             consequences: prev.result?.safetyCheckFailure?.consequences || [],
-            situations: (prev.result?.safetyCheckFailure?.situations && prev.result.safetyCheckFailure.situations.length > 0)
-              ? prev.result.safetyCheckFailure.situations
-              : ['Säkerhetskontroll'],
+            situations: prev.result?.safetyCheckFailure?.situations || [],
             interventionOccurred: false,
             testAborted: false,
           }

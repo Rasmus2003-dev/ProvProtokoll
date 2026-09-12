@@ -40,7 +40,7 @@ export function ResultatScreen() {
             newState.result.safetyCheckFailure = {
               primaryCause: { area: 'Fordonskännedom', deficiencies: [] },
               consequences: [],
-              situations: ['Säkerhetskontroll'],
+              situations: [],
               interventionOccurred: false,
               testAborted: false,
             };

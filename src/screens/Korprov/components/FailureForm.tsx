@@ -20,23 +20,17 @@ export function FailureForm({ data, onChange, title, type = 'driving' }: Failure
     onChange({ ...data, ...partial });
   };
 
-  // Auto-initialize safety check failure to Fordonskännedom and Säkerhetskontroll situation
+  // Auto-initialize safety check failure to Fordonskännedom
   React.useEffect(() => {
     if (type === 'safety') {
       const needsArea = !data.primaryCause || !data.primaryCause.area;
-      const needsSituation = !data.situations || data.situations.length === 0;
-      if (needsArea || needsSituation) {
+      if (needsArea) {
         updateContent({
-          primaryCause: needsArea 
-            ? { area: 'Fordonskännedom', deficiencies: data.primaryCause?.deficiencies || [] } 
-            : data.primaryCause,
-          situations: needsSituation 
-            ? ['Säkerhetskontroll'] 
-            : data.situations
+          primaryCause: { area: 'Fordonskännedom', deficiencies: data.primaryCause?.deficiencies || [] }
         });
       }
     }
-  }, [type, data.primaryCause?.area, data.situations?.length]);
+  }, [type, data.primaryCause?.area]);
   
   // Combine situations: safety specific situations, test items, and all standard situations
   const availableSituations = useMemo(() => {
