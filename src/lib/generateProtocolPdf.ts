@@ -136,9 +136,14 @@ export function generateProtocolPdf(state: AppState, inspectorName?: string) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(20, 20, 20);
-  const provtypPdfText = state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov')
-    ? `Bedömningsprov (${licenseType})`
-    : `Körprov ${licenseType} (${state.properties.testType || 'Förstaprov'})`;
+  let provtypPdfText = `Körprov ${licenseType} (${state.properties.testType || 'Förstaprov'})`;
+  if (state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov')) {
+    provtypPdfText = `Bedömningsprov (${licenseType})`;
+  } else if (state.properties.testType?.includes('Omprov säkerhetskontroll')) {
+    provtypPdfText = `Säkerhetskontroll ${licenseType}`;
+  } else if (state.properties.testType?.includes('Omprov körning')) {
+    provtypPdfText = `Omprov körning ${licenseType}`;
+  }
   doc.text(provtypPdfText, col1, boxY);
   const tachText = state.properties.tachograph ? ` • ${state.properties.tachograph}` : '';
   doc.text(`${state.properties.testDate || '-'} • ${state.properties.transmission || 'Manuell'}${tachText}`, col2, boxY);

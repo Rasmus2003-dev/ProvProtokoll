@@ -66,7 +66,7 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
   } else if (state.properties.testType?.includes('Omprov säkerhetskontroll och körning')) {
     testTypeLabel = `Omprov säkerhetskontroll och körning ${state.properties.licenseType || 'B'}`;
   } else if (state.properties.testType?.includes('Omprov säkerhetskontroll')) {
-    testTypeLabel = `Omprov säkerhetskontroll ${state.properties.licenseType || 'B'}`;
+    testTypeLabel = `Säkerhetskontroll ${state.properties.licenseType || 'B'}`;
   } else if (state.properties.testType?.includes('Omprov körning')) {
     testTypeLabel = `Omprov körning ${state.properties.licenseType || 'B'}`;
   }
@@ -140,7 +140,7 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
       ${state.result.interventionOccurred ? `<div style="margin-top: 10px; margin-bottom: 10px;">Ingripande har förekommit.</div>` : ''}
     `
     : `
-      ${state.result.drivingResult === 'Godkänt' ? `<h2 style="color: green; font-size: 20px; margin: 0 0 15px 0; font-weight: bold;">Din körning är godkänd.</h2>` : ''}
+      ${!isOmprovSakerhet && state.result.drivingResult === 'Godkänt' ? `<h2 style="color: green; font-size: 20px; margin: 0 0 15px 0; font-weight: bold;">Din körning är godkänd.</h2>` : ''}
       ${isSafetyCheckRequired && state.result.safetyCheckResult === 'Godkänt' ? `<h2 style="color: green; font-size: 20px; margin: 10px 0; font-weight: bold;">Din säkerhetskontroll är godkänd.</h2>` : ''}
     `;
 

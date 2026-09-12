@@ -81,7 +81,7 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
   } else if (state.properties.testType?.includes('Omprov säkerhetskontroll och körning')) {
     testTypeLabel = `Omprov säkerhetskontroll och körning ${state.properties.licenseType || 'B'}`;
   } else if (state.properties.testType?.includes('Omprov säkerhetskontroll')) {
-    testTypeLabel = `Omprov säkerhetskontroll ${state.properties.licenseType || 'B'}`;
+    testTypeLabel = `Säkerhetskontroll ${state.properties.licenseType || 'B'}`;
   } else if (state.properties.testType?.includes('Omprov körning')) {
     testTypeLabel = `Omprov körning ${state.properties.licenseType || 'B'}`;
   }
@@ -343,7 +343,7 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
           </div>
         ) : (
           <div>
-            {state.result.drivingResult === 'Godkänt' && (
+            {!isOmprovSakerhet && state.result.drivingResult === 'Godkänt' && (
               <h2 style={{ color: 'green', fontSize: '20px', margin: '0 0 15px 0', fontWeight: 'bold' }}>
                 Din körning är godkänd.
               </h2>
