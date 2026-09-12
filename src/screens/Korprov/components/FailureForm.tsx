@@ -15,16 +15,41 @@ type FailureFormProps = {
 
 export function FailureForm({ data, onChange, title, type = 'driving' }: FailureFormProps) {
   const { state } = useAppStore();
-  
-  // Combine hardcoded situations with whatever the inspector specifically checked during the test
-  const availableSituations = useMemo(() => {
-    const included = state.includedTestItems || [];
-    const items = included.length > 0 ? included : failureSituations;
-    return Array.from(new Set(items));
-  }, [state.includedTestItems]);
+
   const updateContent = (partial: Partial<FailureAssessment>) => {
     onChange({ ...data, ...partial });
   };
+
+  // Auto-initialize safety check failure to Fordonskännedom and Säkerhetskontroll situation
+  React.useEffect(() => {
+    if (type === 'safety') {
+      const needsArea = !data.primaryCause || !data.primaryCause.area;
+      const needsSituation = !data.situations || data.situations.length === 0;
+      if (needsArea || needsSituation) {
+        updateContent({
+          primaryCause: needsArea 
+            ? { area: 'Fordonskännedom', deficiencies: data.primaryCause?.deficiencies || [] } 
+            : data.primaryCause,
+          situations: needsSituation 
+            ? ['Säkerhetskontroll'] 
+            : data.situations
+        });
+      }
+    }
+  }, [type, data.primaryCause?.area, data.situations?.length]);
+  
+  // Combine situations: safety specific situations, test items, and all standard situations
+  const availableSituations = useMemo(() => {
+    const included = state.includedTestItems || [];
+    const safetyDefaults = type === 'safety' ? [
+      'Säkerhetskontroll',
+      'Funktionsbeskrivning',
+      'Säkerhetskontroll och funktionsbeskrivning',
+      'Koppling och lastsäkring',
+      'Färdskrivare'
+    ] : [];
+    return Array.from(new Set([...safetyDefaults, ...included, ...failureSituations]));
+  }, [state.includedTestItems, type]);
 
   const handlePrimaryCauseAreaChange = (area: string) => {
     updateContent({ primaryCause: { area, deficiencies: [] } });

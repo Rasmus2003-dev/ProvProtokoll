@@ -47,8 +47,9 @@ export class ErrorBoundary extends React.Component<Props, State> {
                 Ett oväntat fel uppstod i applikationen. Din data är automatiskt sparad lokalt.
               </p>
               {this.state.error && (
-                <div className="bg-danger/5 p-3 rounded-lg text-left text-sm text-danger/80 w-full overflow-auto max-h-32 font-mono">
-                  {this.state.error.message}
+                <div className="bg-danger/5 p-3 rounded-lg text-left text-xs text-danger/80 w-full overflow-auto max-h-60 font-mono whitespace-pre-wrap">
+                  <div className="font-bold text-sm mb-1">{this.state.error.message}</div>
+                  <div>{this.state.error.stack}</div>
                 </div>
               )}
               <Button onClick={this.handleReset} className="w-full" size="lg">

@@ -4,7 +4,8 @@ import provprotokollLogoImg from '../assets/images/provprotokoll_logo.png';
 export function generateOfficialProtocolHtml(state: AppState, inspectorName?: string): string {
   const licenseType = state.properties.licenseType || 'B';
   const HEAVY_LICENSES = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'];
-  const isSafetyCheckRequired = [...HEAVY_LICENSES, 'BE', 'B96', 'Lokförare'].includes(licenseType);
+  const isSafetyCheckRequired = [...HEAVY_LICENSES, 'B', 'B96', 'BE', 'Lokförare'].includes(licenseType);
+  const isTaxi = licenseType === 'TAXI';
 
   const isOmprovSakerhet = state.properties.testType === 'Omprov säkerhetskontroll';
   const isOmprovKorning = state.properties.testType === 'Omprov körning';
@@ -42,18 +43,22 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
   let behorighetText = 'Ingen behörighet uppnådd.';
   const isAssessmentOnly = state.properties.testType?.includes('Testprov') || state.properties.testType?.includes('Bedömningsprov');
 
-  if (isGodkand && state.properties.licenseType && !isAssessmentOnly) {
+  if (isGodkand && state.properties.licenseType && !isAssessmentOnly && !isTaxi) {
     const conditions: string[] = [];
-    if (state.properties.transmission === 'Automat') conditions.push('Villkor 78 (Automat)');
+    if (state.properties.transmission === 'Automat') conditions.push('(Automat)');
     if (state.properties.tachograph === 'Utan färdskrivare') conditions.push('Utan färdskrivare');
     const condStr = conditions.length > 0 ? ` [${conditions.join(', ')}]` : '';
     behorighetText = `Behörighet uppnådd: ${state.properties.licenseType}${condStr}`;
-  } else if (isAssessmentOnly) {
+  } else if (isAssessmentOnly || isTaxi) {
     behorighetText = 'Ingen behörighet uppnådd.';
   }
 
   const drivingFail = state.result.drivingFailure;
   const safetyFail = state.result.safetyCheckFailure;
+  const allSituations = Array.from(new Set([
+    ...(state.result.drivingResult === 'Underkänt' ? (drivingFail?.situations || []) : []),
+    ...(state.result.safetyCheckResult === 'Underkänt' ? (safetyFail?.situations || []) : [])
+  ]));
 
   let testTypeLabel = `Körprov ${state.properties.licenseType || 'B'}`;
   if (state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov')) {
@@ -77,9 +82,11 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
   const failureRowsHtml = isFailed
     ? `
       ${state.result.drivingResult === 'Underkänt' ? `<h2 style="color: red; font-size: 20px; margin: 0 0 15px 0; font-weight: bold;">Din körning är underkänd.</h2>` : ''}
-      ${isSafetyCheckRequired && state.result.safetyCheckResult === 'Underkänt' && state.result.drivingResult !== 'Underkänt' ? `<h2 style="color: red; font-size: 20px; margin: 0 0 15px 0; font-weight: bold;">Din säkerhetskontroll är underkänd.</h2>` : ''}
+      ${isSafetyCheckRequired && state.result.safetyCheckResult === 'Underkänt' ? `<h2 style="color: red; font-size: 20px; margin: 0 0 15px 0; font-weight: bold;">Din säkerhetskontroll är underkänd.</h2>` : ''}
+      ${state.result.drivingResult === 'Godkänt' ? `<h2 style="color: green; font-size: 20px; margin: 0 0 15px 0; font-weight: bold;">Din körning är godkänd.</h2>` : ''}
+      ${isSafetyCheckRequired && state.result.safetyCheckResult === 'Godkänt' && state.result.drivingResult === 'Underkänt' ? `<h2 style="color: green; font-size: 20px; margin: 10px 0; font-weight: bold;">Din säkerhetskontroll är godkänd.</h2>` : ''}
       ${drivingFail?.primaryCause?.area && state.result.drivingResult === 'Underkänt' ? `
-        <b>Grundorsak till underkännandet är:</b><br />
+        <b>${state.result.safetyCheckResult === 'Underkänt' ? 'Grundorsak till körningens underkännande är:' : 'Grundorsak till underkännandet är:'}</b><br />
         <div style="border: 3px #C0504D solid; margin-bottom: 10px; padding: 5px; margin-top: 5px;">
           <div style="margin-bottom: 10px;">${drivingFail.primaryCause.area}</div>
           Din körning visar brister i att:
@@ -101,7 +108,7 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
         `).join('')}
       ` : ''}
       ${isSafetyCheckRequired && safetyFail?.primaryCause?.area && state.result.safetyCheckResult === 'Underkänt' ? `
-        <div style="margin-top: 15px;"><b>Grundorsak till säkerhetskontrollens underkännande är:</b></div>
+        <div style="margin-top: 15px;"><b>${state.result.drivingResult === 'Underkänt' ? 'Grundorsak till säkerhetskontrollens underkännande är:' : 'Grundorsak till underkännandet är:'}</b></div>
         <div style="border: 3px #C0504D solid; margin-bottom: 10px; padding: 5px; margin-top: 5px;">
           <div style="margin-bottom: 10px;">${safetyFail.primaryCause.area}</div>
           Din säkerhetskontroll visar brister i att:
@@ -122,11 +129,11 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
           `).join('')}
         ` : ''}
       ` : ''}
-      ${drivingFail?.situations && drivingFail.situations.length > 0 ? `
+      ${allSituations.length > 0 ? `
         <div>
           <span><b>Brister har visat sig i följande situationer:</b></span>
           <ul style="margin-top: 0; padding-left: 20px; list-style-type: disc;">
-            ${drivingFail.situations.map(s => `<li style="list-style-type: disc;">${s}</li>`).join('')}
+            ${allSituations.map(s => `<li style="list-style-type: disc;">${s}</li>`).join('')}
           </ul>
         </div>
       ` : ''}
@@ -145,14 +152,22 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
     `
     : `<p style="margin-top: 0; font-style: italic;">Inga specifika moment registrerade.</p>`;
 
+  const taxiLegislationText = 'Detta beslut grundas på taxitrafiklagen (2012:211) och taxitrafikförordningen (2012:238).';
+  const standardLegislationText = 'Detta beslut får enligt 8 kap. 2 § körkortslagen (1998:488) inte överklagas.';
+  const legislationText = isTaxi ? taxiLegislationText : standardLegislationText;
+
   const closingHtml = isFailed
-    ? `<p style="margin-top: 50px;">Det är viktigt att du tränar mer innan du genomför ditt nästa körprov.<br />Välkommen åter!</p>`
+    ? (isTaxi 
+        ? `<p style="margin-top: 50px;">Du uppfyllde inte kraven för godkänt taxiförarprov enligt taxitrafiklagen (2012:211). Det är viktigt att du tränar mer innan du genomför ditt nästa prov.<br />Välkommen åter!</p>`
+        : `<p style="margin-top: 50px;">Det är viktigt att du tränar mer innan du genomför ditt nästa körprov.<br />Välkommen åter!</p>`)
     : `
       <br />
       <span><b>Vad händer nu?</b></span>
-      ${isAssessmentOnly 
-        ? `<p style="margin-top: 5px; line-height: 1.5;">Grattis till ett godkänt bedömningsprov! Du uppfyller de formella kompetenskraven för körbedömning. Du kan nu bifoga detta intyg för ansökan och behörighetsprövning till <strong>trafiklärarutbildning</strong> samt vidare prövning för <strong>förarprövar- / inspektörsbehörighet</strong>.</p>`
-        : `<p style="margin-top: 5px; line-height: 1.5;">Grattis till ditt körkort! Du kan nu köra med en giltig legitimation i Sverige tills du har fått ditt körkort, dock i max två månader.</p>`
+      ${isTaxi
+        ? `<p style="margin-top: 5px; line-height: 1.5;">Grattis till godkänt taxiförarprov! Du kan nu ansöka om <strong>taxiförarlegitimation</strong> hos Transportstyrelsen enligt taxitrafiklagen (2012:211). Legitimationen utfärdas efter prövning av övriga krav.</p>`
+        : isAssessmentOnly 
+          ? `<p style="margin-top: 5px; line-height: 1.5;">Grattis till ett godkänt bedömningsprov! Du uppfyller de formella kompetenskraven för körbedömning. Du kan nu bifoga detta intyg för ansökan och behörighetsprövning till <strong>trafiklärarutbildning</strong> samt vidare prövning för <strong>förarprövar- / inspektörsbehörighet</strong>.</p>`
+          : `<p style="margin-top: 5px; line-height: 1.5;">Grattis till ditt körkort! Du kan nu köra med en giltig legitimation i Sverige tills du har fått ditt körkort, dock i max två månader.</p>`
       }
     `;
 
@@ -259,7 +274,7 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
 
             <br />
             <div>
-                Detta beslut får enligt 8 kap. 2 § körkortslagen (1998:488) inte överklagas.<br />
+                ${legislationText}<br />
                 Här ser du ditt resultat inom provets olika ämnesområden.
             </div>
             <br />

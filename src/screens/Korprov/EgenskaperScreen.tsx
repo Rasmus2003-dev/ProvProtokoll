@@ -235,7 +235,7 @@ export function EgenskaperScreen() {
                     </h4>
                   </div>
                   <p className="text-xs sm:text-sm text-gray-500 dark:text-zinc-400 leading-relaxed max-w-2xl">
-                    Kandidaten fick underkänt i klassen <strong className="font-bold text-gray-800 dark:text-white">{previousFailedTest.properties.licenseType}</strong> på sitt prov den {previousFailedTest.properties.testDate}. Kuggade områden inkluderade <strong className="font-semibold text-red-600 dark:text-red-400 font-mono">{(previousFailedTest.result.drivingFailure?.situations || []).join(', ') || 'prov-moment'}</strong>.
+                    Kandidaten fick underkänt i klassen <strong className="font-bold text-gray-800 dark:text-white">{previousFailedTest.properties.licenseType}</strong> på sitt prov den {previousFailedTest.properties.testDate}. Kuggade områden inkluderade <strong className="font-semibold text-red-600 dark:text-red-400 font-mono">{([...(previousFailedTest.result.drivingFailure?.situations || []), ...(previousFailedTest.result.safetyCheckFailure?.situations || [])]).join(', ') || 'prov-moment'}</strong>.
                   </p>
                 </div>
                 

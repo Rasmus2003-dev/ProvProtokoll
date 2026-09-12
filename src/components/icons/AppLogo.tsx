@@ -1,16 +1,18 @@
-import { HTMLAttributes } from 'react';
+import { HTMLAttributes, CSSProperties } from 'react';
 import provprotokollLogoImg from '../../assets/images/provprotokoll_logo.png';
 
 interface AppLogoProps extends HTMLAttributes<HTMLDivElement> {
   variant?: 'icon' | 'full' | 'horizontal' | 'badge' | 'trafikverket' | 'provprotokoll';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  style?: CSSProperties;
 }
 
 export function AppLogo({ 
   variant = 'horizontal', 
   size = 'md',
   className = '', 
+  style,
   ...props 
 }: AppLogoProps) {
   
@@ -23,7 +25,7 @@ export function AppLogo({
     return (
       <div 
         className={`inline-flex items-center select-none ${className}`}
-        style={{ ...props.style }}
+        style={style}
         {...props}
       >
         <img 
@@ -41,7 +43,7 @@ export function AppLogo({
     return (
       <div 
         className={`inline-flex flex-col items-center justify-center bg-[#c40000] text-white px-5 py-2 select-none shadow-sm ${className}`}
-        style={{ minWidth: '130px', ...props.style }}
+        style={{ minWidth: '130px', ...style }}
         {...props}
       >
         <div className="flex items-center justify-center gap-1.5 mb-0.5">

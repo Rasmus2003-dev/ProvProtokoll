@@ -18,7 +18,6 @@ import {
   Cpu,
   Bookmark
 } from 'lucide-react';
-import { motion } from 'motion/react';
 import { triggerHaptic } from '../../lib/utils';
 
 const COMMON_LICENSES = ['B', 'BE', 'B96', 'C', 'CE', 'C1', 'C1E', 'D', 'DE', 'A', 'AM', 'TAXI', 'Lokförare', 'Lokförare (Person)', 'Lokförare (Gods)', 'Spårvagn', 'Tunnelbana'];

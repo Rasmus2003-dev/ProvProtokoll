@@ -35,7 +35,7 @@ export function ProtokollScreen() {
   const HEAVY_LICENSES = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'];
   
   // Rule checks
-  const isSafetyCheckRequired = [...HEAVY_LICENSES, 'BE', 'B96', 'Lokförare'].includes(licenseType);
+  const isSafetyCheckRequired = [...HEAVY_LICENSES, 'B', 'B96', 'BE', 'Lokförare'].includes(licenseType);
   
   const isOmprovSakerhet = state.properties.testType === 'Omprov säkerhetskontroll';
   const isOmprovKorning = state.properties.testType === 'Omprov körning';

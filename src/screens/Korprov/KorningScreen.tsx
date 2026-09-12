@@ -141,7 +141,19 @@ export function KorningScreen() {
       result: {
         ...(prev.result || {}),
         safetyCheckResult: value,
-        ...(value !== 'Underkänt' ? {
+        ...(value === 'Underkänt' ? {
+          safetyCheckFailure: {
+            primaryCause: prev.result?.safetyCheckFailure?.primaryCause?.area 
+              ? prev.result.safetyCheckFailure.primaryCause 
+              : { area: 'Fordonskännedom', deficiencies: [] },
+            consequences: prev.result?.safetyCheckFailure?.consequences || [],
+            situations: (prev.result?.safetyCheckFailure?.situations && prev.result.safetyCheckFailure.situations.length > 0)
+              ? prev.result.safetyCheckFailure.situations
+              : ['Säkerhetskontroll'],
+            interventionOccurred: false,
+            testAborted: false,
+          }
+        } : {
           safetyCheckFailure: {
             primaryCause: { area: '', deficiencies: [] },
             consequences: [],
@@ -149,7 +161,7 @@ export function KorningScreen() {
             interventionOccurred: false,
             testAborted: false,
           }
-        } : {})
+        })
       }
     }));
   };

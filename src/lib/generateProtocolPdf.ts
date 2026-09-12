@@ -24,7 +24,8 @@ export function generateProtocolPdf(state: AppState, inspectorName?: string) {
 
   const licenseType = state.properties.licenseType || 'B';
   const HEAVY_LICENSES = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'];
-  const isSafetyCheckRequired = [...HEAVY_LICENSES, 'BE', 'B96', 'Lokförare'].includes(licenseType);
+  const isSafetyCheckRequired = [...HEAVY_LICENSES, 'B', 'B96', 'BE', 'Lokförare'].includes(licenseType);
+  const isTaxi = licenseType === 'TAXI';
 
   const isOmprovSakerhet = state.properties.testType?.includes('Omprov säkerhetskontroll');
   const isOmprovKorning = state.properties.testType?.includes('Omprov körning');
@@ -394,6 +395,28 @@ export function generateProtocolPdf(state: AppState, inspectorName?: string) {
       }
     }
 
+    const allSituations = Array.from(new Set([
+      ...(state.result.drivingResult === 'Underkänt' ? (drivingFail?.situations || []) : []),
+      ...(state.result.safetyCheckResult === 'Underkänt' ? (safetyFail?.situations || []) : [])
+    ]));
+
+    if (allSituations.length > 0) {
+      checkPageOffset(30 + allSituations.length * 13);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(50, 50, 50);
+      doc.text('Brister har visat sig i följande situationer:', margin + 6, y);
+      y += 14;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      allSituations.forEach(sit => {
+        doc.text(`• ${sit}`, margin + 14, y);
+        y += 13;
+      });
+      y += 6;
+    }
+
     if (state.result.interventionOccurred) {
       checkPageOffset(24);
       doc.setFont('helvetica', 'normal');
@@ -447,7 +470,14 @@ export function generateProtocolPdf(state: AppState, inspectorName?: string) {
   doc.setTextColor(40, 40, 40);
   const isAssessmentOnlyPdf = state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov');
   if (isPassed) {
-    if (isAssessmentOnlyPdf) {
+    if (isTaxi) {
+      const infoLines = doc.splitTextToSize('Grattis till godkänt taxiförarprov! Du kan nu ansöka om taxiförarlegitimation hos Transportstyrelsen enligt taxitrafiklagen (2012:211). Legitimationen utfärdas efter prövning av övriga krav.', contentWidth);
+      infoLines.forEach((l: string) => {
+        checkPageOffset(11);
+        doc.text(l, margin, y);
+        y += 11;
+      });
+    } else if (isAssessmentOnlyPdf) {
       const infoLines = doc.splitTextToSize('Grattis till ett godkänt bedömningsprov! Du uppfyller de formella kompetenskraven för körbedömning. Du kan nu bifoga detta intyg för ansökan och behörighetsprövning till trafiklärarutbildning samt vidare prövning för förarprövar- / inspektörsbehörighet.', contentWidth);
       infoLines.forEach((l: string) => {
         checkPageOffset(11);
@@ -463,8 +493,15 @@ export function generateProtocolPdf(state: AppState, inspectorName?: string) {
       });
     }
   } else {
-    doc.text('Det är viktigt att du tränar mer innan du genomför ditt nästa körprov. Välkommen åter!', margin, y);
-    y += 12;
+    const failText = isTaxi
+      ? 'Du uppfyllde inte kraven för godkänt taxiförarprov enligt taxitrafiklagen (2012:211). Det är viktigt att du tränar mer. Välkommen åter!'
+      : 'Det är viktigt att du tränar mer innan du genomför ditt nästa körprov. Välkommen åter!';
+    const failLines = doc.splitTextToSize(failText, contentWidth);
+    failLines.forEach((l: string) => {
+      checkPageOffset(11);
+      doc.text(l, margin, y);
+      y += 11;
+    });
   }
   y += 10;
 
@@ -505,7 +542,10 @@ export function generateProtocolPdf(state: AppState, inspectorName?: string) {
     doc.setTextColor(130, 130, 130);
 
     // Legal line
-    doc.text('Detta beslut får enligt 8 kap. 2 § körkortslagen (1998:488) inte överklagas.', margin, pageHeight - margin + 10);
+    const legalText = isTaxi
+      ? 'Detta beslut grundas på taxitrafiklagen (2012:211) och taxitrafikförordningen (2012:238).'
+      : 'Detta beslut får enligt 8 kap. 2 § körkortslagen (1998:488) inte överklagas.';
+    doc.text(legalText, margin, pageHeight - margin + 10);
 
     // Page count
     const pageStr = `Sida ${i} av ${totalPages}`;

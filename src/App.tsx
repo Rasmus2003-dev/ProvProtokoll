@@ -19,6 +19,7 @@ import { TopAppBar } from './components/layout/TopAppBar';
 import { BottomNavBar } from './components/layout/BottomNavBar';
 import { PWAInstallBanner } from './components/PWAInstallBanner';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function AppContent() {
   const location = useLocation();
@@ -66,8 +67,6 @@ function AppContent() {
     </div>
   );
 }
-
-import { ErrorBoundary } from './components/ErrorBoundary';
 
 export default function App() {
   return (

@@ -11,6 +11,8 @@ export function ResultatScreen() {
 
   const licenseType = state.properties.licenseType || 'B';
   const HEAVY_LICENSES = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'];
+  const SAFETY_CHECK_LICENSES = [...HEAVY_LICENSES, 'B', 'B96', 'BE', 'Lokförare'];
+  const isTaxi = licenseType === 'TAXI';
 
   const handleNext = () => {
     navigate('/korprov/protokoll');
@@ -32,14 +34,26 @@ export function ResultatScreen() {
         };
       }
 
-      if (field === 'safetyCheckResult' && value !== 'Underkänt') {
-        newState.result.safetyCheckFailure = {
-          primaryCause: { area: '', deficiencies: [] },
-          consequences: [],
-          situations: [],
-          interventionOccurred: false,
-          testAborted: false,
-        };
+      if (field === 'safetyCheckResult') {
+        if (value === 'Underkänt') {
+          if (!newState.result.safetyCheckFailure?.primaryCause?.area) {
+            newState.result.safetyCheckFailure = {
+              primaryCause: { area: 'Fordonskännedom', deficiencies: [] },
+              consequences: [],
+              situations: ['Säkerhetskontroll'],
+              interventionOccurred: false,
+              testAborted: false,
+            };
+          }
+        } else {
+          newState.result.safetyCheckFailure = {
+            primaryCause: { area: '', deficiencies: [] },
+            consequences: [],
+            situations: [],
+            interventionOccurred: false,
+            testAborted: false,
+          };
+        }
       }
       
       return newState;
@@ -217,7 +231,7 @@ export function ResultatScreen() {
           )}
 
           {/* Safety check result (Heavy licenses only — for non-heavy licenses this is set already during Körning) */}
-          {!state.properties.testType?.includes('Omprov körning') && HEAVY_LICENSES.includes(licenseType) && (
+          {!state.properties.testType?.includes('Omprov körning') && SAFETY_CHECK_LICENSES.includes(licenseType) && (
             <>
               <div className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm overflow-hidden mb-6">
                 <div className="border-b border-gray-100 dark:border-white/5 bg-gradient-to-r from-gray-50 via-white to-white dark:from-slate-900/40 dark:to-slate-950/20 py-3.5 px-5 flex items-center justify-between">
@@ -353,9 +367,31 @@ export function ResultatScreen() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
-                      <span>✗</span> Provet är underkänt.
-                    </div>
+                    {/* Status badges */}
+                    {state.result.drivingResult === 'Godkänt' && state.result.safetyCheckResult === 'Underkänt' ? (
+                      <div className="space-y-2">
+                        <div className="text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
+                          <span>✓</span> Din körning är godkänd.
+                        </div>
+                        <div className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
+                          <span>✗</span> Din säkerhetskontroll är underkänd.
+                        </div>
+                      </div>
+                    ) : state.result.drivingResult === 'Underkänt' && state.result.safetyCheckResult === 'Godkänt' ? (
+                      <div className="space-y-2">
+                        <div className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
+                          <span>✗</span> Din körning är underkänd.
+                        </div>
+                        <div className="text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
+                          <span>✓</span> Din säkerhetskontroll är godkänd.
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
+                        <span>✗</span> Provet är underkänt.
+                      </div>
+                    )}
+
                     {/* Driving deficiencies */}
                     {state.result.drivingResult === 'Underkänt' && (
                       <div className="space-y-3">
@@ -420,26 +456,60 @@ export function ResultatScreen() {
 
                     {/* Safety check deficiencies */}
                     {state.result.safetyCheckResult === 'Underkänt' && (
-                      <div className="border-[3px] border-[#C0504D] bg-red-50/20 dark:bg-red-950/10 p-4 rounded-lg space-y-2.5 shadow-sm">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[#C0504D] text-white">
-                            Grundorsak – Säkerhetskontroll
-                          </span>
-                          <span className="text-xs font-bold text-gray-900 dark:text-white">
-                            {state.result.safetyCheckFailure?.primaryCause?.area || 'Inget område valt'}
-                          </span>
+                      <div className="space-y-3">
+                        <div className="border-[3px] border-[#C0504D] bg-red-50/20 dark:bg-red-950/10 p-4 rounded-lg space-y-2.5 shadow-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[#C0504D] text-white">
+                              Grundorsak – Säkerhetskontroll
+                            </span>
+                            <span className="text-xs font-bold text-gray-900 dark:text-white">
+                              {state.result.safetyCheckFailure?.primaryCause?.area || 'Fordonskännedom'}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-700 dark:text-gray-300 font-medium">
+                            Din säkerhetskontroll visar brister i att:
+                          </div>
+                          {state.result.safetyCheckFailure?.primaryCause?.deficiencies?.length > 0 ? (
+                            <ul className="text-xs text-gray-800 dark:text-gray-200 space-y-1 pl-5 list-disc font-medium">
+                              {state.result.safetyCheckFailure.primaryCause.deficiencies.map((d: string) => (
+                                <li key={d}>{d}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-xs text-gray-400 italic font-medium">Inga specifika brister markerade för detta område än.</p>
+                          )}
                         </div>
-                        <div className="text-xs text-gray-700 dark:text-gray-300 font-medium">
-                          Din säkerhetskontroll visar brister i att:
-                        </div>
-                        {state.result.safetyCheckFailure?.primaryCause?.deficiencies?.length > 0 ? (
-                          <ul className="text-xs text-gray-800 dark:text-gray-200 space-y-1 pl-5 list-disc font-medium">
-                            {state.result.safetyCheckFailure.primaryCause.deficiencies.map((d: string) => (
-                              <li key={d}>{d}</li>
+
+                        {/* Consequence areas for safety check */}
+                        {state.result.safetyCheckFailure?.consequences?.some((c: { area: string }) => c.area) && (
+                          <div className="space-y-2">
+                            <span className="text-[10px] uppercase font-black tracking-widest text-[#F79646] block">
+                              Detta får konsekvenser på:
+                            </span>
+                            {state.result.safetyCheckFailure.consequences.filter((c: { area: string }) => c.area).map((c: { area: string, id: string, deficiencies?: string[] }, ki: number) => (
+                              <div key={c.id || ki} className="border-[3px] border-[#F79646] bg-orange-50/20 dark:bg-orange-950/10 p-3.5 rounded-lg space-y-1.5 shadow-sm">
+                                <div className="text-xs font-bold text-gray-900 dark:text-white">{c.area}</div>
+                                <div className="text-[11px] text-gray-600 dark:text-gray-400 font-medium">Din säkerhetskontroll visar brister i att:</div>
+                                {c.deficiencies && c.deficiencies.length > 0 && (
+                                  <ul className="text-xs text-gray-800 dark:text-gray-200 font-medium pl-5 list-disc space-y-0.5">
+                                    {c.deficiencies.map(d => <li key={d}>{d}</li>)}
+                                  </ul>
+                                )}
+                              </div>
                             ))}
-                          </ul>
-                        ) : (
-                          <p className="text-xs text-gray-400 italic font-medium">Inga specifika brister markerade för detta område än.</p>
+                          </div>
+                        )}
+
+                        {/* Situations for safety check */}
+                        {state.result.safetyCheckFailure?.situations && state.result.safetyCheckFailure.situations.length > 0 && (
+                          <div className="pt-2 text-xs text-gray-700 dark:text-gray-300">
+                            <span className="font-bold block mb-1">Brister har visat sig i följande situationer:</span>
+                            <ul className="pl-5 list-disc space-y-0.5 text-xs text-gray-800 dark:text-gray-200">
+                              {state.result.safetyCheckFailure.situations.map((sit: string) => (
+                                <li key={sit}>{sit}</li>
+                              ))}
+                            </ul>
+                          </div>
                         )}
                       </div>
                     )}
@@ -566,7 +636,7 @@ export function ResultatScreen() {
                 </div>
 
                 {/* Safety check outcome */}
-                {(HEAVY_LICENSES.includes(licenseType) || ['B', 'B96', 'BE', 'Lokförare'].includes(licenseType)) && (
+                {SAFETY_CHECK_LICENSES.includes(licenseType) && (
                   <div className="border border-slate-200/90 dark:border-slate-800 rounded-xl p-3.5 flex items-center justify-between bg-white dark:bg-slate-950 hover:border-slate-300 dark:hover:border-slate-700 transition-colors shadow-2xs">
                     <div>
                       <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Fordonskontroll</div>
@@ -597,6 +667,18 @@ export function ResultatScreen() {
                 </div>
               )}
 
+              {/* Tunga Behörigheter - Säkerhetskontroll underkänd, körning godkänd */}
+              {(HEAVY_LICENSES.includes(licenseType) || licenseType === 'Lokförare') && state.result.safetyCheckResult === 'Underkänt' && state.result.drivingResult === 'Godkänt' && (
+                <div className="bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/80 rounded-xl p-3.5 text-xs text-blue-950 dark:text-blue-200 shadow-xs">
+                  <div className="font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5 mb-1 text-blue-800 dark:text-blue-400">
+                    <span className="w-3.5 h-3.5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[9px]">✓</span> Din körning är godkänd
+                  </div>
+                  <div className="text-[11.5px] leading-relaxed">
+                    Körningen tillgodoräknas som <strong>GODKÄND</strong> för framtida provtillfällen. Endast säkerhetskontroll behöver genomföras vid omprov enligt gällande föreskrifter.
+                  </div>
+                </div>
+              )}
+
               {/* Deviations / Interventions */}
               {(state.result.interventionOccurred || state.result.testAborted) && (
                 <div className="bg-red-50/90 dark:bg-red-950/40 border-l-4 border-l-[#c40000] border border-red-200 dark:border-red-800 rounded-xl p-3.5 text-xs text-red-900 dark:text-red-300 shadow-xs">
@@ -615,7 +697,7 @@ export function ResultatScreen() {
                 {(() => {
                   const isOmprovSakerhet = state.properties.testType === 'Omprov säkerhetskontroll';
                   const isOmprovKorning = state.properties.testType === 'Omprov körning';
-                  const heavyMandatory = (HEAVY_LICENSES.includes(licenseType) || ['B', 'B96', 'BE', 'Lokförare'].includes(licenseType)) && !isOmprovKorning;
+                  const heavyMandatory = SAFETY_CHECK_LICENSES.includes(licenseType) && !isOmprovKorning;
 
                   const drivingDone = isOmprovSakerhet || (Boolean(state.result.drivingResult) && state.result.drivingResult !== '-');
                   const safetyDone = !heavyMandatory || (Boolean(state.result.safetyCheckResult) && state.result.safetyCheckResult !== '-');
@@ -626,7 +708,8 @@ export function ResultatScreen() {
                   } else if (isOmprovKorning) {
                     anyFail = state.result.drivingResult === 'Underkänt' || Boolean(state.result.testAborted);
                   } else {
-                    anyFail = state.result.drivingResult === 'Underkänt' || state.result.safetyCheckResult === 'Underkänt' || Boolean(state.result.testAborted);
+                    const safetyFailed = heavyMandatory && state.result.safetyCheckResult === 'Underkänt';
+                    anyFail = state.result.drivingResult === 'Underkänt' || safetyFailed || Boolean(state.result.testAborted);
                   }
 
                   const complete = drivingDone && safetyDone;
@@ -640,11 +723,13 @@ export function ResultatScreen() {
                   if (complete) {
                     if (anyFail) { 
                       label = 'UNDERKÄNT'; 
-                      statusDesc = 'Kandidaten uppfyller ej kraven för godkänd bedömning';
+                      statusDesc = isTaxi
+                        ? 'Kandidaten uppfyller ej kraven enligt taxitrafiklagen (2012:211)'
+                        : 'Kandidaten uppfyller ej kraven för godkänd bedömning';
                       tone = 'red'; 
                     } else { 
                       label = 'GODKÄNT'; 
-                      statusDesc = isAssessmentOnly 
+                      statusDesc = (isAssessmentOnly || isTaxi)
                         ? 'Godkänd körning – Ingen behörighet uppnådd' 
                         : 'Kandidaten uppfyller samtliga krav för behörigheten';
                       tone = 'emerald'; 
@@ -683,7 +768,7 @@ export function ResultatScreen() {
                       <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-3 pt-3 border-t border-slate-200/80 dark:border-slate-700/60 leading-relaxed">
                         {statusDesc}
                       </div>
-                      {isAssessmentOnly && complete && !anyFail && (
+                      {(isAssessmentOnly || isTaxi) && complete && !anyFail && (
                         <div className="mt-3 text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2 shadow-2xs">
                           <span className="text-blue-600 dark:text-blue-400 font-bold">ℹ️</span>
                           <span>Ingen behörighet uppnådd</span>

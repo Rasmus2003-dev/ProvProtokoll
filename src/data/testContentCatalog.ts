@@ -53,6 +53,28 @@ export const HEAVY_TRUCK_ITEMS = [
   'Backning med samtidig svängning'
 ];
 
+export const BE_SAFETY_ITEMS = [
+  'Dörrar',
+  'Sammankoppling',
+  'Blinkers',
+  'Systematisk kontroll',
+  'Vindrutetorkare och spolare',
+  'Last',
+  'Bromsar på släpfordon',
+  'Belysning',
+  'Däck och fälg',
+  'Reflexer',
+  'Bromsar på dragfordon',
+  'Vätskor',
+  'Rutor',
+  'Backspeglar',
+  'Styrning',
+  'Varningssystem',
+  'Signalhorn',
+  'Katastrofbromswire',
+  'Kopplingsanordning'
+];
+
 export const ALL_SAFETY_ITEMS = [
   'Säkerhetskontroll',
   'Stänkskydd',
@@ -62,7 +84,17 @@ export const ALL_SAFETY_ITEMS = [
   'Katastrofbromswire',
   'Rutor',
   'Belysning, blinkers och signal',
+  'Belysning',
+  'Blinkers',
+  'Signalhorn',
   'Bromsar på släpfordon',
+  'Bromsar på dragfordon',
+  'Dörrar',
+  'Däck och fälg',
+  'Reflexer',
+  'Styrning',
+  'Sammankoppling',
+  'Kopplingsanordning',
   'Backspeglar',
   'Systematisk kontroll',
   'Sammankoppling och isärkoppling',
@@ -73,7 +105,6 @@ export const ALL_SAFETY_ITEMS = [
   'Last',
   'Säkerhetskontroll motorcykel',
   'Styrsystem',
-  'Kopplingsanordning',
   'Säkerhetskontroll (yttre och inre lok)',
   'Bromsar',
   'Broms- och elanslutningar till släpfordon',
@@ -114,11 +145,11 @@ const BUS_SAFETY = [
 // Apply B's content to all other categories, appending heavy safety items for heavy licenses and BE/B96
 const baseContent = TEST_CONTENT.B.filter(item => item !== 'Säkerhetskontroll');
 
-const heavyTypes = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE', 'BE', 'B96'];
+const heavyTypes = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'];
 const mcTypes = ['A', 'A1', 'A2', 'AM'];
 
 heavyTypes.forEach(type => {
-  const isTrailer = type.endsWith('E') || type === 'B96';
+  const isTrailer = type.endsWith('E');
   const isBus = type.startsWith('D');
   const isTruck = type.startsWith('C');
   
@@ -135,14 +166,13 @@ heavyTypes.forEach(type => {
   if (isTrailer) {
     items = [...items, ...HEAVY_TRAILER_ITEMS, ...TRAILER_SAFETY];
   }
-  
-  // B96 and BE might not have färdskrivare
-  if (type === 'BE' || type === 'B96') {
-    items = items.filter(item => item !== 'Färdskrivare');
-  }
 
   TEST_CONTENT[type] = Array.from(new Set(items));
 });
+
+// Specifika provmoment för BE och B96
+TEST_CONTENT['BE'] = Array.from(new Set([...baseContent, ...BE_SAFETY_ITEMS]));
+TEST_CONTENT['B96'] = Array.from(new Set([...baseContent, ...BE_SAFETY_ITEMS]));
 
 // Officiella moment för motorcykelprov (A, A1, A2) enligt Trafikverkets protokoll
 export const MC_SPECIFIC_ITEMS = [
