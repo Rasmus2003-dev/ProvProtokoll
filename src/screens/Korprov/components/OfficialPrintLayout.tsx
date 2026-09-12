@@ -294,9 +294,8 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
                 <div style={{ marginTop: '15px' }}>
                   <b>{state.result.drivingResult === 'Underkänt' ? 'Grundorsak till säkerhetskontrollens underkännande är:' : 'Grundorsak till underkännandet är:'}</b>
                 </div>
-                <div style={{ border: '3px #C0504D solid', marginBottom: '10px', padding: '5px', marginTop: '5px' }}>
-                  <div style={{ marginBottom: '10px' }}>{safetyFail.primaryCause.area}</div>
-                  Din säkerhetskontroll visar brister i att:
+                <div style={{ border: '3px #C0504D solid', marginBottom: '10px', padding: '6px 10px', marginTop: '5px' }}>
+                  <div style={{ marginBottom: '6px', fontWeight: 800, fontSize: '14px', color: '#111' }}>{safetyFail.primaryCause.area}</div>
                   <ul style={{ marginTop: 0, paddingLeft: '20px', listStyleType: 'disc', listStyle: 'disc' }}>
                     {safetyFail.primaryCause.deficiencies.map((def, idx) => (
                       <li key={idx} style={{ listStyleType: 'disc', display: 'list-item' }}>{def}</li>
@@ -308,9 +307,8 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
                   <>
                     <div style={{ marginTop: '15px' }}><b>Detta får konsekvenser på: </b></div>
                     {safetyFail.consequences.map((cons, idx) => (
-                      <div key={idx} style={{ border: '3px #F79646 solid', marginBottom: '10px', padding: '5px', marginTop: '5px' }}>
-                        <div style={{ marginBottom: '10px' }}>{cons.area}</div>
-                        Din säkerhetskontroll visar brister i att:
+                      <div key={idx} style={{ border: '3px #F79646 solid', marginBottom: '10px', padding: '6px 10px', marginTop: '5px' }}>
+                        <div style={{ marginBottom: '6px', fontWeight: 800, fontSize: '14px', color: '#111' }}>{cons.area}</div>
                         <ul style={{ marginTop: 0, paddingLeft: '20px', listStyleType: 'disc', listStyle: 'disc' }}>
                           {cons.deficiencies.map((def, idy) => (
                             <li key={idy} style={{ listStyleType: 'disc', display: 'list-item' }}>{def}</li>

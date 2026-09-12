@@ -21,6 +21,8 @@ import { PWAInstallBanner } from './components/PWAInstallBanner';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
+import { PullToRefresh } from './components/layout/PullToRefresh';
+
 function AppContent() {
   const location = useLocation();
 
@@ -38,7 +40,7 @@ function AppContent() {
     <div className="flex flex-col h-screen overflow-hidden bg-[#f8f9fa] dark:bg-[#0b1120] text-gray-900 dark:text-gray-100">
       <OfflineIndicator />
       <TopAppBar />
-      <div className="flex-1 overflow-y-auto">
+      <PullToRefresh>
         <Routes>
           <Route path="/" element={<Navigate to="/korprov/start" replace />} />
           {/* Note the use of relative nested routes under KorprovLayout */}
@@ -59,7 +61,7 @@ function AppContent() {
           <Route path="/profil" element={<ProfilScreen />} />
           <Route path="*" element={<Navigate to="/korprov/start" replace />} />
         </Routes>
-      </div>
+      </PullToRefresh>
       <div className="md:hidden shrink-0">
         <BottomNavBar />
       </div>

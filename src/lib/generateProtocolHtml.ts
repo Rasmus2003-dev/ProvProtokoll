@@ -109,9 +109,8 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
       ` : ''}
       ${isSafetyCheckRequired && safetyFail?.primaryCause?.area && state.result.safetyCheckResult === 'Underkänt' ? `
         <div style="margin-top: 15px;"><b>${state.result.drivingResult === 'Underkänt' ? 'Grundorsak till säkerhetskontrollens underkännande är:' : 'Grundorsak till underkännandet är:'}</b></div>
-        <div style="border: 3px #C0504D solid; margin-bottom: 10px; padding: 5px; margin-top: 5px;">
-          <div style="margin-bottom: 10px;">${safetyFail.primaryCause.area}</div>
-          Din säkerhetskontroll visar brister i att:
+        <div style="border: 3px #C0504D solid; margin-bottom: 10px; padding: 6px 10px; margin-top: 5px;">
+          <div style="margin-bottom: 6px; font-weight: 800; font-size: 14px; color: #111;">${safetyFail.primaryCause.area}</div>
           <ul style="margin-top: 0; padding-left: 20px; list-style-type: disc;">
             ${safetyFail.primaryCause.deficiencies.map(d => `<li style="list-style-type: disc;">${d}</li>`).join('')}
           </ul>
@@ -119,9 +118,8 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
         ${safetyFail?.consequences && safetyFail.consequences.length > 0 ? `
           <div style="margin-top: 15px;"><b>Detta får konsekvenser på: </b></div>
           ${safetyFail.consequences.map(c => `
-            <div style="border: 3px #F79646 solid; margin-bottom: 10px; padding: 5px; margin-top: 5px;">
-              <div style="margin-bottom: 10px;">${c.area}</div>
-              Din säkerhetskontroll visar brister i att:
+            <div style="border: 3px #F79646 solid; margin-bottom: 10px; padding: 6px 10px; margin-top: 5px;">
+              <div style="margin-bottom: 6px; font-weight: 800; font-size: 14px; color: #111;">${c.area}</div>
               <ul style="margin-top: 0; padding-left: 20px; list-style-type: disc;">
                 ${c.deficiencies.map(d => `<li style="list-style-type: disc;">${d}</li>`).join('')}
               </ul>
