@@ -303,7 +303,7 @@ export function ElevProvScreen() {
     setIsLoggedIn(true);
   };
 
-  // Procedural Builder utilizing shared module function
+  // Procedural Builder utilizing shared module function with candidate seed
   const buildTestQuestions = (testId: string) => {
     let customQs: Question[] = [];
     const customSaved = localStorage.getItem('custom_questions_pool');
@@ -312,7 +312,8 @@ export function ElevProvScreen() {
         customQs = JSON.parse(customSaved) || [];
       } catch (e) {}
     }
-    return buildTestQuestionsShared(testId, customQs);
+    const seed = activeCandidate?.id || localStorage.getItem('current_candidate_id') || pnrInput || undefined;
+    return buildTestQuestionsShared(testId, customQs, seed);
   };
 
   // Launch test selection
@@ -816,40 +817,45 @@ export function ElevProvScreen() {
           </div>
         ) : isSubmitted && testResult ? (
 
-          <div className="w-full flex flex-col items-center">
-            {/* Automatic result sheet */}
-            <div className="w-full max-w-2xl bg-white border border-gray-300 p-8 sm:p-14 mb-10 font-sans text-black shadow-md text-center">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 border ${
-                testResult.passed ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'
+          <div className="w-full flex flex-col items-center justify-center min-h-[65vh] py-8">
+            {/* Trafikverket Authentic Result Screen */}
+            <div className="w-full max-w-xl bg-white border border-gray-300 rounded-lg p-10 sm:p-14 shadow-lg text-center flex flex-col items-center">
+              
+              {/* Green checkmark or Red crossmark */}
+              <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8 border-2 shadow-sm ${
+                testResult.passed ? 'bg-emerald-50 border-emerald-500 text-emerald-600' : 'bg-red-50 border-red-500 text-red-600'
               }`}>
                 {testResult.passed ? (
-                  <CheckCircle className="w-8 h-8 text-emerald-600" />
+                  <CheckCircle className="w-14 h-14 stroke-[2.5]" />
                 ) : (
-                  <XCircle className="w-8 h-8 text-red-600" />
+                  <XCircle className="w-14 h-14 stroke-[2.5]" />
                 )}
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-black text-gray-950 uppercase tracking-tight mb-1">Provet är inlämnat</h2>
-              <p className={`text-lg font-black uppercase tracking-tight mb-3 ${testResult.passed ? 'text-emerald-600' : 'text-red-600'}`}>
+              {/* Status Header */}
+              <h2 className={`text-2xl sm:text-3xl font-black uppercase tracking-tight mb-3 ${
+                testResult.passed ? 'text-emerald-700' : 'text-red-700'
+              }`}>
                 {testResult.passed ? 'Ditt prov är godkänt' : 'Ditt prov är underkänt'}
+              </h2>
+
+              {/* Mandatory User-Requested Text */}
+              <p className="text-base sm:text-lg font-semibold text-gray-700 mb-8">
+                Resultatbesked mailas till dig.
               </p>
 
-              <div className="space-y-3 text-xs sm:text-sm text-gray-600 leading-relaxed font-medium mb-8 max-w-md mx-auto">
-                <p>Resultatet är rättat och meddelat automatiskt av systemet direkt efter inlämning.</p>
-                <p>Detta beslut får enligt 8 kap. 2 § körkortslagen (1998:488) inte överklagas.</p>
-              </div>
-
-              <div className="text-[11px] text-gray-500 font-mono leading-relaxed border-t border-gray-200 pt-5 inline-block text-left">
-                <div>Elev: <strong className="text-gray-950 uppercase font-bold">{studentName}</strong></div>
-                <div>Pnr: <strong className="text-gray-950 font-bold">{activeCandidate?.pnr || pnrInput}</strong></div>
-                <div>Datum: <strong className="text-gray-950 font-bold">{new Date().toLocaleDateString('sv-SE')}</strong></div>
-                <div>Bänk / Dator ID: <strong className="text-gray-950 font-bold">Bänk {activeCandidate?.bench || '7'}</strong></div>
+              {/* Candidate reference metadata */}
+              <div className="w-full text-xs text-gray-500 font-mono border-t border-gray-200 pt-5 space-y-1 text-center bg-gray-50/60 p-3 rounded-md">
+                <div>Kandidat: <strong className="text-gray-900 uppercase font-bold">{studentName}</strong></div>
+                <div>Personnummer: <strong className="text-gray-900 font-bold">{activeCandidate?.pnr || pnrInput}</strong></div>
+                <div>Datum: <strong className="text-gray-900 font-bold">{new Date().toLocaleDateString('sv-SE')}</strong></div>
+                <div>Dator / Bänk: <strong className="text-gray-900 font-bold">Bänk {activeCandidate?.bench || '7'}</strong></div>
               </div>
             </div>
 
             <button
               onClick={handleExitTest}
-              className="px-6 py-2.5 bg-[#002f6c] hover:bg-[#001d4a] text-white text-xs font-bold uppercase tracking-widest rounded-sm cursor-pointer shadow-sm transition-all"
+              className="mt-8 px-8 py-3 bg-[#002f6c] hover:bg-[#001d4a] text-white text-xs font-bold uppercase tracking-widest rounded-sm cursor-pointer shadow transition-all hover:scale-105"
             >
               Tillbaka till startsidan
             </button>

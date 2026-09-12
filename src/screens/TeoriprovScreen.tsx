@@ -714,7 +714,7 @@ export function TeoriprovScreen() {
                 }
 
                 // Determine the question set of this candidate's test to compute real-time score
-                const candidateQuestions = buildTestQuestions(c.assignedTestId || 'B_STANDARD');
+                const candidateQuestions = buildTestQuestions(c.assignedTestId || 'B_STANDARD', undefined, c.id);
 
                 let realScore = 0;
                 if (c.liveAnswers) {
@@ -1180,7 +1180,7 @@ export function TeoriprovScreen() {
                   Frågeanalys & Svarsgranskning (Mottagningskontroll)
                 </h3>
                 <div className="space-y-3.5 max-h-[300px] overflow-y-auto pr-2 divide-y divide-slate-100 dark:divide-white/5">
-                  {buildTestQuestions(selectedCandidateForProtocol.assignedTestId).map((q, idx) => {
+                  {buildTestQuestions(selectedCandidateForProtocol.assignedTestId, undefined, selectedCandidateForProtocol.id).map((q, idx) => {
                     // simulate if they answered correctly
                     const isCorrect = selectedCandidateForProtocol.result === 'Pass' 
                       ? Math.random() < 0.88 

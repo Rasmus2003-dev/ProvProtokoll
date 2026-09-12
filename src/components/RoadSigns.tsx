@@ -4,7 +4,8 @@
 export type RoadSignType =
   | 'warning' | 'forbidden' | 'mandatory' | 'stop' | 'info' | 'yield' | 'no-entry'
   | 'vajningsplikt' | 'stopplikt' | 'parkering-forbud' | 'stanna-parkera-forbud'
-  | 'motorvag' | 'postombud' | 'lgf';
+  | 'motorvag' | 'postombud' | 'lgf'
+  | 'huvudled' | 'overgangsstalle' | 'varning-alg' | 'cirkulationsplats' | 'cykelbana';
 
 export const RoadSign = ({ type, icon: Icon, text }: { type: string, icon?: any, text?: string }) => {
   if (type === 'warning') {
@@ -163,6 +164,83 @@ export const RoadSign = ({ type, icon: Icon, text }: { type: string, icon?: any,
         <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full drop-shadow-lg">
           <polygon points="50,8 92,88 8,88" fill="#f97316" stroke="#d2232a" strokeWidth="6" strokeLinejoin="round" />
           <polygon points="50,26 76,78 24,78" fill="#fde68a" />
+        </svg>
+      </div>
+    );
+  }
+
+  // Huvudled (B4) — yellow diamond with white border
+  if (type === 'huvudled') {
+    return (
+      <div className="relative w-48 h-48 flex items-center justify-center">
+        <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full drop-shadow-lg">
+          <polygon points="50,5 95,50 50,95 5,50" fill="white" stroke="#334155" strokeWidth="1" />
+          <polygon points="50,15 85,50 50,85 15,50" fill="#facc15" />
+        </svg>
+      </div>
+    );
+  }
+
+  // Övergångsställe (B7 / E11) — blue square with pedestrian walking
+  if (type === 'overgangsstalle') {
+    return (
+      <div className="relative w-48 h-48 flex items-center justify-center">
+        <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full drop-shadow-lg">
+          <rect x="4" y="4" width="92" height="92" rx="6" fill="#0056a8" stroke="white" strokeWidth="3" />
+          <polygon points="50,12 88,84 12,84" fill="white" />
+          {/* Walking person silhouette */}
+          <circle cx="50" cy="36" r="5" fill="#1e293b" />
+          <path d="M48 43 L54 55 L58 53 L51 43 Z" fill="#1e293b" />
+          <path d="M46 54 L40 76 L44 76 L49 61 L55 76 L60 76 L52 56 Z" fill="#1e293b" />
+          <rect x="25" y="78" width="50" height="4" fill="#0056a8" />
+        </svg>
+      </div>
+    );
+  }
+
+  // Varning för älg / vilt (A19)
+  if (type === 'varning-alg') {
+    return (
+      <div className="relative w-48 h-48 flex items-center justify-center">
+        <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full drop-shadow-lg">
+          <polygon points="50,6 94,84 6,84" fill="#fdf6e3" stroke="#d2232a" strokeWidth="8" strokeLinejoin="round" />
+          <path d="M30 65 Q35 55 45 55 L58 53 Q62 48 66 45 Q70 42 72 46 L70 50 L64 54 Q65 58 66 68 L62 68 L60 58 L48 60 L45 68 L40 68 Q41 62 42 58 L32 60 Z" fill="#1e293b" />
+        </svg>
+      </div>
+    );
+  }
+
+  // Cirkulationsplats (D1) — blue circle with three white rotating arrows
+  if (type === 'cirkulationsplats') {
+    return (
+      <div className="relative w-48 h-48 flex items-center justify-center">
+        <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full drop-shadow-lg">
+          <circle cx="50" cy="50" r="46" fill="#0056a8" stroke="white" strokeWidth="3" />
+          <g stroke="white" strokeWidth="6" fill="none" strokeLinecap="round">
+            <path d="M50 20 A30 30 0 0 1 76 65" />
+            <path d="M76 65 A30 30 0 0 1 24 65" />
+            <path d="M24 65 A30 30 0 0 1 50 20" />
+          </g>
+          <polygon points="50,14 58,26 44,26" fill="white" />
+          <polygon points="82,60 74,74 68,62" fill="white" />
+          <polygon points="20,58 32,66 22,76" fill="white" />
+        </svg>
+      </div>
+    );
+  }
+
+  // Påbjuden cykelbana (D4)
+  if (type === 'cykelbana') {
+    return (
+      <div className="relative w-48 h-48 flex items-center justify-center">
+        <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full drop-shadow-lg">
+          <circle cx="50" cy="50" r="46" fill="#0056a8" stroke="white" strokeWidth="3" />
+          {/* Bicycle outline */}
+          <circle cx="34" cy="58" r="12" fill="none" stroke="white" strokeWidth="3.5" />
+          <circle cx="66" cy="58" r="12" fill="none" stroke="white" strokeWidth="3.5" />
+          <path d="M34 58 L48 42 L62 42 M48 42 L52 58 L34 58 M52 58 L66 58" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+          <line x1="44" y1="38" x2="52" y2="38" stroke="white" strokeWidth="3.5" strokeLinecap="round" />
+          <line x1="62" y1="38" x2="68" y2="44" stroke="white" strokeWidth="3.5" strokeLinecap="round" />
         </svg>
       </div>
     );
