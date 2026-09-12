@@ -1,3 +1,5 @@
+import { IMPORTED_CE_QUESTIONS, IMPORTED_YKB_QUESTIONS } from './teoriQuestionsBank';
+
 export interface Question {
   id: number;
   categoryId: number; // 1: Fordonskännedom/manövrering, 2: Miljö, 3: Trafiksäkerhet, 4: Trafikregler, 5: Personliga förutsättningar
@@ -1074,7 +1076,8 @@ export const YKB_QUESTIONS: Question[] = [
     ],
     correct: 1,
     explanation: "Friktionsmattor ökar friktionskoefficienten avsevärt, vilket drastiskt minskar den surrningsstyrka som krävs för att säkra lasten säkert mot tröghetskrafterna."
-  }
+  },
+  ...IMPORTED_YKB_QUESTIONS
 ];
 
 // NEW LICENSE POOLS
@@ -1237,7 +1240,8 @@ export const CE_SLAP_QUESTIONS: Question[] = [
     ],
     correct: 1,
     explanation: "Katastrofventilen ser till att släpets bromsar låser sig direkt om de röda tryckluftsslangarna slits av (t.ex. om släpet kopplas loss oavsiktligt under färd)."
-  }
+  },
+  ...IMPORTED_CE_QUESTIONS
 ];
 
 export const D_BUSS_QUESTIONS: Question[] = [

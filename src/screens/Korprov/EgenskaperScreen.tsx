@@ -289,8 +289,8 @@ export function EgenskaperScreen() {
                   {[
                     { id: 'Förstaprov', label: 'Förstaprov', desc: 'Ny prövning med fullständigt prov' },
                     { id: 'Omprov', label: 'Omprov', desc: 'Fullständigt omprov av alla delar' },
-                    { id: 'Omprov säkerhetskontroll', label: 'Omb. Säkerhetskontroll', desc: 'Komplettering av säkerhetsmoment' },
-                    { id: 'Omprov körning', label: 'Omb. Körning i trafik', desc: 'Endast trafikbedömning' },
+                    { id: 'Omprov säkerhetskontroll', label: 'Omprov säkerhetskontroll', desc: 'Komplettering av säkerhetsmoment' },
+                    { id: 'Omprov körning', label: 'Omprov körning', desc: 'Endast trafikbedömning' },
                     { id: 'Bedömningsprov', label: 'Bedömningsprov', desc: 'Pedagogisk bedömning – Ingen behörighet uppnås vid godkänt' }
                   ].map(type => {
                     const isSelected = state.properties.testType?.includes(type.id);

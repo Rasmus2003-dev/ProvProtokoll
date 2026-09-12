@@ -4,6 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import { Button } from '../../components/ui/Button';
 import { useAppStore } from '../../store/ProvContext';
 import { FailureForm } from './components/FailureForm';
+import { generateProtocolPdf } from '../../lib/generateProtocolPdf';
+import { FileDown, ArrowRight } from 'lucide-react';
 
 export function ResultatScreen() {
   const navigate = useNavigate();
@@ -784,14 +786,26 @@ export function ResultatScreen() {
         </div>
       </div>
 
-      {/* Footer / Trigger creation */}
-      <div className="flex justify-stretch sm:justify-end pt-8 border-t border-slate-200 dark:border-slate-800 sm:mt-8">
+      {/* Footer / Trigger creation & Direct PDF Download */}
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-8 border-t border-slate-200 dark:border-slate-800 sm:mt-8">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => generateProtocolPdf(state)}
+          size="lg"
+          className="rounded-xl px-6 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 h-14 font-bold text-[14px] flex items-center justify-center gap-2 shadow-sm transition-all"
+        >
+          <FileDown className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+          <span>Ladda ner PDF (Protokoll)</span>
+        </Button>
+
         <Button
           onClick={handleNext}
           size="lg"
-          className="w-full sm:w-auto rounded-xl px-12 shadow-lg shadow-blue-500/20 border border-blue-600 bg-blue-600 hover:bg-blue-700 text-white h-14 font-bold text-[15px] tracking-wide cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
+          className="rounded-xl px-12 shadow-lg shadow-blue-500/20 border border-blue-600 bg-blue-600 hover:bg-blue-700 text-white h-14 font-bold text-[15px] tracking-wide cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
         >
-          Generera protokoll
+          <span>Generera protokoll</span>
+          <ArrowRight className="w-5 h-5" />
         </Button>
       </div>
     </div>

@@ -240,8 +240,39 @@ export function generateProtocolPdf(state: AppState, inspectorName?: string) {
 
   if (isFailed) {
     checkPageOffset(40);
+
+    // Official Trafikverket headline banners
+    if (state.result.drivingResult === 'Godkänt') {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(46, 125, 50);
+      doc.text('Din körning är godkänd.', margin, y + 10);
+      y += 18;
+    } else if (state.result.drivingResult === 'Underkänt') {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(211, 47, 47);
+      doc.text('Din körning är underkänd.', margin, y + 10);
+      y += 18;
+    }
+
+    if (isSafetyCheckRequired && state.result.safetyCheckResult === 'Godkänt' && !isOmprovKorning) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(46, 125, 50);
+      doc.text('Din säkerhetskontroll är godkänd.', margin, y + 10);
+      y += 18;
+    } else if (isSafetyCheckRequired && state.result.safetyCheckResult === 'Underkänt') {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(211, 47, 47);
+      doc.text('Din säkerhetskontroll är underkänd.', margin, y + 10);
+      y += 18;
+    }
+
+    y += 6;
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.setTextColor(211, 47, 47);
     doc.text('MOTIVERING OCH BRISTFÖRTECKNING', margin, y);
     y += 16;
