@@ -1083,71 +1083,89 @@ export function ElevProvScreen() {
               </div>
             </div>
 
-            {/* LOWER INDEX CAROUSEL & STATS BAR */}
-            <div className="shrink-0 w-full bg-[#dcdfe4] border border-gray-300 p-2.5 sm:p-3 rounded-lg flex flex-col lg:flex-row items-center justify-between gap-3">
+            {/* LOWER INDEX CAROUSEL & STATS BAR (Trafikverkets autentiska provutseende) */}
+            <div className="shrink-0 w-full bg-[#dfe3e8] border border-gray-300 p-2 sm:p-3 rounded-lg flex flex-col xl:flex-row items-center justify-between gap-3 select-none">
               
-              {/* Question Number Matrix */}
-              <div className="flex-1 overflow-x-auto w-full pb-1 lg:pb-0">
-                <div 
-                  className="grid gap-1 min-w-max" 
-                  style={{ gridTemplateColumns: `repeat(${Math.min(currentTestQuestions.length, 35)}, minmax(28px, 1fr))` }}
-                >
-                  {currentTestQuestions.map((q, i) => {
-                    const hasAnswer = selectedAnswers[i] !== undefined;
-                    const isMarked = marked[i] === true;
-                    const isActive = i === currentQuestion;
-
-                    let btnClass = 'bg-[#e2e6eb] text-gray-900 hover:bg-gray-200 border-gray-300';
-                    if (isActive) btnClass = 'bg-slate-900 text-white font-black border-slate-900';
-                    else if (hasAnswer) btnClass = 'bg-[#4a505a] text-white font-bold border-[#4a505a]';
-
+              {/* Question Number Matrix (Rows of 30 questions) */}
+              <div className="flex-1 w-full overflow-x-auto pb-1 xl:pb-0">
+                <div className="flex flex-col gap-1 min-w-max">
+                  {Array.from({ length: Math.ceil(currentTestQuestions.length / 30) }, (_, rowIdx) => {
+                    const rowStart = rowIdx * 30;
+                    const rowQuestions = currentTestQuestions.slice(rowStart, rowStart + 30);
                     return (
-                      <button
-                        type="button"
-                        key={i}
-                        onClick={() => setCurrentQuestion(i)}
-                        className={`h-7 w-7 text-xs font-bold border rounded flex items-center justify-center relative cursor-pointer transition-colors ${btnClass}`}
-                      >
-                        {i + 1}
-                        {isMarked && (
-                          <span className="absolute -top-1 -right-0.5 text-amber-500 font-extrabold text-[11px] leading-none">*</span>
-                        )}
-                      </button>
+                      <div key={rowIdx} className="flex items-center gap-1">
+                        {rowQuestions.map((_, colIdx) => {
+                          const i = rowStart + colIdx;
+                          const hasAnswer = selectedAnswers[i] !== undefined;
+                          const isMarked = marked[i] === true;
+                          const isActive = i === currentQuestion;
+
+                          // Trafikverket authentic style:
+                          // - Answered: solid black background with white text ("besvarad blir svart")
+                          // - Unanswered: white/very light background with black text
+                          // - Active: marked with distinct border/ring
+                          // - Marked: gets a star ("Markerad fråga får en stjärna")
+                          let btnClass = 'bg-white text-gray-900 hover:bg-gray-100 border-gray-300';
+                          if (hasAnswer) {
+                            btnClass = 'bg-black text-white font-bold border-black hover:bg-neutral-800';
+                          }
+                          if (isActive) {
+                            btnClass += ' ring-2 ring-blue-600 border-blue-600 z-10';
+                          }
+
+                          return (
+                            <button
+                              type="button"
+                              key={i}
+                              onClick={() => setCurrentQuestion(i)}
+                              className={`h-7 w-7 text-xs font-bold border rounded-[3px] flex items-center justify-center relative cursor-pointer transition-colors ${btnClass}`}
+                              title={`Fråga ${i + 1}${hasAnswer ? ' (Besvarad)' : ' (Obesvarad)'}${isMarked ? ' ★' : ''}`}
+                            >
+                              <span>{i + 1}</span>
+                              {isMarked && (
+                                <span className="absolute -top-1.5 -right-1 text-amber-500 font-extrabold text-sm drop-shadow-xs leading-none">
+                                  ★
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Stats Box & Submit Button */}
-              <div className="flex items-center justify-between lg:justify-end w-full lg:w-auto gap-4 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-gray-300">
+              {/* Stats Box & Submit Button (Matches screenshot layout) */}
+              <div className="flex items-center justify-between xl:justify-end w-full xl:w-auto gap-3 shrink-0 pt-2 xl:pt-0 border-t xl:border-t-0 border-gray-300">
                 
-                {/* Stats list */}
-                <div className="flex items-center gap-4 text-xs font-bold text-gray-800 bg-[#eef2f6] px-3 py-1.5 rounded border border-gray-300">
-                  <div className="flex items-center gap-1.5">
-                    <span className="px-1.5 py-0.5 bg-[#4a505a] text-white rounded text-[11px]">
+                {/* Stats list with vertical column styling */}
+                <div className="flex flex-col gap-1 text-xs text-gray-800 font-medium">
+                  <div className="flex items-center gap-2">
+                    <span className="w-7 h-5 bg-black text-white font-bold text-center text-[11px] rounded-[3px] flex items-center justify-center">
                       {Object.keys(selectedAnswers).length}
                     </span>
-                    <span>Besvarade</span>
+                    <span className="text-gray-700 text-xs font-semibold">Besvarade</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="px-1.5 py-0.5 bg-white text-gray-900 border border-gray-400 rounded text-[11px]">
+                  <div className="flex items-center gap-2">
+                    <span className="w-7 h-5 bg-white text-gray-900 border border-gray-400 font-bold text-center text-[11px] rounded-[3px] flex items-center justify-center">
                       {currentTestQuestions.length - Object.keys(selectedAnswers).length}
                     </span>
-                    <span>Obesvarade</span>
+                    <span className="text-gray-700 text-xs font-semibold">Obesvarade</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 border border-amber-300 rounded text-[11px]">
+                  <div className="flex items-center gap-2">
+                    <span className="w-7 h-5 bg-white text-gray-900 border border-gray-400 font-bold text-center text-[11px] rounded-[3px] flex items-center justify-center">
                       {Object.keys(marked).filter(k => marked[Number(k)]).length}*
                     </span>
-                    <span>Markerade</span>
+                    <span className="text-gray-700 text-xs font-semibold">Markerade</span>
                   </div>
                 </div>
 
-                {/* Submit button */}
+                {/* Submit button: Avsluta och rätta prov */}
                 <button 
                   type="button"
                   onClick={() => setShowConfirmDialog(true)}
-                  className="bg-[#388e3c] hover:bg-[#2e7d32] text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-lg transition-colors cursor-pointer shadow-xs uppercase tracking-wider"
+                  className="bg-[#4caf50] hover:bg-[#43a047] text-white text-sm font-bold px-5 py-3 rounded-md transition-colors cursor-pointer shadow-xs whitespace-nowrap self-stretch flex items-center justify-center"
                 >
                   Avsluta och rätta prov
                 </button>
