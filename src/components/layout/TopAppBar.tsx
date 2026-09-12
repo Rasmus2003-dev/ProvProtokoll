@@ -299,7 +299,11 @@ export function TopAppBar() {
         </div>
       </div>
 
-      <LathundModal isOpen={isLathundOpen} onClose={() => setIsLathundOpen(false)} />
+      <LathundModal 
+        isOpen={isLathundOpen} 
+        onClose={() => setIsLathundOpen(false)}
+        defaultLicense={state.properties.licenseType || 'B'}
+      />
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
     </header>
   );

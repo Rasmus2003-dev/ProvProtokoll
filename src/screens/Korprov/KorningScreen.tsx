@@ -4,11 +4,12 @@ import { Button } from '../../components/ui/Button';
 import { useAppStore } from '../../store/ProvContext';
 import { cn } from '../../lib/utils';
 import { TEST_CONTENT, ALL_SAFETY_ITEMS } from '../../data/testContentCatalog';
-import { AlertCircle, ShieldAlert, Search, X, Bus, Maximize, Minimize } from 'lucide-react';
+import { AlertCircle, ShieldAlert, Search, X, Bus, Maximize, Minimize, BookOpen } from 'lucide-react';
 import { FailureForm } from './components/FailureForm';
 
 import { AppLogo } from '../../components/icons/AppLogo';
 import { toggleAppFullscreen, isCurrentlyFullscreen } from '../../lib/fullscreen';
+import { LathundModal } from '../../components/LathundModal';
 
 const HEAVY_LICENSES = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'];
 
@@ -17,6 +18,7 @@ export function KorningScreen() {
   const { state, updateState } = useAppStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isLathundOpen, setIsLathundOpen] = useState(false);
 
   useEffect(() => {
     const handleFs = () => setIsFullscreen(isCurrentlyFullscreen());
@@ -266,6 +268,16 @@ export function KorningScreen() {
         <div className="flex items-center gap-2">
           <button
             type="button"
+            onClick={() => setIsLathundOpen(true)}
+            className="px-3 py-2 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/60 shadow-xs"
+            title={`Öppna lathund för behörighet ${licenseType}`}
+          >
+            <BookOpen size={14} className="text-amber-600 dark:text-amber-400" />
+            <span>Lathund ({licenseType})</span>
+          </button>
+
+          <button
+            type="button"
             onClick={setIntervention}
             className={cn(
               "px-3.5 py-2 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none active:scale-95",
@@ -432,6 +444,12 @@ export function KorningScreen() {
           </Button>
         </div>
       </div>
+      {/* Lathund Modal */}
+      <LathundModal
+        isOpen={isLathundOpen}
+        onClose={() => setIsLathundOpen(false)}
+        defaultLicense={licenseType}
+      />
     </div>
   );
 }
