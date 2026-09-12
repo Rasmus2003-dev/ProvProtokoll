@@ -233,6 +233,11 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
         {/* Huvudrubrik för beslut */}
         {isFailed ? (
           <div>
+            {state.result.drivingResult === 'Godkänt' && (
+              <h2 style={{ color: 'green', fontSize: '20px', margin: '0 0 15px 0', fontWeight: 'bold' }}>
+                Din körning är godkänd.
+              </h2>
+            )}
             {state.result.drivingResult === 'Underkänt' && (
               <h2 style={{ color: 'red', fontSize: '20px', margin: '0 0 15px 0', fontWeight: 'bold' }}>
                 Din körning är underkänd.
@@ -241,11 +246,6 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
             {isSafetyCheckRequired && state.result.safetyCheckResult === 'Underkänt' && (
               <h2 style={{ color: 'red', fontSize: '20px', margin: '0 0 15px 0', fontWeight: 'bold' }}>
                 Din säkerhetskontroll är underkänd.
-              </h2>
-            )}
-            {state.result.drivingResult === 'Godkänt' && (
-              <h2 style={{ color: 'green', fontSize: '20px', margin: '0 0 15px 0', fontWeight: 'bold' }}>
-                Din körning är godkänd.
               </h2>
             )}
             {isSafetyCheckRequired && state.result.safetyCheckResult === 'Godkänt' && state.result.drivingResult === 'Underkänt' && (
