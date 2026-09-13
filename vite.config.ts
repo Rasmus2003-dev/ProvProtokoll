@@ -14,6 +14,7 @@ export default defineConfig(({mode}) => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'pwa-192x192.svg', 'pwa-512x512.svg'],
         workbox: {
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
           navigateFallback: '/index.html',
           navigateFallbackDenylist: [/^\/api\//],
           globPatterns: ['**/*.{js,css,html,svg,ico,woff2}'],
