@@ -56,6 +56,47 @@ export const LICENSE_GUIDES: Record<string, LicenseGuideItem> = {
     ]
   },
 
+  B1: {
+    license: 'B1',
+    name: 'Fyrhjuling & Lätt bil (Quadricycle)',
+    category: 'bil',
+    driveTime: 'Minst 25 minuter ren körning i trafik (tätort och landsväg). Säkerhetskontroll och manöverprov tillkommer.',
+    mandatoryHighlights: [
+      'Säkerhetskontroll anpassad för fyrhjuling / quadricycle (styrning, däck, bromsar).',
+      'Minst 2 särskilda manövrer: Backning på trång yta och parkering/vändning.',
+      'Effektiv inbromsning och hantering av kort axelavstånd samt vältningsrisk vid kurvtagning.',
+      'Körning i blandtrafik, uppsikt i backspeglar och döda vinkeln.'
+    ],
+    safetyCheck: {
+      title: 'Säkerhetskontroll B1 (Fyrhjuling/Microcar)',
+      description: 'Systematisk kontroll före start:',
+      items: [
+        'Däck och fälg (mönsterdjup min 1,6 mm, lufttryck, skador)',
+        'Styrning, spindelleder och fjädring',
+        'Färdbroms och mekanisk parkeringsbroms (vajer/spärr)',
+        'Belysning, körriktningsvisare och reflexer',
+        'Vindruta och torkare (om heltäckt kaross) eller skyddsglasögon/hjälm',
+        'Säkerhetsbälte eller förankring/skyddsbåge'
+      ]
+    },
+    maneuverItems: [
+      'Backning (precisionsbackning runt hörn eller i trång passage)',
+      'Vändning med manövrering (kort vändradie)',
+      'Start i lutning utan bakåtrullning',
+      'Effektiv bromsning från minst 45–50 km/h'
+    ],
+    trafficItems: [
+      'Placering i körfält och tydlighet mot tyngre trafik',
+      'Cirkulationsplatser och signalreglerade korsningar',
+      'Landsvägskörning och känslighet för sidovind/sug från lastbilar',
+      'Oskyddade trafikanter och väjningsregler'
+    ],
+    notes: [
+      'B1 omfattar fyrhjuliga fordon med tomvikt max 400 kg (550 kg för godsfordon) och motoreffekt max 15 kW.',
+      'Trafikverkets grundläggande kompetensområden för B gäller fullt ut.'
+    ]
+  },
+
   B96: {
     license: 'B96',
     name: 'Utökad B (Kombination max 4 250 kg)',

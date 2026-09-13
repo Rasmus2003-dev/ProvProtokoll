@@ -21,7 +21,7 @@ import {
 import { triggerHaptic } from '../../lib/utils';
 
 const COMMON_LICENSES = [
-  'B', 'BE', 'B96', 'C', 'CE', 'C1', 'C1E', 'D', 'DE', 'A', 'A1', 'A2', 'AM', 'TAXI', 
+  'B', 'B1', 'BE', 'B96', 'C', 'CE', 'C1', 'C1E', 'D', 'DE', 'A', 'A1', 'A2', 'AM', 'TAXI', 
   'Traktor (Traktorkort)', 'Snöskoter (Förarbevis)', 'Terränghjuling (ATV)', 'Truck (A+B)', 'Grävmaskin / Hjullastare',
   'Lokförare', 'Lokförare (Person)', 'Lokförare (Gods)', 'Spårvagn', 'Tunnelbana'
 ];

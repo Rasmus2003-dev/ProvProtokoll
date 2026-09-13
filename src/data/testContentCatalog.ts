@@ -248,8 +248,28 @@ TEST_CONTENT['Lokförare (Gods)'] = [...TRAIN_SPECIFIC_ITEMS, 'Farligt gods hant
 TEST_CONTENT['Spårvagn'] = ['Körning i blandtrafik', 'Växelomläggning (manuell/radio)', 'Dörrhantering', 'Perrongstopp', 'Signalkunskap för spårvagn', 'Trafikering med optisk signalering', 'Vagnteknik och felavhjälpning'];
 TEST_CONTENT['Tunnelbana'] = ['Stationsuppehåll och dörrhantering', 'Körning i ATC/ATO', 'Signalkunskap för tunnelbana', 'Evakuering i tunnel', 'Kommunikation med TLC (Trafikledningscentral)', 'Klargöring av tunnelvagn'];
 
+// B1 Körprov (Fyrhjuling / Lätt bil - Quadricycle upp till 450 kg / 550 kg för gods & max 15 kW)
+// Innehåller Trafikverkets obligatoriska grundmoment samt fordonsspecifika moment
+export const B1_SPECIFIC_ITEMS = [
+  'Säkerhetskontroll (fyrhjuling/microcar)',
+  'Stabilitetskontroll och kurvtagning med kort hjulbas',
+  'Backning och vändning på trång yta',
+  'Start i lutning / handhavande av transmission',
+  'Effektiv bromsning (panikbroms utan ABS vid behov)',
+  'Parkering och säkring mot rullning',
+  'Körning i blandtrafik och placering mot tyngre fordon',
+  'Hastighetsanpassning och sidovindskänslighet',
+  'Döda vinkeln och spegeluppsikt (begränsat synfält)',
+  'Cirkulationsplats och körfältsbyte med lätt fordon'
+];
+
+TEST_CONTENT['B1'] = Array.from(new Set([
+  ...baseContent,
+  ...B1_SPECIFIC_ITEMS
+]));
+
 // Ytterligare Behörigheter & Förarbevis i Trafikverkets och Transportstyrelsens katalog
-TEST_CONTENT['Traktor (Traktorkort)'] = [
+const traktorItems = [
   'Säkerhetskontroll traktor och draganordning',
   'Start i motlut/medlut',
   'Backning med jordbruksvagn/släp',
@@ -257,8 +277,18 @@ TEST_CONTENT['Traktor (Traktorkort)'] = [
   'LGF-skylt och belysningskontroll',
   'Möte och väjningsplikt på smal väg',
   'Hydraulik och kraftuttag (PTO-säkerhet)',
-  'Stopp och parkering med lastsäkring'
+  'Stopp och parkering med lastsäkring',
+  // Grundläggande trafikmoment som alltid ingår
+  'Gatukorsning',
+  'Sväng från landsväg',
+  'Cirkulationsplats',
+  'Oskyddade trafikanter',
+  'Användande av reglage'
 ];
+
+TEST_CONTENT['Traktor'] = traktorItems;
+TEST_CONTENT['Traktor (Traktorkort)'] = traktorItems;
+TEST_CONTENT['Traktorkort'] = traktorItems;
 
 TEST_CONTENT['Snöskoter (Förarbevis)'] = [
   'Säkerhetskontroll snöskoter och nödstoppslina',

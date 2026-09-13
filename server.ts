@@ -119,6 +119,14 @@ async function startServer() {
       speedMargin: "Följ hastighetsgränser och grundregel 14 §. Inga onödiga tveksamheter vid företräde."
     },
     {
+      license: "B1",
+      title: "Körprov B1 (Fyrhjuling & Lätt bil)",
+      minDrivingMinutes: 25,
+      requiredManeuvers: ["Backning runt hörn / trång passage", "Vändning med kort vändradie", "Effektiv panikbromsning"],
+      checklist: ["Säkerhetskontroll fyrhjuling/microcar", "Kurvstabilitet & vältningsförebyggande", "Uppsikt döda vinkeln", "Blandtrafik med tunga fordon"],
+      speedMargin: "Följ hastighetsgränser. Extra försiktighet vid sidovind och möte med tunga fordon."
+    },
+    {
       license: "C",
       title: "Körprov C (Tung Lastbil)",
       minDrivingMinutes: 45,

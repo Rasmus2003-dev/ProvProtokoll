@@ -13,7 +13,7 @@ export function ResultatScreen() {
 
   const licenseType = state.properties.licenseType || 'B';
   const HEAVY_LICENSES = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'];
-  const SAFETY_CHECK_LICENSES = [...HEAVY_LICENSES, 'B', 'B96', 'BE', 'Lokförare'];
+  const SAFETY_CHECK_LICENSES = [...HEAVY_LICENSES, 'B', 'B1', 'B96', 'BE', 'Traktor', 'Traktor (Traktorkort)', 'Lokförare'];
   const isTaxi = licenseType === 'TAXI';
 
   const handleNext = () => {

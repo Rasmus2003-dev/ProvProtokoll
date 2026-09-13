@@ -4,7 +4,7 @@ import provprotokollLogoImg from '../assets/images/provprotokoll_logo.png';
 export function generateOfficialProtocolHtml(state: AppState, inspectorName?: string): string {
   const licenseType = state.properties.licenseType || 'B';
   const HEAVY_LICENSES = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'];
-  const isSafetyCheckRequired = [...HEAVY_LICENSES, 'B', 'B96', 'BE', 'Lokförare'].includes(licenseType);
+  const isSafetyCheckRequired = [...HEAVY_LICENSES, 'B', 'B1', 'B96', 'BE', 'Traktor', 'Traktor (Traktorkort)', 'Lokförare'].includes(licenseType);
   const isTaxi = licenseType === 'TAXI';
 
   const isOmprovSakerhet = state.properties.testType === 'Omprov säkerhetskontroll';
