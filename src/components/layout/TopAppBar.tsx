@@ -213,6 +213,17 @@ export function TopAppBar() {
             Trafikskola
           </button>
           <button 
+            onClick={() => navigate('/elevregister')}
+            className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+              location.pathname.includes('/elevregister') 
+                ? 'bg-[#002f6c] text-white shadow-sm' 
+                : 'text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-200/60 dark:hover:bg-slate-800'
+            }`}
+          >
+            <User className="w-4 h-4 hidden sm:inline text-blue-500" />
+            Elevregister
+          </button>
+          <button 
             onClick={() => navigate('/lathundar')}
             className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
               location.pathname.includes('/lathundar') 

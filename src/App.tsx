@@ -8,6 +8,7 @@ import { LathundarScreen } from './screens/LathundarScreen';
 import { TeoriprovScreen } from './screens/TeoriprovScreen';
 import { ElevProvScreen } from './screens/ElevProvScreen';
 import { TrafikskolaScreen } from './screens/TrafikskolaScreen';
+import { ElevregisterScreen } from './screens/ElevregisterScreen';
 import { KorprovLayout } from './screens/Korprov/KorprovLayout';
 import { DagensProvScreen } from './screens/Korprov/DagensProvScreen';
 import { StartScreen } from './screens/Korprov/StartScreen';
@@ -59,6 +60,7 @@ function AppContent() {
             <Route path="protokoll" element={<ProtokollScreen />} />
           </Route>
           
+          <Route path="/elevregister" element={<ElevregisterScreen />} />
           <Route path="/teoriprov" element={<TeoriprovScreen />} />
           <Route path="/trafikskola" element={<TrafikskolaScreen />} />
           <Route path="/lathundar" element={<LathundarScreen />} />

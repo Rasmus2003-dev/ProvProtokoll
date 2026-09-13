@@ -25,20 +25,10 @@ export interface TestRow {
 }
 
 const DEFAULT_USERS: UserRow[] = [
-  { id: 'usr-1', name: 'Rasmus Lundin', personalNumber: '19850412-1111', email: 'rasmus.lundin@provprotokoll.se', role: 'inspector', pin: '1234' },
-  { id: 'usr-2', name: 'Elvira Strömqvist', personalNumber: '19950613-1234', email: 'elvira.stromqvist@exempel.se', role: 'candidate', pin: '1234', authClass: 'B', bench: '12' },
-  { id: 'usr-3', name: 'Mikael Kronberg', personalNumber: '19820209-4937', email: 'mikael.kronberg@exempel.se', role: 'candidate', pin: '1234', authClass: 'C', bench: '4' },
-  { id: 'usr-4', name: 'Fatima Al-Sayed', personalNumber: '19900314-5566', email: 'fatima.alsayed@exempel.se', role: 'candidate', pin: '1234', authClass: 'D', bench: '8' },
-  { id: 'usr-5', name: 'Simon Svensson', personalNumber: '19970613-9876', email: 'simon.svensson@exempel.se', role: 'candidate', pin: '1234', authClass: 'B', bench: '7' },
-  { id: 'usr-6', name: 'Lucas Bergqvist', personalNumber: '20011119-9876', email: 'lucas.bergqvist@exempel.se', role: 'candidate', pin: '1234', authClass: 'B', bench: '15' },
+  { id: 'usr-1', name: 'Rasmus Lundin', personalNumber: '19850412-1111', email: 'rasmus.lundin@provprotokoll.se', role: 'inspector', pin: '1234' }
 ];
 
-const DEFAULT_TESTS: TestRow[] = [
-  { id: 'test-101', personalNumber: '19950613-1234', studentName: 'Elvira Strömqvist', testType: 'Förstaprov', licenseType: 'B', testDate: '2026-05-19', status: 'Bokad' },
-  { id: 'test-102', personalNumber: '19820209-4937', studentName: 'Mikael Kronberg', testType: 'Förstaprov', licenseType: 'C', testDate: '2026-05-19', status: 'Bokad' },
-  { id: 'test-103', personalNumber: '19900314-5566', studentName: 'Fatima Al-Sayed', testType: 'Omprov', licenseType: 'D', testDate: '2026-05-19', status: 'Bokad' },
-  { id: 'test-104', personalNumber: '19970613-9876', studentName: 'Simon Svensson', testType: 'Förstaprov', licenseType: 'B', testDate: '2026-05-19', status: 'Genomförd', score: 62, maxScore: 65 },
-];
+const DEFAULT_TESTS: TestRow[] = [];
 
 class MiniSqlDb {
   private users: UserRow[] = [];

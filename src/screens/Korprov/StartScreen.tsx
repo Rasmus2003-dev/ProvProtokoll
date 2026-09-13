@@ -26,53 +26,42 @@ const COMMON_LICENSES = [
   'Lokförare', 'Lokförare (Person)', 'Lokförare (Gods)', 'Spårvagn', 'Tunnelbana'
 ];
 
-// Detailed mock list of today's schedule for full-featured feel
-const DAILY_SCHEDULE = [
-  { 
-    id: '1', 
-    time: '08:30', 
-    studentName: 'Mikael Kronberg', 
-    personalNumber: '19820209-4937', 
-    email: 'mikael.kronberg@exempel.se', 
-    licenseType: 'C',
-    testType: 'Omprov',
-    transmission: 'Manuell',
-    status: 'Klar för start'
-  },
-  { 
-    id: '2', 
-    time: '10:15', 
-    studentName: 'Fatima Al-Sayed', 
-    personalNumber: '19900314-5566', 
-    email: 'fatima.alsayed@exempel.se', 
-    licenseType: 'D',
-    testType: 'Förstaprov',
-    transmission: 'Automat',
-    status: 'Incheckad'
-  },
-  { 
-    id: '3', 
-    time: '13:00', 
-    studentName: 'Elvira Strömqvist', 
-    personalNumber: '19950613-1234', 
-    email: 'elvira@exempel.se', 
-    licenseType: 'B',
-    testType: 'Omprov körning',
-    transmission: 'Manuell',
-    status: 'Underkänd historik'
-  },
-  { 
-    id: '4', 
-    time: '15:15', 
-    studentName: 'Lucas Bergqvist', 
-    personalNumber: '20011119-9876', 
-    email: 'lucas.b@exempel.se', 
-    licenseType: 'B',
-    testType: 'Förstaprov',
-    transmission: 'Manuell',
-    status: 'Inbokad'
-  }
-];
+// Dynamic Schedule reading directly from Elevregistret
+interface ScheduleItem {
+  id: string;
+  time: string;
+  studentName: string;
+  personalNumber: string;
+  email: string;
+  licenseType: string;
+  testType: string;
+  transmission: 'Manuell' | 'Automat';
+  status: string;
+}
+
+const getStoredSchedule = (): ScheduleItem[] => {
+  try {
+    const saved = localStorage.getItem('provprotokoll_elevregister');
+    if (saved) {
+      const all: any[] = JSON.parse(saved);
+      // Filter candidates for Trafikverket prov
+      return all
+        .filter(item => item.source === 'trv' || !item.source)
+        .map(item => ({
+          id: item.id,
+          time: item.bookingTime || '09:00',
+          studentName: item.name,
+          personalNumber: item.personalNumber,
+          email: item.email || '',
+          licenseType: item.licenseType || 'B',
+          testType: item.testType || 'Förstaprov',
+          transmission: item.transmission || 'Manuell',
+          status: item.status || 'Klar för start'
+        }));
+    }
+  } catch (_) {}
+  return [];
+};
 
 export function StartScreen() {
   const navigate = useNavigate();
@@ -204,7 +193,15 @@ export function StartScreen() {
     });
   };
 
-  const filteredSchedule = DAILY_SCHEDULE.filter(item => 
+  const [scheduleList, setScheduleList] = useState<ScheduleItem[]>(() => getStoredSchedule());
+
+  useEffect(() => {
+    const handleStorage = () => setScheduleList(getStoredSchedule());
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  const filteredSchedule = scheduleList.filter(item => 
     item.studentName.toLowerCase().includes(activeSearch.toLowerCase()) ||
     item.personalNumber.includes(activeSearch) ||
     item.licenseType.toLowerCase().includes(activeSearch.toLowerCase())
@@ -248,7 +245,9 @@ export function StartScreen() {
         <div className="flex gap-3 sm:gap-4 shrink-0 z-10 w-full lg:w-auto">
           <div className="flex-1 lg:flex-none bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-white/5 min-w-[120px] flex flex-col justify-center items-center">
             <span className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Planerat Idag</span>
-            <span className="text-2xl font-black text-[#002f6c] dark:text-blue-400">4 Prov</span>
+            <span className="text-2xl font-black text-[#002f6c] dark:text-blue-400">
+              {scheduleList.length} Prov
+            </span>
           </div>
           <div className="flex-1 lg:flex-none bg-emerald-50/50 dark:bg-emerald-900/10 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/30 min-w-[120px] flex flex-col justify-center items-center">
             <span className="block text-[10px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest mb-1">Status</span>
@@ -563,57 +562,71 @@ export function StartScreen() {
             </div>
 
             <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
-              {filteredSchedule.map(item => {
-                const isSelected = studentName === item.studentName && licenseType === item.licenseType;
-                return (
+              {filteredSchedule.length === 0 ? (
+                <div className="text-center py-10 px-4 border border-dashed border-gray-200 dark:border-slate-800 rounded-2xl">
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mb-3">
+                    Inga inbokade kandidater i schemat.
+                  </p>
                   <button
-                    key={item.id}
-                    onClick={() => {
-                      triggerHaptic('medium');
-                      setPresetCandidate({
-                        studentName: item.studentName,
-                        personalNumber: item.personalNumber,
-                        email: item.email,
-                        licenseType: item.licenseType,
-                        testType: item.testType,
-                        transmission: item.transmission
-                      });
-                    }}
-                    className={`w-full p-4 rounded-2xl border text-left transition-all flex items-center justify-between cursor-pointer group ${
-                      isSelected
-                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-500/30 shadow-sm'
-                        : 'bg-white dark:bg-slate-900 border-gray-100 dark:border-white/5 hover:border-gray-200 dark:hover:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800/50'
-                    }`}
+                    onClick={() => navigate('/elevregister')}
+                    className="px-3 py-2 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 text-[#002f6c] dark:text-blue-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
                   >
-                    <div className="space-y-1.5 flex-1 pr-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-[#002f6c] dark:group-hover:text-blue-400 transition-colors">
-                          {item.studentName}
-                        </span>
-                        {item.status === 'Underkänd historik' && (
-                          <span className="text-[9px] font-black text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded-md uppercase tracking-wider">
-                            Omprov
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[11px] text-gray-500 dark:text-slate-400 font-mono flex items-center gap-2">
-                        {item.personalNumber} <span className="opacity-50">•</span> {item.transmission}
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className="text-xs font-black text-gray-900 dark:text-white flex items-center gap-1.5 justify-end bg-gray-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
-                        <Clock size={12} className="text-gray-400 dark:text-slate-500" />
-                        {item.time}
-                      </div>
-                      <div className="mt-2 text-right">
-                        <span className="inline-block text-[10px] font-black bg-[#002f6c] text-white dark:bg-slate-700 px-2 py-0.5 rounded-md shadow-sm">
-                          {item.licenseType}
-                        </span>
-                      </div>
-                    </div>
+                    + Öppna Elevregister
                   </button>
-                );
-              })}
+                </div>
+              ) : (
+                filteredSchedule.map(item => {
+                  const isSelected = studentName === item.studentName && licenseType === item.licenseType;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        triggerHaptic('medium');
+                        setPresetCandidate({
+                          studentName: item.studentName,
+                          personalNumber: item.personalNumber,
+                          email: item.email,
+                          licenseType: item.licenseType,
+                          testType: item.testType,
+                          transmission: item.transmission
+                        });
+                      }}
+                      className={`w-full p-4 rounded-2xl border text-left transition-all flex items-center justify-between cursor-pointer group ${
+                        isSelected
+                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-500/30 shadow-sm'
+                          : 'bg-white dark:bg-slate-900 border-gray-100 dark:border-white/5 hover:border-gray-200 dark:hover:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800/50'
+                      }`}
+                    >
+                      <div className="space-y-1.5 flex-1 pr-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-[#002f6c] dark:group-hover:text-blue-400 transition-colors">
+                            {item.studentName}
+                          </span>
+                          {item.status === 'Underkänd historik' && (
+                            <span className="text-[9px] font-black text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded-md uppercase tracking-wider">
+                              Omprov
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-gray-500 dark:text-slate-400 font-mono flex items-center gap-2">
+                          {item.personalNumber} <span className="opacity-50">•</span> {item.transmission}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-xs font-black text-gray-900 dark:text-white flex items-center gap-1.5 justify-end bg-gray-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
+                          <Clock size={12} className="text-gray-400 dark:text-slate-500" />
+                          {item.time}
+                        </div>
+                        <div className="mt-2 text-right">
+                          <span className="inline-block text-[10px] font-black bg-[#002f6c] text-white dark:bg-slate-700 px-2 py-0.5 rounded-md shadow-sm">
+                            {item.licenseType}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
             </div>
           </div>
 

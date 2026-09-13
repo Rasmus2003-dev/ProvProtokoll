@@ -224,6 +224,16 @@ async function startServer() {
     res.json({ success: true, count: drivingSchoolStudents.length });
   });
 
+  // Trafikverket Provkandidater (Elevregister för förarprov & kunskapsprov)
+  let trvCandidates: any[] = [];
+  app.get("/api/trv/candidates", (req, res) => {
+    res.json({ success: true, count: trvCandidates.length, candidates: trvCandidates });
+  });
+  app.post("/api/trv/candidates", (req, res) => {
+    trvCandidates = req.body || [];
+    res.json({ success: true, count: trvCandidates.length });
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

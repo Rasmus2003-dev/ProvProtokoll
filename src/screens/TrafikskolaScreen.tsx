@@ -53,53 +53,7 @@ export function TrafikskolaScreen() {
     if (saved) {
       try { return JSON.parse(saved); } catch (_) {}
     }
-    return [
-      {
-        id: 'elev-1',
-        name: 'Elvira Strömqvist',
-        personalNumber: '19950613-1234',
-        phone: '070-123 45 67',
-        licenseType: 'B',
-        transmission: 'Manuell',
-        startDate: '2026-03-01',
-        totalLessons: 14,
-        theoryStatus: 'Godkänd',
-        risk1: true,
-        risk2: true,
-        teacher: 'Rasmus Lundin',
-        curriculum: DEFAULT_CURRICULUM
-      },
-      {
-        id: 'elev-2',
-        name: 'Mikael Kronberg',
-        personalNumber: '19820209-4937',
-        phone: '072-987 65 43',
-        licenseType: 'C',
-        transmission: 'Manuell',
-        startDate: '2026-04-10',
-        totalLessons: 8,
-        theoryStatus: 'Pågående',
-        risk1: true,
-        risk2: false,
-        teacher: 'Rasmus Lundin',
-        curriculum: DEFAULT_CURRICULUM.map(m => ({ ...m, category: m.category === 'Landsväg' ? 'Landsväg' : m.category }))
-      },
-      {
-        id: 'elev-3',
-        name: 'Fatima Al-Sayed',
-        personalNumber: '19900314-5566',
-        phone: '073-456 78 90',
-        licenseType: 'D',
-        transmission: 'Automat',
-        startDate: '2026-04-15',
-        totalLessons: 6,
-        theoryStatus: 'Pågående',
-        risk1: true,
-        risk2: true,
-        teacher: 'Rasmus Lundin',
-        curriculum: DEFAULT_CURRICULUM
-      }
-    ];
+    return [];
   });
 
   const [activeStudentId, setActiveStudentId] = useState<string>(students[0]?.id || '');

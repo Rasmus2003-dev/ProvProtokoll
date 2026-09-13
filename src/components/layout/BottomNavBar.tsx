@@ -6,9 +6,9 @@ import { triggerHaptic } from '../../lib/utils';
 export function BottomNavBar() {
   const navItems = [
     { name: 'PROTOKOLL', path: '/korprov', icon: Car },
+    { name: 'REGISTER', path: '/elevregister', icon: User },
     { name: 'TRAFIKSKOLA', path: '/trafikskola', icon: GraduationCap },
     { name: 'TEORIPROV', path: '/teoriprov', icon: Laptop },
-    { name: 'LATHUNDAR', path: '/lathundar', icon: BookOpen },
     { name: 'HISTORIK', path: '/historik', icon: History },
   ];
 
