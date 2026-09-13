@@ -238,12 +238,12 @@ export function KorningScreen() {
         </div>
 
         {/* Ren textnavigering: Start  Egenskaper  Inledning  Körning  Resultat */}
-        <div className="flex items-center justify-center gap-6 sm:gap-10 text-sm sm:text-base font-normal text-gray-400 dark:text-zinc-500 select-none pt-1">
-          <button onClick={() => navigate('/korprov/start')} className="hover:text-gray-700 dark:hover:text-zinc-300 transition-colors">Start</button>
-          <button onClick={() => navigate('/korprov/egenskaper')} className="hover:text-gray-700 dark:hover:text-zinc-300 transition-colors">Egenskaper</button>
-          <button onClick={() => navigate('/korprov/inledning')} className="hover:text-gray-700 dark:hover:text-zinc-300 transition-colors">Inledning</button>
-          <span className="text-gray-950 dark:text-white font-medium border-b-2 border-gray-900 dark:border-white pb-0.5">Körning</span>
-          <button onClick={() => navigate('/korprov/resultat')} className="hover:text-gray-700 dark:hover:text-zinc-300 transition-colors">Resultat</button>
+        <div className="w-full overflow-x-auto hide-scrollbar flex items-center justify-start sm:justify-center gap-4 sm:gap-10 text-xs sm:text-base font-normal text-gray-400 dark:text-zinc-500 select-none pt-1 px-2">
+          <button onClick={() => navigate('/korprov/start')} className="hover:text-gray-700 dark:hover:text-zinc-300 transition-colors whitespace-nowrap">Start</button>
+          <button onClick={() => navigate('/korprov/egenskaper')} className="hover:text-gray-700 dark:hover:text-zinc-300 transition-colors whitespace-nowrap">Egenskaper</button>
+          <button onClick={() => navigate('/korprov/inledning')} className="hover:text-gray-700 dark:hover:text-zinc-300 transition-colors whitespace-nowrap">Inledning</button>
+          <span className="text-gray-950 dark:text-white font-medium border-b-2 border-gray-900 dark:border-white pb-0.5 whitespace-nowrap">Körning</span>
+          <button onClick={() => navigate('/korprov/resultat')} className="hover:text-gray-700 dark:hover:text-zinc-300 transition-colors whitespace-nowrap">Resultat</button>
         </div>
       </div>
 

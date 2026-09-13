@@ -84,22 +84,22 @@ export function ProtokollScreen() {
 
       {/* Dynamic top tool-bar to match standalone Web App wrapper (hidden during printing) */}
       <div className="max-w-[730px] mx-auto mb-4 flex flex-col gap-3 print:hidden px-2 sm:px-3">
-        <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
           <Button 
             variant="secondary" 
             onClick={() => navigate('/korprov/resultat')} 
-            className="rounded-xl border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 px-5 py-3 text-sm shadow-none w-full md:w-auto text-center font-bold"
+            className="rounded-xl border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 px-4 py-2.5 sm:py-3 text-xs sm:text-sm shadow-none w-full sm:w-auto text-center font-bold"
           >
             Tillbaka till Beslut
           </Button>
           
-          <div className="flex flex-wrap items-center justify-end gap-2 w-full md:w-auto">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-end gap-2 w-full sm:w-auto">
             <Button 
               variant="outline" 
               onClick={handlePrint} 
-              className="bg-white rounded-xl px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-100 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5"
+              className="bg-white rounded-xl px-2.5 sm:px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-100 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5"
             >
-              <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <svg className="w-4 h-4 text-gray-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
               </svg>
               <span>Skriv ut</span>
@@ -112,9 +112,9 @@ export function ProtokollScreen() {
                 const mailtoLink = `mailto:${state.properties.email || ''}?subject=Resultat%20på%20ditt%20körprov%20${licenseType}&body=Hej!%0D%0A%0D%0AHär%20är%20länken%20till%20provprotokollssystemet:%0D%0A${encodeURIComponent(appUrl)}%0D%0A%0D%0AVänliga%20hälsningar`;
                 window.location.href = mailtoLink;
               }}
-              className="bg-white rounded-xl px-3 sm:px-4 py-2 border border-blue-200 text-blue-700 hover:bg-blue-50 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5"
+              className="bg-white rounded-xl px-2.5 sm:px-4 py-2 border border-blue-200 text-blue-700 hover:bg-blue-50 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5"
             >
-              <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <svg className="w-4 h-4 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
               <span>Mejla länk</span>
@@ -123,39 +123,39 @@ export function ProtokollScreen() {
             <Button 
               variant="outline" 
               onClick={() => setShowEmailModal(true)} 
-              className="bg-white rounded-xl px-3 sm:px-4 py-2 border border-violet-200 text-violet-700 hover:bg-violet-50 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5"
+              className="bg-white rounded-xl px-2.5 sm:px-4 py-2 border border-violet-200 text-violet-700 hover:bg-violet-50 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5"
               title="Generera och förhandsgranska HTML-mejl med protokollet"
             >
-              <Mail className="w-4 h-4 text-violet-600" />
+              <Mail className="w-4 h-4 text-violet-600 shrink-0" />
               <span>HTML-mejl</span>
             </Button>
 
             <Button 
               variant="outline" 
-              onClick={handleDownloadHTML} 
-              className="bg-white rounded-xl px-3 sm:px-4 py-2 border border-indigo-200 text-indigo-700 hover:bg-indigo-50 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5"
-              title="Ladda ned officiellt protokoll som HTML-fil"
-            >
-              <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-              </svg>
-              <span>Ladda ned HTML</span>
-            </Button>
-
-            <Button 
-              variant="outline" 
               onClick={handleDownloadPDF} 
-              className="bg-white rounded-xl px-3 sm:px-4 py-2 border border-teal-200 text-teal-700 hover:bg-teal-50 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5"
+              className="bg-white rounded-xl px-2.5 sm:px-4 py-2 border border-teal-200 text-teal-700 hover:bg-teal-50 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5"
             >
-              <svg className="w-4 h-4 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <svg className="w-4 h-4 text-teal-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <span>Hämta PDF</span>
             </Button>
+
+            <Button 
+              variant="outline" 
+              onClick={handleDownloadHTML} 
+              className="bg-white rounded-xl px-2.5 sm:px-4 py-2 border border-indigo-200 text-indigo-700 hover:bg-indigo-50 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5 col-span-1 sm:col-span-auto"
+              title="Ladda ned officiellt protokoll som HTML-fil"
+            >
+              <svg className="w-4 h-4 text-indigo-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+              <span>HTML</span>
+            </Button>
             
             <Button 
               onClick={() => setShowConfirmModal(true)} 
-              className="bg-emerald-600 hover:bg-emerald-700 text-white border-transparent rounded-xl px-4 sm:px-5 py-2 shadow-sm font-bold text-xs transition-all flex items-center justify-center"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white border-transparent rounded-xl px-3 sm:px-5 py-2 shadow-sm font-bold text-xs transition-all flex items-center justify-center col-span-1 sm:col-span-auto"
             >
               Spara & Slutför
             </Button>
@@ -246,7 +246,9 @@ export function ProtokollScreen() {
         )}
 
         {/* TRV Style Document Wrapper */}
-        <OfficialPrintLayout />
+        <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+          <OfficialPrintLayout />
+        </div>
       </div>
 
       {/* HTML Email Modal */}
