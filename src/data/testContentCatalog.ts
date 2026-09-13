@@ -238,18 +238,82 @@ export const TRAIN_SPECIFIC_ITEMS = [
   'Hastighetsanpassning för tågets vikt och bromsprocent',
   'Perrongstopp och resenärsutrop',
   'Hantering av nedsatt sikt/halka på räl',
-  'Signalkunskap och ljussignaler',
-  'Växlingsrörelse och radiostyrning'
+  'Signalkunskap och optiska signaler (huvud/försignal)',
+  'Växlingsrörelse och radiostyrning',
+  'Körning mot stoppsignal / restriktiv signalbild',
+  'Halt räl / slir- och glidskyddshantering',
+  'Nödstopp och snabbromsning från linjehastighet',
+  'Hantering av strömavtagare och sektionspassager',
+  'Dvärgsignaler och medgivande för växling',
+  'Säkerhetsavsyning av koppel och bromsslangar'
 ];
 
-TEST_CONTENT['Lokförare'] = [...TRAIN_SPECIFIC_ITEMS, 'Säkerhetskontroll (yttre och inre lok)', 'Klargöring av fordon', 'Bromsprov och täthetsprov'];
-TEST_CONTENT['Lokförare (Person)'] = [...TRAIN_SPECIFIC_ITEMS, 'Passagerarhantering i nödsituationer', 'Säkerhetskontroll (yttre och inre lok)', 'Klargöring av fordon', 'Bromsprov och täthetsprov'];
-TEST_CONTENT['Lokförare (Gods)'] = [...TRAIN_SPECIFIC_ITEMS, 'Farligt gods hantering (RID)', 'Säkerhetskontroll (yttre och inre lok)', 'Klargöring av fordon', 'Bromsprov och täthetsprov'];
-TEST_CONTENT['Spårvagn'] = ['Körning i blandtrafik', 'Växelomläggning (manuell/radio)', 'Dörrhantering', 'Perrongstopp', 'Signalkunskap för spårvagn', 'Trafikering med optisk signalering', 'Vagnteknik och felavhjälpning'];
-TEST_CONTENT['Tunnelbana'] = ['Stationsuppehåll och dörrhantering', 'Körning i ATC/ATO', 'Signalkunskap för tunnelbana', 'Evakuering i tunnel', 'Kommunikation med TLC (Trafikledningscentral)', 'Klargöring av tunnelvagn'];
+TEST_CONTENT['Lokförare'] = [
+  ...TRAIN_SPECIFIC_ITEMS,
+  'Säkerhetskontroll (yttre och inre lok)',
+  'Klargöring av fordon',
+  'Bromsprov och täthetsprov',
+  'Kontroll av tågbildning och rullande materiel',
+  'Hantering av ATC-panel och felkoder',
+  'Skyddsåtgärder vid påkörd vilt eller hinder på spår'
+];
+
+TEST_CONTENT['Lokförare (Person)'] = [
+  ...TRAIN_SPECIFIC_ITEMS,
+  'Passagerarhantering i nödsituationer',
+  'Säkerhetskontroll (yttre och inre lok)',
+  'Klargöring av fordon',
+  'Bromsprov och täthetsprov',
+  'Dörrblockering och plattformsövervakning',
+  'Brandskydd och utrymning av persontåg',
+  'Trafikantinformation vid trafikstörning',
+  'Hissning av rullstolslyft och tillgänglighet'
+];
+
+TEST_CONTENT['Lokförare (Gods)'] = [
+  ...TRAIN_SPECIFIC_ITEMS,
+  'Farligt gods hantering (RID)',
+  'Säkerhetskontroll (yttre och inre lok)',
+  'Klargöring av fordon',
+  'Bromsprov och täthetsprov',
+  'Kontroll av vagnvikter och axeltryck',
+  'Säkring av godsvagnar mot rullning (handbroms/skruvbroms)',
+  'Rangering på bangård med radiostyrningsdosa',
+  'Tillsyn av godsöverhäng och profilfrihet'
+];
+
+TEST_CONTENT['Spårvagn'] = [
+  'Säkerhetskontroll spårvagn (yttre & förarhytt)',
+  'Körning i blandtrafik mot bilister och cyklister',
+  'Växelomläggning (manuell/radio/detektor)',
+  'Dörrhantering och resenärssäkerhet vid påstigning',
+  'Perrongstopp och exakt hållplatspositionering',
+  'Signalkunskap för spårvagn (S-signaler och vita streck)',
+  'Trafikering med optisk signalering',
+  'Vagnteknik och enklare felavhjälpning på linjen',
+  'Spårhalka och sandspridningssystem',
+  'Nödbromsning och magnetskenbroms',
+  'Backning och rangering i vagnhall',
+  'Särskild uppmärksamhet vid gågator och torg',
+  'Samverkan med trafikledningen vid banarbete'
+];
+
+TEST_CONTENT['Tunnelbana'] = [
+  'Säkerhetskontroll tunnelbanevagn och förarhytt',
+  'Stationsuppehåll och dörrhantering med speglar/kameror',
+  'Körning i ATC/ATO (automatiskt tågskydd)',
+  'Manuell körning vid signalfel (20-restriktion)',
+  'Signalkunskap för tunnelbana och hyttsignalering',
+  'Evakuering och vandring i tunnelmiljö',
+  'Kommunikation med TLC (Trafikledningscentral)',
+  'Klargöring av tunnelvagn i depå',
+  'Hantering av spänningslös tredje skena (strömskena)',
+  'Trafikering i extrem trängsel / rusningstid',
+  'Säkerhetsåtgärder vid obehörig i spårområdet',
+  'Brandlarm och rökutvecklingsprocedurer'
+];
 
 // B1 Körprov (Fyrhjuling / Lätt bil - Quadricycle upp till 450 kg / 550 kg för gods & max 15 kW)
-// Innehåller Trafikverkets obligatoriska grundmoment samt fordonsspecifika moment
 export const B1_SPECIFIC_ITEMS = [
   'Säkerhetskontroll (fyrhjuling/microcar)',
   'Stabilitetskontroll och kurvtagning med kort hjulbas',
@@ -260,7 +324,9 @@ export const B1_SPECIFIC_ITEMS = [
   'Körning i blandtrafik och placering mot tyngre fordon',
   'Hastighetsanpassning och sidovindskänslighet',
   'Döda vinkeln och spegeluppsikt (begränsat synfält)',
-  'Cirkulationsplats och körfältsbyte med lätt fordon'
+  'Cirkulationsplats och körfältsbyte med lätt fordon',
+  'Omkörning av långsamtgående fordon',
+  'Körning i bostadsområde och farthinder'
 ];
 
 TEST_CONTENT['B1'] = Array.from(new Set([
@@ -271,19 +337,20 @@ TEST_CONTENT['B1'] = Array.from(new Set([
 // Ytterligare Behörigheter & Förarbevis i Trafikverkets och Transportstyrelsens katalog
 const traktorItems = [
   'Säkerhetskontroll traktor och draganordning',
-  'Start i motlut/medlut',
-  'Backning med jordbruksvagn/släp',
-  'Körning på allmän väg och vägren',
+  'Start i motlut/medlut med tungt ekipage',
+  'Backning med jordbruksvagn/flakvagn mot lastramp',
+  'Körning på allmän väg och vägrensplacering',
   'LGF-skylt och belysningskontroll',
-  'Möte och väjningsplikt på smal väg',
+  'Möte och väjningsplikt på smal landsväg',
   'Hydraulik och kraftuttag (PTO-säkerhet)',
   'Stopp och parkering med lastsäkring',
-  // Grundläggande trafikmoment som alltid ingår
-  'Gatukorsning',
-  'Sväng från landsväg',
-  'Cirkulationsplats',
-  'Oskyddade trafikanter',
-  'Användande av reglage'
+  'Diffspärr och fyrhjulsdrift i svår terräng',
+  'Tillsyn av trepunktslyft och redskapsinfästning',
+  'Gatukorsning och siktprioritet',
+  'Sväng från landsväg (vänstersväng med släp)',
+  'Cirkulationsplats och placering',
+  'Oskyddade trafikanter och döda vinklar runt traktorn',
+  'Användande av bromsar och styrbroms'
 ];
 
 TEST_CONTENT['Traktor'] = traktorItems;
@@ -293,36 +360,55 @@ TEST_CONTENT['Traktorkort'] = traktorItems;
 TEST_CONTENT['Snöskoter (Förarbevis)'] = [
   'Säkerhetskontroll snöskoter och nödstoppslina',
   'Start och körställning i varierad terräng',
-  'Körning i djup snö och skråkörning',
-  'Passage av skoterled, allmän väg och järnväg',
+  'Körning i djup snö och skråkörning i backe',
+  'Passage av preparerad skoterled, allmän väg och järnväg',
   'Isbedömning och issäkerhetsutrustning (isdubbar)',
   'Naturvårdshänsyn, skogsplantering och rennäringsområden',
-  'Bogsering och nödsituation i fjällmiljö'
+  'Bogsering av kälke/släde och passagerarsäkerhet',
+  'Vändning i brant terräng och fastkörningshantering',
+  'Fjällsäkerhet, lavinkunskap och nödbivack/utrustning',
+  'Nattkörning, siktförhållanden och hjälm/visirvård',
+  'Första hjälpen och larmrutiner i obygd'
 ];
 
 TEST_CONTENT['Terränghjuling (ATV)'] = [
   'Säkerhetskontroll ATV och skyddsutrustning',
-  'Viktförskjutning och kurvteknik',
-  'Körning över hinder och ojämn mark',
-  'Vinschning och bärgningsteknik',
-  'Körning i backe och vältförebyggande åtgärder',
-  'Regler för körning i terräng vs allmän väg'
+  'Aktiv viktförskjutning och kurvteknik',
+  'Körning över stenar, stockar och ojämn mark',
+  'Vinschning, förankring och bärgningsteknik',
+  'Körning i brant backe (uppför och utför)',
+  'Vältförebyggande åtgärder och säker avstigning',
+  'Däcktryck och spårval i mjuk mark/myr',
+  'Säkring av last på lasträcken (tyngdpunkt)',
+  'Backning i terräng med begränsad sikt',
+  'Lagstiftning: Körning i terräng vs transport på allmän väg',
+  'Miljöhänsyn och markskador'
 ];
 
 TEST_CONTENT['Truck (A+B)'] = [
-  'Daglig tillsyn och batteri/gashantering',
+  'Daglig tillsyn, hydraulik och batteri/gashantering',
   'Stabilitetstriangel och tyngdpunktsberäkning',
-  'Stapling i pallställ på hög höjd',
-  'Körning med skymd sikt (backning)',
-  'Hantering av varierande palltyper och laster',
-  'Fotgängarsäkerhet och signalering i lager'
+  'Stapling i pallställ på hög höjd (nivå 3-5)',
+  'Körning med skymd sikt (backning med signalering)',
+  'Hantering av varierande palltyper, containers och långgods',
+  'Fotgängarsäkerhet och signalering vid korsande truckgångar',
+  'Körning på lutande ramp och lastkaj',
+  'Lastning och lossning av lastbilstrailer',
+  'Nödstopp, bromsprov och parkeringsbroms',
+  'Hantering av skadat gods och utrymningsvägar i lager',
+  'Ergonomi och säker förarställning'
 ];
 
 TEST_CONTENT['Grävmaskin / Hjullastare'] = [
-  'Daglig tillsyn, hydraulik och snabbfäste',
-  'Schaktning och släntning med precision',
-  'Planering och lastning på dumper/lastbil',
-  'Stabilitet vid lyft och arbete nära ledningar',
-  'Säkerhet på arbetsplats och signalman'
+  'Daglig tillsyn, hydrauliktryck och snabbfäste',
+  'Schaktning och släntning med precision och laser/maskinstyrning',
+  'Planering av mark och lastning på dumper/lastbil',
+  'Stabilitet vid tunga lyft och arbete nära schaktkanter',
+  'Säkerhet kring ledningar i mark (kabelanvisning) och luftledningar',
+  'Säkerhet på arbetsplats, signalman och 360-kamera/döda vinklar',
+  'Byte av skopor och hydrauliska redskap',
+  'Körning i brant lutning och bandspårning/hjuldrift',
+  'Säkring av maskin vid transport på maskintrailer',
+  'Nödsänkning av bom/aggregat vid motorbortfall'
 ];
 
