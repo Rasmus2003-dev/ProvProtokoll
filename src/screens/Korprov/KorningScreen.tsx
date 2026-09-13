@@ -358,7 +358,7 @@ export function KorningScreen() {
                 className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shadow-sm hover:shadow-md cursor-pointer active:scale-95 shrink-0"
               >
                 <Dice5 size={16} />
-                <span>Slumpa Funktionsfråga (76 st)</span>
+                <span>Generera Fråga att ställa (76 st)</span>
               </button>
             )}
           </div>

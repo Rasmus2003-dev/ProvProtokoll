@@ -102,7 +102,7 @@ export function HeavySafetyQuestionModal({ isOpen, onClose, licenseType }: Heavy
             </p>
           </div>
 
-          {/* Answer Toggle Card */}
+          {/* Answer & Lathund Toggle Card */}
           <div>
             {!showAnswer ? (
               <button
@@ -111,49 +111,74 @@ export function HeavySafetyQuestionModal({ isOpen, onClose, licenseType }: Heavy
                   triggerHaptic('light');
                   setShowAnswer(true);
                 }}
-                className="w-full py-3.5 px-4 bg-gray-100 hover:bg-gray-200/80 dark:bg-slate-800 dark:hover:bg-slate-750 text-gray-700 dark:text-gray-200 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer border border-gray-200/60 dark:border-slate-700"
+                className="w-full py-3.5 px-4 bg-gray-100 hover:bg-gray-200/80 dark:bg-slate-800 dark:hover:bg-slate-750 text-gray-700 dark:text-gray-200 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer border border-gray-200/60 dark:border-slate-700 shadow-2xs"
               >
                 <Eye size={16} />
-                <span>Visa facit & bedömningspunkter</span>
+                <span>Visa Lathund & Acceptabel Förklaring</span>
               </button>
             ) : (
-              <div className="p-5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 space-y-3 animate-in fade-in duration-200">
-                <div className="flex items-center justify-between">
-                  <div className="text-[10px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-400 flex items-center gap-1.5">
-                    <CheckCircle size={14} />
-                    <span>Rätt svar & Förklaring</span>
+              <div className="space-y-3 animate-in fade-in duration-200">
+                {/* Fullständig Förklaring */}
+                <div className="p-5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[10px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-400 flex items-center gap-1.5">
+                      <CheckCircle size={14} />
+                      <span>Korrekt Fullständigt Svar</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowAnswer(false)}
+                      className="text-[10px] font-bold text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center gap-1 cursor-pointer"
+                    >
+                      <EyeOff size={12} />
+                      <span>Dölj</span>
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowAnswer(false)}
-                    className="text-[10px] font-bold text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center gap-1 cursor-pointer"
-                  >
-                    <EyeOff size={12} />
-                    <span>Dölj</span>
-                  </button>
+
+                  <p className="text-xs sm:text-sm text-gray-800 dark:text-gray-100 leading-relaxed font-medium">
+                    {currentQuestion.answer}
+                  </p>
                 </div>
 
-                <p className="text-xs sm:text-sm text-gray-800 dark:text-gray-100 leading-relaxed font-medium">
-                  {currentQuestion.answer}
-                </p>
+                {/* LATHUND FÖR INSPEKTÖREN: ACCEPTABEL FÖRKLARING */}
+                <div className="p-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-[#002f6c] dark:text-blue-300 flex items-center gap-1.5">
+                      <Sparkles size={13} className="text-amber-500" />
+                      <span>Lathund: Acceptabel förklaring (Godkänt)</span>
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 rounded">
+                      Krav för G
+                    </span>
+                  </div>
 
-                {currentQuestion.keyPoints && currentQuestion.keyPoints.length > 0 && (
-                  <div className="pt-2 border-t border-emerald-200/60 dark:border-emerald-900/40">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1.5">
-                      Nyckelpunkter att lyssna efter:
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
+                  <p className="text-xs text-blue-950 dark:text-blue-200 leading-relaxed">
+                    Kandidaten behöver inte kunna formuleringen ordagrant, men <strong>måste</strong> förstå principen och nämna följande kärnpunkter:
+                  </p>
+
+                  {currentQuestion.keyPoints && currentQuestion.keyPoints.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
                       {currentQuestion.keyPoints.map((kp, idx) => (
                         <span 
                           key={idx}
-                          className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-2xs"
+                          className="text-xs font-bold px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 text-[#002f6c] dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-2xs flex items-center gap-1"
                         >
-                          ✓ {kp}
+                          <span className="text-emerald-500 font-black">✓</span> {kp}
                         </span>
                       ))}
                     </div>
+                  ) : (
+                    <div className="text-xs font-bold text-gray-600 dark:text-gray-300">
+                      • Relevanta säkerhetskrav och trafiksäkert agerande redogjort.
+                    </div>
+                  )}
+
+                  <div className="text-[11px] text-gray-500 dark:text-slate-400 pt-1 border-t border-blue-100 dark:border-blue-900/30 flex items-center justify-between">
+                    <span>Otillräckligt svar / felaktig säkerhetsbedömning?</span>
+                    <span className="text-red-600 dark:text-red-400 font-bold">Kryssa Brist i Protokollet</span>
                   </div>
-                )}
+                </div>
+
               </div>
             )}
           </div>
