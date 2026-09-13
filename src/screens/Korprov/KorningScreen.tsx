@@ -4,12 +4,13 @@ import { Button } from '../../components/ui/Button';
 import { useAppStore } from '../../store/ProvContext';
 import { cn } from '../../lib/utils';
 import { TEST_CONTENT, ALL_SAFETY_ITEMS } from '../../data/testContentCatalog';
-import { AlertCircle, ShieldAlert, Search, X, Bus, Maximize, Minimize, BookOpen } from 'lucide-react';
+import { AlertCircle, ShieldAlert, Search, X, Bus, Maximize, Minimize, BookOpen, Dice5 } from 'lucide-react';
 import { FailureForm } from './components/FailureForm';
 
 import { AppLogo } from '../../components/icons/AppLogo';
 import { toggleAppFullscreen, isCurrentlyFullscreen } from '../../lib/fullscreen';
 import { LathundModal } from '../../components/LathundModal';
+import { HeavySafetyQuestionModal } from './components/HeavySafetyQuestionModal';
 
 const HEAVY_LICENSES = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'];
 
@@ -19,6 +20,7 @@ export function KorningScreen() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLathundOpen, setIsLathundOpen] = useState(false);
+  const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
 
   useEffect(() => {
     const handleFs = () => setIsFullscreen(isCurrentlyFullscreen());
@@ -331,9 +333,34 @@ export function KorningScreen() {
       {/* Safety CheckPoints Section (Längst ner) */}
       {selectedSafetyItems.length > 0 && state.properties?.testType !== 'Omprov körning' && (
         <div className="pt-10 border-t border-gray-100 dark:border-white/5 mt-12 space-y-6">
-          <div>
-            <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">Säkerhetskontroll</h3>
-            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Välj de ingående moment inom säkerhetskontrollen som ingått i provet.</p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                  Säkerhetskontroll
+                </h3>
+                {HEAVY_LICENSES.includes(licenseType) && (
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-900">
+                    Tung Behörighet
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+                Välj de ingående moment inom säkerhetskontrollen som ingått i provet.
+              </p>
+            </div>
+
+            {/* Funktionsfråga knapp (särskilt anpassad för tunga fordon C, CE, D, DE etc.) */}
+            {HEAVY_LICENSES.includes(licenseType) && (
+              <button
+                type="button"
+                onClick={() => setIsQuestionModalOpen(true)}
+                className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shadow-sm hover:shadow-md cursor-pointer active:scale-95 shrink-0"
+              >
+                <Dice5 size={16} />
+                <span>Slumpa Funktionsfråga (76 st)</span>
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 lg:gap-x-12 gap-y-3">
@@ -449,6 +476,13 @@ export function KorningScreen() {
         isOpen={isLathundOpen}
         onClose={() => setIsLathundOpen(false)}
         defaultLicense={licenseType}
+      />
+
+      {/* Slumpad säkerhetsfråga modal för tunga behörigheter */}
+      <HeavySafetyQuestionModal
+        isOpen={isQuestionModalOpen}
+        onClose={() => setIsQuestionModalOpen(false)}
+        licenseType={licenseType}
       />
     </div>
   );
