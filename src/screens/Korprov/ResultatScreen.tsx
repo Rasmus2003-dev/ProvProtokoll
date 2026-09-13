@@ -13,7 +13,7 @@ export function ResultatScreen() {
 
   const licenseType = state.properties.licenseType || 'B';
   const HEAVY_LICENSES = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'];
-  const SAFETY_CHECK_LICENSES = [...HEAVY_LICENSES, 'B', 'B1', 'B96', 'BE', 'Traktor', 'Traktor (Traktorkort)', 'Lokförare'];
+  const SAFETY_CHECK_LICENSES = [...HEAVY_LICENSES, 'BE'];
   const isTaxi = licenseType === 'TAXI';
 
   const handleNext = () => {
@@ -689,8 +689,8 @@ export function ResultatScreen() {
                 )}
               </div>
 
-              {/* Tunga Behörigheter & Släp - Informative notice */}
-              {(HEAVY_LICENSES.includes(licenseType) || ['BE', 'B96', 'Lokförare'].includes(licenseType)) && state.result.safetyCheckResult === 'Godkänt' && state.result.drivingResult === 'Underkänt' && (
+              {/* Tunga Behörigheter & BE - Informative notice */}
+              {(HEAVY_LICENSES.includes(licenseType) || licenseType === 'BE') && state.result.safetyCheckResult === 'Godkänt' && state.result.drivingResult === 'Underkänt' && (
                 <div className="bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 rounded-xl p-3.5 text-xs text-emerald-900 dark:text-emerald-300 shadow-xs">
                   <div className="font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5 mb-1 text-emerald-800 dark:text-emerald-400">
                     <span className="w-3.5 h-3.5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[9px]">✓</span> Säkerhetskontroll godkänd
@@ -701,8 +701,8 @@ export function ResultatScreen() {
                 </div>
               )}
 
-              {/* Tunga Behörigheter & Släp - Säkerhetskontroll underkänd, körning godkänd */}
-              {(HEAVY_LICENSES.includes(licenseType) || ['BE', 'B96', 'Lokförare'].includes(licenseType)) && state.result.safetyCheckResult === 'Underkänt' && state.result.drivingResult === 'Godkänt' && (
+              {/* Tunga Behörigheter & BE - Säkerhetskontroll underkänd, körning godkänd */}
+              {(HEAVY_LICENSES.includes(licenseType) || licenseType === 'BE') && state.result.safetyCheckResult === 'Underkänt' && state.result.drivingResult === 'Godkänt' && (
                 <div className="bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/80 rounded-xl p-3.5 text-xs text-blue-950 dark:text-blue-200 shadow-xs">
                   <div className="font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5 mb-1 text-blue-800 dark:text-blue-400">
                     <span className="w-3.5 h-3.5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[9px]">✓</span> Din körning är godkänd

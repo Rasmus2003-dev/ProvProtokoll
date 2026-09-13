@@ -3,15 +3,17 @@ import { useAppStore } from '../../store/ProvContext';
 import { Button } from '../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { OfficialPrintLayout } from './components/OfficialPrintLayout';
-import { AlertTriangle, Send, FileCheck } from 'lucide-react';
+import { AlertTriangle, Send, FileCheck, Mail, Copy, Check } from 'lucide-react';
 import { generateProtocolPdf } from '../../lib/generateProtocolPdf';
-import { downloadProtocolHtml } from '../../lib/generateProtocolHtml';
+import { downloadProtocolHtml, downloadEmailProtocolHtml, generateEmailProtocolHtml } from '../../lib/generateProtocolHtml';
 
 export function ProtokollScreen() {
   const { state, saveTest, resetCurrentTest, profile } = useAppStore();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'email' | 'beslut'>('beslut');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [copiedEmailHtml, setCopiedEmailHtml] = useState(false);
 
   const handlePrint = () => {
     window.print();
@@ -25,6 +27,18 @@ export function ProtokollScreen() {
     downloadProtocolHtml(state, profile?.name);
   };
 
+  const handleDownloadEmailHTML = () => {
+    downloadEmailProtocolHtml(state, profile?.name);
+  };
+
+  const handleCopyEmailHTML = () => {
+    const html = generateEmailProtocolHtml(state, profile?.name);
+    navigator.clipboard.writeText(html).then(() => {
+      setCopiedEmailHtml(true);
+      setTimeout(() => setCopiedEmailHtml(false), 2500);
+    });
+  };
+
   const handleComplete = () => {
     saveTest();
     resetCurrentTest();
@@ -34,8 +48,7 @@ export function ProtokollScreen() {
   const licenseType = state.properties.licenseType || 'B';
   const HEAVY_LICENSES = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'];
   
-  // Rule checks
-  const isSafetyCheckRequired = [...HEAVY_LICENSES, 'B', 'B1', 'B96', 'BE', 'Traktor', 'Traktor (Traktorkort)', 'Lokförare'].includes(licenseType);
+  const isSafetyCheckRequired = [...HEAVY_LICENSES, 'BE'].includes(licenseType);
   
   const isOmprovSakerhet = state.properties.testType === 'Omprov säkerhetskontroll';
   const isOmprovKorning = state.properties.testType === 'Omprov körning';
@@ -109,6 +122,16 @@ export function ProtokollScreen() {
 
             <Button 
               variant="outline" 
+              onClick={() => setShowEmailModal(true)} 
+              className="bg-white rounded-xl px-3 sm:px-4 py-2 border border-violet-200 text-violet-700 hover:bg-violet-50 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5"
+              title="Generera och förhandsgranska HTML-mejl med protokollet"
+            >
+              <Mail className="w-4 h-4 text-violet-600" />
+              <span>HTML-mejl</span>
+            </Button>
+
+            <Button 
+              variant="outline" 
               onClick={handleDownloadHTML} 
               className="bg-white rounded-xl px-3 sm:px-4 py-2 border border-indigo-200 text-indigo-700 hover:bg-indigo-50 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5"
               title="Ladda ned officiellt protokoll som HTML-fil"
@@ -172,7 +195,31 @@ export function ProtokollScreen() {
         
         {/* Email mock helper view */}
         {activeTab === 'email' && (
-          <div className="mb-4 border border-gray-200 bg-gray-50 p-4 rounded-none space-y-1 text-xs text-gray-700 print:hidden" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
+          <div className="mb-4 border border-gray-200 bg-gray-50 p-4 rounded-xl space-y-3 text-xs text-gray-700 print:hidden" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
+            <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+              <span className="font-bold text-gray-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                <Mail size={14} className="text-violet-600" />
+                Automatisk HTML-mejl förhandsvisning
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopyEmailHTML}
+                  className="bg-white hover:bg-violet-50 text-violet-700 border-violet-200 text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 font-bold"
+                >
+                  {copiedEmailHtml ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                  <span>{copiedEmailHtml ? 'Kopierat!' : 'Kopiera HTML-kod'}</span>
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleDownloadEmailHTML}
+                  className="bg-violet-600 hover:bg-violet-700 text-white text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 font-bold"
+                >
+                  <span>Ladda ned HTML-mejl</span>
+                </Button>
+              </div>
+            </div>
             <div className="flex border-b border-gray-200 pb-1">
               <span className="w-16 font-bold text-gray-400 uppercase tracking-wider text-[9px]">Från:</span>
               <span className="text-gray-950 font-semibold">Digitalt Provprotokoll &lt;noreply@provprotokoll.se&gt;</span>
@@ -183,16 +230,16 @@ export function ProtokollScreen() {
             </div>
             <div className="flex border-b border-gray-200 pb-1">
               <span className="w-16 font-bold text-gray-400 uppercase tracking-wider text-[9px]">Datum:</span>
-              <span className="text-gray-800">{state.properties.testDate || new Date().toLocaleDateString('sv-SE')} – 16:45</span>
+              <span className="text-gray-800">{state.properties.testDate || new Date().toLocaleDateString('sv-SE')} – {new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
             <div className="flex">
               <span className="w-16 font-bold text-gray-400 uppercase tracking-wider text-[9px]">Ämne:</span>
               <span className="text-black font-bold text-[12px]">Resultat på ditt körprov – {state.properties.testType || 'Körprov'} ({licenseType})</span>
             </div>
             <div className="pt-2 pb-1 border-t border-gray-200 text-gray-800 text-xs leading-relaxed space-y-2">
-              <p>Hej!</p>
+              <p>Hej {state.properties.studentName || 'Kandidat'}!</p>
               <p>Här kommer beslutet för ditt nyligen genomförda körprov. Provresultat och fullständigt protokoll finner du i dokumentet nedan.</p>
-              <p>Med vänlig hälsning,<br /><span className="font-bold">Digitalt Provprotokoll</span></p>
+              <p>Med vänlig hälsning,<br /><span className="font-bold">Digitalt Provprotokoll Sverige</span></p>
               <div className="h-px bg-gray-300 my-2" />
             </div>
           </div>
@@ -202,16 +249,84 @@ export function ProtokollScreen() {
         <OfficialPrintLayout />
       </div>
 
+      {/* HTML Email Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6">
+          <div 
+            className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm transition-opacity" 
+            onClick={() => setShowEmailModal(false)}
+          />
+          
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 w-full max-w-3xl max-h-[90vh] flex flex-col relative z-10 shadow-2xl rounded-2xl overflow-hidden animate-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-zinc-800 flex items-center justify-between bg-slate-50 dark:bg-zinc-850">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 flex items-center justify-center">
+                  <Mail size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-gray-900 dark:text-white uppercase tracking-tight">
+                    Genererat HTML-e-postmeddelande
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-slate-400">
+                    Klar för att klistras in i e-postklient (Outlook, Gmail) eller skickas direkt.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEmailModal(false)}
+                className="w-8 h-8 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-700 flex items-center justify-center text-gray-500 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Email Preview Frame */}
+            <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-zinc-950">
+              <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-2">
+                <iframe
+                  title="HTML Email Preview"
+                  srcDoc={generateEmailProtocolHtml(state, profile?.name)}
+                  className="w-full min-h-[500px] rounded-lg border-0"
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-wrap items-center justify-between gap-3">
+              <div className="text-xs text-gray-500 dark:text-slate-400">
+                Skickas till: <strong className="text-gray-900 dark:text-white">{state.properties.email || 'Saknar angiven e-post'}</strong>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleCopyEmailHTML}
+                  className="border-gray-300 dark:border-zinc-700 text-xs font-bold flex items-center gap-1.5 h-10 px-4 rounded-xl"
+                >
+                  {copiedEmailHtml ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                  <span>{copiedEmailHtml ? 'HTML-kod kopierad!' : 'Kopiera HTML-kod'}</span>
+                </Button>
+                <Button
+                  onClick={handleDownloadEmailHTML}
+                  className="bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold flex items-center gap-1.5 h-10 px-5 rounded-xl shadow-sm"
+                >
+                  <span>Ladda ned .html-fil</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Dynamic reporting confirmation dialog */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm transition-opacity" 
             onClick={() => setShowConfirmModal(false)}
           />
           
-          {/* Modal Box */}
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-850 w-full max-w-md p-6 relative z-10 shadow-2xl rounded-xl animate-in zoom-in-95 duration-150">
             <div className="flex items-start gap-4">
               <div className={`p-3 shrink-0 rounded-xl ${

@@ -34,6 +34,28 @@ export function HistorikScreen() {
     }
   };
 
+  const evaluateIsPassed = (item: {
+    testType?: string;
+    licenseType?: string;
+    drivingResult?: string | null;
+    safetyResult?: string | null;
+  }) => {
+    const tType = item.testType || '';
+    const lType = item.licenseType || 'B';
+    const isSafetyRequired = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE', 'BE'].includes(lType);
+
+    if (tType.includes('Omprov säkerhetskontroll')) {
+      return item.safetyResult === 'Godkänt';
+    }
+    if (tType.includes('Omprov körning')) {
+      return item.drivingResult === 'Godkänt';
+    }
+    // Standard test or Omprov båda
+    const drivingOk = item.drivingResult === 'Godkänt';
+    const safetyOk = !isSafetyRequired || item.safetyResult === 'Godkänt' || !item.safetyResult;
+    return drivingOk && safetyOk;
+  };
+
   // Merge cloud protocols with local testHistory if not already present
   const allDisplayItems = cloudProtocols.length > 0
     ? cloudProtocols.map(p => ({
@@ -45,7 +67,12 @@ export function HistorikScreen() {
         licenseType: p.license_type,
         testType: p.test_type,
         transmission: p.transmission,
-        isPassed: p.driving_result === 'Godkänt' && (p.safety_result === 'Godkänt' || !p.safety_result),
+        isPassed: evaluateIsPassed({
+          testType: p.test_type,
+          licenseType: p.license_type,
+          drivingResult: p.driving_result,
+          safetyResult: p.safety_result
+        }),
         state: p.full_state
       }))
     : testHistory.map((test, idx) => ({
@@ -57,7 +84,12 @@ export function HistorikScreen() {
         licenseType: test.properties.licenseType,
         testType: test.properties.testType || 'Körprov',
         transmission: test.properties.transmission,
-        isPassed: test.result.drivingResult === 'Godkänt' && (test.result.safetyCheckResult === 'Godkänt' || !test.result.safetyCheckResult),
+        isPassed: evaluateIsPassed({
+          testType: test.properties.testType,
+          licenseType: test.properties.licenseType,
+          drivingResult: test.result.drivingResult,
+          safetyResult: test.result.safetyCheckResult
+        }),
         state: test
       }));
 

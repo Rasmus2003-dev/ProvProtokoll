@@ -13,7 +13,8 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
   const { state: currentState, profile } = useAppStore();
   const state = testState || currentState;
 
-  const isSafetyCheckRequired = ['B', 'C1', 'C1E', 'C', 'CE', 'D1', 'D1E', 'D', 'DE', 'BE', 'B96', 'Lokförare'].includes(state.properties.licenseType || '');
+  const HEAVY_LICENSES = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'];
+  const isSafetyCheckRequired = [...HEAVY_LICENSES, 'BE'].includes(state.properties.licenseType || '');
   const isTaxi = (state.properties.licenseType || '') === 'TAXI';
   
   const isOmprovSakerhet = state.properties.testType === 'Omprov säkerhetskontroll';

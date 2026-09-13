@@ -25,7 +25,7 @@ export function generateProtocolPdf(state: AppState, inspectorName?: string) {
 
   const licenseType = state.properties.licenseType || 'B';
   const HEAVY_LICENSES = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'];
-  const isSafetyCheckRequired = [...HEAVY_LICENSES, 'B', 'B1', 'B96', 'BE', 'Traktor', 'Traktor (Traktorkort)', 'Lokförare'].includes(licenseType);
+  const isSafetyCheckRequired = [...HEAVY_LICENSES, 'BE'].includes(licenseType);
   const isTaxi = licenseType === 'TAXI';
 
   const isOmprovSakerhet = state.properties.testType?.includes('Omprov säkerhetskontroll');

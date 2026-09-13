@@ -4,7 +4,7 @@ import provprotokollLogoImg from '../assets/images/provprotokoll_logo.png';
 export function generateOfficialProtocolHtml(state: AppState, inspectorName?: string): string {
   const licenseType = state.properties.licenseType || 'B';
   const HEAVY_LICENSES = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'];
-  const isSafetyCheckRequired = [...HEAVY_LICENSES, 'B', 'B1', 'B96', 'BE', 'Traktor', 'Traktor (Traktorkort)', 'Lokförare'].includes(licenseType);
+  const isSafetyCheckRequired = [...HEAVY_LICENSES, 'BE'].includes(licenseType);
   const isTaxi = licenseType === 'TAXI';
 
   const isOmprovSakerhet = state.properties.testType === 'Omprov säkerhetskontroll';
@@ -298,12 +298,207 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
 </html>`;
 }
 
+export function generateEmailProtocolHtml(state: AppState, inspectorName?: string): string {
+  const licenseType = state.properties.licenseType || 'B';
+  const HEAVY_LICENSES = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'];
+  const isSafetyCheckRequired = [...HEAVY_LICENSES, 'BE'].includes(licenseType);
+  const isTaxi = licenseType === 'TAXI';
+
+  const isOmprovSakerhet = state.properties.testType === 'Omprov säkerhetskontroll';
+  const isOmprovKorning = state.properties.testType === 'Omprov körning';
+
+  let isGodkand = false;
+  if (isOmprovSakerhet) {
+    if (state.result.safetyCheckResult === 'Godkänt') isGodkand = true;
+  } else if (isOmprovKorning) {
+    if (state.result.drivingResult === 'Godkänt') isGodkand = true;
+  } else {
+    const safetyCheckPassedOrNotNeeded = !isSafetyCheckRequired || state.result.safetyCheckResult === 'Godkänt';
+    const drivingPassed = state.result.drivingResult === 'Godkänt';
+    isGodkand = drivingPassed && safetyCheckPassedOrNotNeeded;
+  }
+
+  const studentName = state.properties.studentName || 'Förnamn Efternamn';
+  const pnr = state.properties.personalNumber || 'XXXXXX-XXXX';
+  const testDate = state.properties.testDate || new Date().toISOString().split('T')[0];
+  const examiner = inspectorName || state.properties.examiner || 'Rasmus Lundin';
+
+  let drivingResultText = state.result.drivingResult || '-';
+  if (drivingResultText === 'Godkänt') {
+    const details: string[] = [];
+    if (state.properties.transmission === 'Automat') details.push('Automat');
+    if (state.properties.tachograph === 'Utan färdskrivare') details.push('Utan färdskrivare');
+    if (details.length > 0) drivingResultText = `Godkänt (${details.join(', ')})`;
+  }
+
+  const drivingFail = state.result.drivingFailure;
+  const safetyFail = state.result.safetyCheckFailure;
+
+  return `<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <title>Körprovsresultat - ${studentName}</title>
+</head>
+<body style="margin:0;padding:20px;background-color:#f4f6f8;font-family:Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+    <tr>
+      <td align="center">
+        <table width="680" border="0" cellspacing="0" cellpadding="0" style="max-width:680px;width:100%;background-color:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;box-shadow:0 4px 12px rgba(0,0,0,0.06);">
+          <!-- Header Banner -->
+          <tr>
+            <td style="background-color:#002F6C;padding:28px 36px;color:#ffffff;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td>
+                    <h1 style="margin:0;font-size:22px;font-weight:800;letter-spacing:0.5px;color:#ffffff;">PROVPROTOKOLL</h1>
+                    <p style="margin:4px 0 0 0;font-size:12px;color:#93c5fd;text-transform:uppercase;letter-spacing:1px;">Officiellt Förarprovsbeslut</p>
+                  </td>
+                  <td align="right">
+                    <span style="display:inline-block;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:bold;text-transform:uppercase;${isGodkand ? 'background-color:#10b981;color:#ffffff;' : 'background-color:#ef4444;color:#ffffff;'}">
+                      ${isGodkand ? '✓ Godkänt' : '✗ Underkänt'}
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Body Content -->
+          <tr>
+            <td style="padding:32px 36px;">
+              <h2 style="margin:0 0 20px 0;font-size:18px;color:#0f172a;font-weight:700;">Hej ${studentName},</h2>
+              <p style="margin:0 0 24px 0;font-size:14px;line-height:1.6;color:#334155;">
+                Här är det officiella beslutet och protokollet för ditt genomförda körprov.
+              </p>
+
+              <!-- Info Table Card -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:28px;">
+                <tr>
+                  <td style="padding:16px 20px;width:50%;border-bottom:1px solid #e2e8f0;border-right:1px solid #e2e8f0;">
+                    <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Kandidat</div>
+                    <div style="font-size:14px;font-weight:600;color:#0f172a;">${studentName}</div>
+                  </td>
+                  <td style="padding:16px 20px;width:50%;border-bottom:1px solid #e2e8f0;">
+                    <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Personnummer</div>
+                    <div style="font-size:14px;font-weight:600;color:#0f172a;font-family:monospace;">${pnr}</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:16px 20px;border-right:1px solid #e2e8f0;">
+                    <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Behörighet & Provtyp</div>
+                    <div style="font-size:14px;font-weight:600;color:#0f172a;">${licenseType} – ${state.properties.testType || 'Körprov'} (${state.properties.transmission || 'Manuell'})</div>
+                  </td>
+                  <td style="padding:16px 20px;">
+                    <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Datum & Provförrättare</div>
+                    <div style="font-size:14px;font-weight:600;color:#0f172a;">${testDate} – ${examiner}</div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Delresultat -->
+              <h3 style="margin:0 0 12px 0;font-size:14px;font-weight:700;color:#0f172a;text-transform:uppercase;letter-spacing:0.5px;">Delresultat</h3>
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom:28px;border-collapse:collapse;">
+                <tr style="background-color:#f1f5f9;">
+                  <th align="left" style="padding:10px 14px;font-size:12px;color:#475569;font-weight:700;border-radius:6px 0 0 6px;">Delmoment</th>
+                  <th align="right" style="padding:10px 14px;font-size:12px;color:#475569;font-weight:700;border-radius:0 6px 6px 0;">Utfall</th>
+                </tr>
+                ${!isOmprovSakerhet ? `
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                  <td style="padding:12px 14px;font-size:14px;color:#1e293b;font-weight:600;">Körning i trafik</td>
+                  <td align="right" style="padding:12px 14px;font-size:14px;font-weight:bold;${state.result.drivingResult === 'Godkänt' ? 'color:#10b981;' : 'color:#ef4444;'}">
+                    ${drivingResultText}
+                  </td>
+                </tr>` : ''}
+                ${isSafetyCheckRequired && !isOmprovKorning ? `
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                  <td style="padding:12px 14px;font-size:14px;color:#1e293b;font-weight:600;">Säkerhetskontroll (Tung behörighet)</td>
+                  <td align="right" style="padding:12px 14px;font-size:14px;font-weight:bold;${state.result.safetyCheckResult === 'Godkänt' ? 'color:#10b981;' : 'color:#ef4444;'}">
+                    ${state.result.safetyCheckResult || '-'}
+                  </td>
+                </tr>` : ''}
+              </table>
+
+              <!-- Bedömningsutlåtande -->
+              <div style="padding:18px 22px;border-radius:8px;margin-bottom:28px;${isGodkand ? 'background-color:#ecfdf5;border-left:4px solid #10b981;' : 'background-color:#fef2f2;border-left:4px solid #ef4444;'}">
+                <div style="font-size:15px;font-weight:bold;margin-bottom:6px;${isGodkand ? 'color:#065f46;' : 'color:#991b1b;'}">
+                  ${isGodkand ? 'Provets helhetsbedömning är GODKÄND' : 'Provets helhetsbedömning är UNDERKÄND'}
+                </div>
+                <p style="margin:0;font-size:13px;line-height:1.5;${isGodkand ? 'color:#047857;' : 'color:#b91c1c;'}">
+                  ${isGodkand 
+                    ? (isTaxi 
+                        ? 'Grattis till godkänt taxiförarprov! Du kan nu ansöka om taxiförarlegitimation hos Transportstyrelsen.'
+                        : 'Grattis till ditt godkända förarprov! Du kan nu köra med giltig legitimation i Sverige i upp till 2 månader.')
+                    : 'Din körning uppvisar brister som behöver vidare övning och utveckling innan nytt prov genomförs.'}
+                </p>
+              </div>
+
+              ${!isGodkand && drivingFail?.primaryCause?.area ? `
+              <!-- Deficiencies List -->
+              <div style="margin-bottom:28px;background-color:#fff7ed;border:1px solid #ffedd5;border-radius:8px;padding:16px 20px;">
+                <div style="font-size:12px;font-weight:800;color:#9a3412;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">
+                  Identifierad brist i körningen
+                </div>
+                <div style="font-size:14px;font-weight:700;color:#c2410c;margin-bottom:6px;">
+                  Område: ${drivingFail.primaryCause.area}
+                </div>
+                ${drivingFail.primaryCause.deficiencies && drivingFail.primaryCause.deficiencies.length > 0 ? `
+                <ul style="margin:6px 0 0 0;padding-left:20px;font-size:13px;color:#7c2d12;">
+                  ${drivingFail.primaryCause.deficiencies.map(d => `<li style="margin-bottom:3px;">${d}</li>`).join('')}
+                </ul>` : ''}
+              </div>` : ''}
+
+              <!-- Provinnehåll -->
+              ${state.includedTestItems && state.includedTestItems.length > 0 ? `
+              <div style="margin-bottom:24px;">
+                <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">
+                  Ingående moment under körprovet
+                </div>
+                <div style="font-size:12px;color:#334155;line-height:1.8;">
+                  ${state.includedTestItems.map(i => `<span style="display:inline-block;background-color:#f1f5f9;padding:3px 8px;border-radius:4px;margin-right:6px;margin-bottom:6px;border:1px solid #e2e8f0;">${i}</span>`).join('')}
+                </div>
+              </div>` : ''}
+
+              <div style="border-top:1px solid #e2e8f0;padding-top:20px;font-size:12px;color:#64748b;line-height:1.5;">
+                Detta är ett automatiskt genererat provprotokoll från provprotokollsystemet. Beslutet har registrerats digitalt och signerats av förarprövare ${examiner}.
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#f8fafc;padding:18px 36px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:center;">
+              ProvProtokoll Sverige • Säker digital provhantering & certifiering
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
 export function downloadProtocolHtml(state: AppState, inspectorName?: string) {
   const html = generateOfficialProtocolHtml(state, inspectorName);
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   const filename = `Korprovsresultat_${(state.properties.studentName || 'Kandidat').replace(/\s+/g, '_')}_${state.properties.licenseType || 'B'}.html`;
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export function downloadEmailProtocolHtml(state: AppState, inspectorName?: string) {
+  const html = generateEmailProtocolHtml(state, inspectorName);
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const filename = `Mejlprotokoll_${(state.properties.studentName || 'Kandidat').replace(/\s+/g, '_')}_${state.properties.licenseType || 'B'}.html`;
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);

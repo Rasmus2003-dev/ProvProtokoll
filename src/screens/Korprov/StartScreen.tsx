@@ -44,20 +44,17 @@ const getStoredSchedule = (): ScheduleItem[] => {
     const saved = localStorage.getItem('provprotokoll_elevregister');
     if (saved) {
       const all: any[] = JSON.parse(saved);
-      // Filter candidates for Trafikverket prov
-      return all
-        .filter(item => item.source === 'trv' || !item.source)
-        .map(item => ({
-          id: item.id,
-          time: item.bookingTime || '09:00',
-          studentName: item.name,
-          personalNumber: item.personalNumber,
-          email: item.email || '',
-          licenseType: item.licenseType || 'B',
-          testType: item.testType || 'Förstaprov',
-          transmission: item.transmission || 'Manuell',
-          status: item.status || 'Klar för start'
-        }));
+      return all.map(item => ({
+        id: item.id,
+        time: item.bookingTime || '09:00',
+        studentName: item.name,
+        personalNumber: item.personalNumber,
+        email: item.email || '',
+        licenseType: item.licenseType || 'B',
+        testType: item.testType || 'Förstaprov',
+        transmission: item.transmission || 'Manuell',
+        status: item.status || 'Klar för start'
+      }));
     }
   } catch (_) {}
   return [];
@@ -194,12 +191,19 @@ export function StartScreen() {
   };
 
   const [scheduleList, setScheduleList] = useState<ScheduleItem[]>(() => getStoredSchedule());
+  const [showCandidateSuggestions, setShowCandidateSuggestions] = useState(false);
 
   useEffect(() => {
     const handleStorage = () => setScheduleList(getStoredSchedule());
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
+
+  const matchingCandidates = scheduleList.filter(item => {
+    if (!studentName || studentName.trim() === '') return true;
+    return item.studentName.toLowerCase().includes(studentName.toLowerCase()) ||
+      item.personalNumber.includes(studentName);
+  });
 
   const filteredSchedule = scheduleList.filter(item => 
     item.studentName.toLowerCase().includes(activeSearch.toLowerCase()) ||
@@ -264,118 +268,193 @@ export function StartScreen() {
         <div className="lg:col-span-7 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/5 rounded-[2rem] shadow-sm overflow-hidden flex flex-col">
           
           <div className="p-6 sm:p-8 space-y-8 flex-1">
-            <div>
-              <h2 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-4 mb-2">
-                <User size={16} className="text-[#002f6c] dark:text-blue-400" />
-                Kandidatinformation
-              </h2>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-gray-500 dark:text-slate-400 tracking-widest uppercase ml-1">Kandidatens namn *</label>
-                <div className="relative">
+            {/* Section 1: Kandidatinformation */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/5 pb-3">
+                <h2 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-[#002f6c]/10 dark:bg-blue-500/20 text-[#002f6c] dark:text-blue-400 flex items-center justify-center font-bold">1</span>
+                  Kandidatinformation
+                </h2>
+                {scheduleList.length > 0 && (
+                  <span className="text-[11px] font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-md">
+                    {scheduleList.length} elever i registret
+                  </span>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Namn med sökförslag */}
+                <div className="space-y-1.5 relative sm:col-span-1">
+                  <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 tracking-wide uppercase flex items-center gap-1">
+                    <span>Kandidatens fullständiga namn</span>
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={studentName || ''}
+                      id="input-student-name"
+                      onFocus={() => setShowCandidateSuggestions(true)}
+                      onChange={(e) => {
+                        handleUpdateProp('studentName', e.target.value);
+                        setShowCandidateSuggestions(true);
+                      }}
+                      placeholder="t.ex. Anna Andersson"
+                      className="w-full h-12 px-4 text-sm font-semibold rounded-xl border-2 border-gray-200 dark:border-slate-700 focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white shadow-xs transition-all placeholder:text-gray-400 placeholder:font-normal"
+                    />
+                    {showCandidateSuggestions && matchingCandidates.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-slate-900 border-2 border-blue-200 dark:border-blue-900 rounded-xl shadow-2xl z-50 overflow-hidden divide-y divide-gray-100 dark:divide-slate-800 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+                        <div className="px-3.5 py-2 bg-blue-50/80 dark:bg-slate-800 text-[10px] font-bold uppercase tracking-wider text-blue-900 dark:text-blue-300 flex items-center justify-between">
+                          <span>Klicka för att välja & autofylla</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowCandidateSuggestions(false)}
+                            className="hover:text-red-500 text-xs px-1 cursor-pointer font-black"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        {matchingCandidates.map(c => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => {
+                              setPresetCandidate({
+                                studentName: c.studentName,
+                                personalNumber: c.personalNumber,
+                                email: c.email,
+                                licenseType: c.licenseType,
+                                testType: c.testType,
+                                transmission: c.transmission
+                              });
+                              setShowCandidateSuggestions(false);
+                            }}
+                            className="w-full text-left px-3.5 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center justify-between transition-colors cursor-pointer"
+                          >
+                            <div>
+                              <div className="text-sm font-bold text-gray-900 dark:text-white">{c.studentName}</div>
+                              <div className="text-xs font-mono text-gray-500 dark:text-slate-400">{c.personalNumber || 'Saknar personnummer'}</div>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-black px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200">
+                                {c.licenseType}
+                              </span>
+                              <span className="text-[11px] text-gray-500 dark:text-slate-400">
+                                {c.transmission}
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Personnummer */}
+                <div className="space-y-1.5 sm:col-span-1">
+                  <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 tracking-wide uppercase flex items-center gap-1">
+                    <span>Personnummer</span>
+                    <span className="text-gray-400 font-normal text-[10px] lowercase">(10 eller 12 siffror)</span>
+                  </label>
                   <input
                     type="text"
-                    value={studentName || ''}
-                    id="input-student-name"
-                    onChange={(e) => handleUpdateProp('studentName', e.target.value)}
-                    placeholder="Förnamn Efternamn"
-                    className="w-full h-12 px-4 text-sm font-medium rounded-xl border border-gray-200 dark:border-white/10 focus:outline-none focus:border-[#002f6c] focus:ring-1 focus:ring-[#002f6c] dark:focus:border-blue-500 dark:focus:ring-blue-500 bg-gray-50/50 dark:bg-slate-900/50 dark:text-white transition-all"
+                    value={personalNumber || ''}
+                    id="input-personal-number"
+                    onChange={(e) => handleUpdateProp('personalNumber', e.target.value)}
+                    placeholder="ÅÅÅÅMMDD-XXXX"
+                    className="w-full h-12 px-4 text-sm font-mono font-semibold rounded-xl border-2 border-gray-200 dark:border-slate-700 focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white shadow-xs transition-all placeholder:text-gray-400 placeholder:font-mono"
+                  />
+                </div>
+                
+                {/* E-postadress */}
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 tracking-wide uppercase flex items-center justify-between">
+                    <span>E-postadress för protokollkopia</span>
+                    <span className="text-gray-400 text-[10px] font-normal lowercase">skickas automatiskt vid godkännande</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={email || ''}
+                    id="input-email"
+                    onChange={(e) => handleUpdateProp('email', e.target.value)}
+                    placeholder="elevens.namn@exempel.se"
+                    className="w-full h-12 px-4 text-sm font-medium rounded-xl border-2 border-gray-200 dark:border-slate-700 focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white shadow-xs transition-all placeholder:text-gray-400 placeholder:font-normal"
                   />
                 </div>
               </div>
-              
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-gray-500 dark:text-slate-400 tracking-widest uppercase ml-1">Personnummer</label>
-                <input
-                  type="text"
-                  value={personalNumber || ''}
-                  id="input-personal-number"
-                  onChange={(e) => handleUpdateProp('personalNumber', e.target.value)}
-                  placeholder="ÅÅÅÅMMDD-XXXX"
-                  className="w-full h-12 px-4 text-sm font-mono rounded-xl border border-gray-200 dark:border-white/10 focus:outline-none focus:border-[#002f6c] focus:ring-1 focus:ring-[#002f6c] dark:focus:border-blue-500 dark:focus:ring-blue-500 bg-gray-50/50 dark:bg-slate-900/50 dark:text-white transition-all"
-                />
-              </div>
-              
-              <div className="space-y-1.5 sm:col-span-2">
-                <label className="text-[10px] font-black text-gray-500 dark:text-slate-400 tracking-widest uppercase ml-1">E-postadress</label>
-                <input
-                  type="email"
-                  value={email || ''}
-                  id="input-email"
-                  onChange={(e) => handleUpdateProp('email', e.target.value)}
-                  placeholder="namn@exempel.se"
-                  className="w-full h-12 px-4 text-sm font-medium rounded-xl border border-gray-200 dark:border-white/10 focus:outline-none focus:border-[#002f6c] focus:ring-1 focus:ring-[#002f6c] dark:focus:border-blue-500 dark:focus:ring-blue-500 bg-gray-50/50 dark:bg-slate-900/50 dark:text-white transition-all"
-                />
-              </div>
             </div>
 
-            <div className="pt-2">
-              <h2 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-4 mb-2">
-                <FileText size={16} className="text-amber-500 dark:text-amber-400" />
-                Provdetaljer
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-gray-500 dark:text-slate-400 tracking-widest uppercase ml-1">Provförrättare</label>
-                <input
-                  type="text"
-                  value={examiner || ''}
-                  id="input-examiner"
-                  onChange={(e) => handleUpdateProp('examiner', e.target.value)}
-                  className="w-full h-12 px-4 text-sm font-medium rounded-xl border border-gray-200 dark:border-white/5 focus:outline-none bg-gray-100 dark:bg-slate-800 dark:text-slate-300 cursor-not-allowed text-gray-500"
-                  disabled
-                />
+            {/* Section 2: Provdetaljer */}
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/5 pb-3">
+                <h2 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">2</span>
+                  Provdetaljer & Inställningar
+                </h2>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-gray-500 dark:text-slate-400 tracking-widest uppercase ml-1">Provdatum</label>
-                <input
-                  type="date"
-                  value={testDate || ''}
-                  id="input-test-date"
-                  onChange={(e) => handleUpdateProp('testDate', e.target.value)}
-                  className="w-full h-12 px-4 text-sm font-medium rounded-xl border border-gray-200 dark:border-white/10 focus:outline-none focus:border-[#002f6c] focus:ring-1 focus:ring-[#002f6c] dark:focus:border-blue-500 dark:focus:ring-blue-500 bg-gray-50/50 dark:bg-slate-900/50 dark:text-white transition-all"
-                />
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 tracking-wide uppercase">Provförrättare</label>
+                  <input
+                    type="text"
+                    value={examiner || ''}
+                    id="input-examiner"
+                    onChange={(e) => handleUpdateProp('examiner', e.target.value)}
+                    className="w-full h-12 px-4 text-sm font-semibold rounded-xl border-2 border-gray-200 dark:border-slate-800 bg-gray-100 dark:bg-slate-800/80 text-gray-600 dark:text-slate-300 cursor-not-allowed"
+                    disabled
+                  />
+                </div>
 
-              <div className="space-y-1.5 sm:col-span-2">
-                <label className="text-[10px] font-black text-gray-500 dark:text-slate-400 tracking-widest uppercase ml-1">Provtyp</label>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                  {[
-                    { id: 'Förstaprov', label: 'Förstaprov' },
-                    { id: 'Omprov', label: 'Omprov' },
-                    { id: 'Omprov säkerhetskontroll', label: 'Omprov säkerhet' },
-                    { id: 'Omprov körning', label: 'Omprov körning' },
-                    { id: 'Bedömningsprov', label: 'Bedömningsprov' }
-                  ].map(pt => (
-                    <button
-                      key={pt.id}
-                      type="button"
-                      onClick={() => handleUpdateProp('testType', pt.id)}
-                      className={`h-11 px-3 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
-                        (state.properties.testType || 'Förstaprov') === pt.id
-                          ? 'bg-[#002f6c] text-white border-[#002f6c] dark:bg-blue-600 dark:border-blue-500 shadow-sm'
-                          : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-white/10 hover:bg-gray-50'
-                      }`}
-                    >
-                      {pt.label}
-                    </button>
-                  ))}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 tracking-wide uppercase">Provdatum</label>
+                  <input
+                    type="date"
+                    value={testDate || ''}
+                    id="input-test-date"
+                    onChange={(e) => handleUpdateProp('testDate', e.target.value)}
+                    className="w-full h-12 px-4 text-sm font-semibold rounded-xl border-2 border-gray-200 dark:border-slate-700 focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white shadow-xs transition-all"
+                  />
+                </div>
+
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 tracking-wide uppercase block">Provtyp</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {[
+                      { id: 'Förstaprov', label: 'Förstaprov' },
+                      { id: 'Omprov', label: 'Omprov' },
+                      { id: 'Omprov säkerhetskontroll', label: 'Omprov säkerhet' },
+                      { id: 'Omprov körning', label: 'Omprov körning' },
+                      { id: 'Bedömningsprov', label: 'Bedömningsprov' }
+                    ].map(pt => (
+                      <button
+                        key={pt.id}
+                        type="button"
+                        onClick={() => handleUpdateProp('testType', pt.id)}
+                        className={`h-11 px-2.5 text-xs font-bold rounded-xl border-2 transition-all cursor-pointer select-none active:scale-[0.98] ${
+                          (state.properties.testType || 'Förstaprov') === pt.id
+                            ? 'bg-[#002f6c] text-white border-[#002f6c] dark:bg-blue-600 dark:border-blue-500 shadow-sm font-black'
+                            : 'bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* License Grid */}
             <div className="space-y-3 pt-2">
-              <div className="flex items-center justify-between">
-                <label className="text-[10px] font-black text-gray-500 dark:text-slate-400 tracking-widest uppercase ml-1 block">Behörighet</label>
-                <span className="text-xs font-bold text-[#002f6c] dark:text-blue-400">Vald: {licenseType}</span>
+              <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/5 pb-2">
+                <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 tracking-wide uppercase flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">3</span>
+                  Körkortsbehörighet
+                </label>
+                <span className="text-xs font-black text-[#002f6c] dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-md">Vald: {licenseType}</span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                 {COMMON_LICENSES.map((lic) => (
                   <button
                     key={lic}
@@ -384,10 +463,10 @@ export function StartScreen() {
                       triggerHaptic('light');
                       handleUpdateProp('licenseType', lic);
                     }}
-                    className={`h-11 px-2 text-xs font-bold rounded-xl transition-all select-none active:scale-95 cursor-pointer flex items-center justify-center text-center truncate ${
+                    className={`h-11 px-2 text-xs font-bold rounded-xl transition-all select-none active:scale-95 cursor-pointer flex items-center justify-center text-center border-2 truncate ${
                       licenseType === lic
-                        ? 'bg-[#002f6c] dark:bg-blue-600 text-white shadow-md shadow-blue-900/20 ring-2 ring-offset-2 ring-[#002f6c] dark:ring-blue-500 dark:ring-offset-slate-900 font-black'
-                        : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-slate-700'
+                        ? 'bg-[#002f6c] dark:bg-blue-600 text-white border-[#002f6c] dark:border-blue-500 shadow-md font-black ring-2 ring-blue-500/20'
+                        : 'bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:border-gray-300 hover:bg-gray-50'
                     }`}
                     title={lic}
                   >
@@ -397,13 +476,13 @@ export function StartScreen() {
               </div>
             </div>
 
-            {/* Fordonsegenskaper: Växellåda & Färdskrivare (endast tunga prov: C, D, CE, DE etc.) */}
+            {/* Fordonsegenskaper: Växellåda & Färdskrivare */}
             {(() => {
               const isHeavy = ['C', 'C1', 'CE', 'C1E', 'D', 'D1', 'DE', 'D1E'].includes(licenseType);
               return (
-                <div className={`grid grid-cols-1 ${isHeavy ? 'sm:grid-cols-2' : ''} gap-4 pt-1`}>
+                <div className={`grid grid-cols-1 ${isHeavy ? 'sm:grid-cols-2' : ''} gap-4 pt-2`}>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-gray-500 dark:text-slate-400 tracking-widest uppercase ml-1 block">
+                    <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 tracking-wide uppercase block">
                       Växellåda (Transmission)
                     </label>
                     <div className="grid grid-cols-2 gap-2">
@@ -413,10 +492,10 @@ export function StartScreen() {
                           triggerHaptic('light');
                           handleUpdateProp('transmission', 'Manuell');
                         }}
-                        className={`h-11 px-3 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                        className={`h-11 px-3 text-xs font-bold rounded-xl border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none active:scale-95 ${
                           (state.properties.transmission || 'Manuell') !== 'Automat'
                             ? 'bg-[#002f6c] dark:bg-blue-600 text-white border-[#002f6c] dark:border-blue-500 shadow-sm font-black'
-                            : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-white/10 hover:bg-gray-50'
+                            : 'bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:bg-gray-50'
                         }`}
                       >
                         <span>⚙️ Manuell</span>
@@ -427,10 +506,10 @@ export function StartScreen() {
                           triggerHaptic('light');
                           handleUpdateProp('transmission', 'Automat');
                         }}
-                        className={`h-11 px-3 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                        className={`h-11 px-3 text-xs font-bold rounded-xl border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none active:scale-95 ${
                           state.properties.transmission === 'Automat'
                             ? 'bg-[#002f6c] dark:bg-blue-600 text-white border-[#002f6c] dark:border-blue-500 shadow-sm font-black'
-                            : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-white/10 hover:bg-gray-50'
+                            : 'bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:bg-gray-50'
                         }`}
                       >
                         <span>⚡ Automat (78)</span>
@@ -441,7 +520,7 @@ export function StartScreen() {
                   {/* Färdskrivare (endast på tunga prov C, C1, CE, C1E, D, D1, DE, D1E) */}
                   {isHeavy && (
                     <div className="space-y-1.5 animate-in fade-in duration-200">
-                      <label className="text-[10px] font-black text-gray-500 dark:text-slate-400 tracking-widest uppercase ml-1 block">
+                      <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 tracking-wide uppercase block">
                         Färdskrivare (Tunga fordon)
                       </label>
                       <div className="grid grid-cols-2 gap-2">
@@ -451,10 +530,10 @@ export function StartScreen() {
                             triggerHaptic('light');
                             handleUpdateProp('tachograph' as any, 'Med färdskrivare');
                           }}
-                          className={`h-11 px-3 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          className={`h-11 px-3 text-xs font-bold rounded-xl border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none active:scale-95 ${
                             (state.properties.tachograph || 'Med färdskrivare') !== 'Utan färdskrivare'
                               ? 'bg-[#002f6c] dark:bg-blue-600 text-white border-[#002f6c] dark:border-blue-500 shadow-sm font-black'
-                              : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-white/10 hover:bg-gray-50'
+                              : 'bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:bg-gray-50'
                           }`}
                         >
                           <span>Med färdskrivare</span>
@@ -465,10 +544,10 @@ export function StartScreen() {
                             triggerHaptic('light');
                             handleUpdateProp('tachograph' as any, 'Utan färdskrivare');
                           }}
-                          className={`h-11 px-3 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          className={`h-11 px-3 text-xs font-bold rounded-xl border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none active:scale-95 ${
                             state.properties.tachograph === 'Utan färdskrivare'
                               ? 'bg-[#c40000] text-white border-[#c40000] shadow-sm font-black'
-                              : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-white/10 hover:bg-gray-50'
+                              : 'bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:bg-gray-50'
                           }`}
                         >
                           <span>Utan färdskrivare</span>

@@ -38,7 +38,7 @@ export function KorningScreen() {
 
   const licenseType = state.properties?.licenseType || 'B';
   const rawAvailableItems = TEST_CONTENT[licenseType] || TEST_CONTENT['B'];
-  const isHeavy = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE', 'BE', 'B96'].includes(licenseType);
+  const isHeavy = HEAVY_LICENSES.includes(licenseType) || licenseType === 'BE';
 
   // Filter items if search is active
   const filteredAvailableItems = Array.from(
@@ -168,7 +168,7 @@ export function KorningScreen() {
     }));
   };
 
-  const safetyCheckResultRelevant = !HEAVY_LICENSES.includes(licenseType) && ['B', 'B96', 'BE', 'Lokförare'].includes(licenseType);
+  const safetyCheckResultRelevant = HEAVY_LICENSES.includes(licenseType) || licenseType === 'BE';
 
   const renderItemButton = (item: string, customKey?: string) => {
     const isSelected = (state.includedTestItems || []).includes(item);
