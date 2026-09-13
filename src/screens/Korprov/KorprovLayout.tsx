@@ -124,21 +124,26 @@ export function KorprovLayout() {
           {/* Stepper Tabs Bar (Desktop-centered, Mobile-scrollable) */}
           <div className="relative overflow-x-auto hide-scrollbar pb-2">
             <div className="px-4 md:px-6 w-full flex items-center justify-between">
-              <div className="flex gap-2 sm:gap-3 w-full justify-start md:justify-center min-w-max pb-1">
-                {steps.filter(s => s.name !== 'Protokoll').map((step) => (
+              <div className="flex gap-2 sm:gap-2.5 w-full justify-start md:justify-center min-w-max pb-1">
+                {steps.filter(s => s.name !== 'Protokoll').map((step, idx) => (
                   <NavLink
                     key={step.id}
                     to={`/korprov/${step.path}`}
                     onClick={() => triggerHaptic('light')}
                     className={({ isActive }) =>
-                      `text-xs sm:text-sm py-2 px-3.5 sm:px-4 rounded-xl transition-all duration-150 font-bold uppercase tracking-wider relative flex items-center gap-1.5 ${
+                      `text-xs sm:text-xs py-2 px-3.5 sm:px-4 rounded-xl transition-all duration-200 font-bold uppercase tracking-wider relative flex items-center gap-2 border-2 ${
                         isActive
-                          ? 'bg-[#002F6C] dark:bg-blue-600 text-white shadow-sm font-black'
-                          : 'bg-gray-100/80 dark:bg-zinc-800/80 text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/80 dark:hover:bg-zinc-700/80'
+                          ? 'bg-[#002F6C] dark:bg-blue-600 text-white border-[#002F6C] dark:border-blue-500 shadow-md font-black ring-2 ring-blue-500/20'
+                          : idx < activeStepIdx
+                            ? 'bg-emerald-50/60 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/50 hover:bg-emerald-100/60'
+                            : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700 hover:bg-gray-50'
                       }`
                     }
                   >
-                    {step.name}
+                    <span className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black bg-black/10 dark:bg-white/10 shrink-0">
+                      {idx < activeStepIdx ? '✓' : idx + 1}
+                    </span>
+                    <span>{step.name}</span>
                   </NavLink>
                 ))}
               </div>

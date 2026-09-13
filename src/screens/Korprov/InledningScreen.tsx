@@ -46,12 +46,21 @@ export function InledningScreen() {
       {/* Header */}
       <div className="border-b border-gray-200 dark:border-zinc-800 pb-5">
         <div className="flex items-center gap-3 text-gray-500 dark:text-zinc-400 mb-2">
-          <span className="text-xs font-bold tracking-widest uppercase">Steg 1 av 4</span>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-black tracking-widest uppercase">
+            Steg 3 av 5
+          </span>
+          <span className="text-xs font-bold text-gray-400">|</span>
+          <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400">Obligatoriska moment innan start</span>
         </div>
-        <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">
-          Inledning
+        <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
+          <span>Inledning & Information</span>
+          {allChecked && (
+            <span className="inline-flex items-center gap-1 text-xs font-bold bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 px-2.5 py-0.5 rounded-full">
+              Klar för start ✓
+            </span>
+          )}
         </h1>
-        <p className="text-sm text-gray-600 dark:text-zinc-400 mt-2 max-w-2xl">
+        <p className="text-sm text-gray-600 dark:text-zinc-400 mt-2 max-w-2xl leading-relaxed">
           Genomför de obligatoriska kontrollerna och informera kandidaten om provets fem kompetensområden innan provstart.
         </p>
       </div>
@@ -60,12 +69,18 @@ export function InledningScreen() {
         
         {/* Left: Checklist */}
         <div className="lg:col-span-5 space-y-4">
-          <h2 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">
-            Checklista för provstart
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-[#002f6c] text-white flex items-center justify-center text-xs">1</span>
+              Checklista för provstart
+            </h2>
+            <span className="text-xs font-bold text-gray-500 dark:text-zinc-400">
+              {checks.filter(c => state.checklist?.[c.id]).length} / {checks.length} klara
+            </span>
+          </div>
           
-          <Card className="border border-gray-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 overflow-hidden rounded-2xl">
-            <div className="divide-y divide-gray-100 dark:divide-zinc-800/50">
+          <Card className="border-2 border-gray-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 overflow-hidden rounded-2xl">
+            <div className="divide-y divide-gray-100 dark:divide-zinc-800">
               {checks.map((check) => {
                 const isChecked = state.checklist?.[check.id];
                 return (
@@ -73,13 +88,18 @@ export function InledningScreen() {
                     key={check.id}
                     onClick={() => toggleCheck(check.id)}
                     className={cn(
-                      "w-full text-left p-4 flex items-start gap-3.5 transition-colors cursor-pointer group",
+                      "w-full text-left p-4 flex items-start gap-3.5 transition-all cursor-pointer group",
                       isChecked 
-                        ? "bg-blue-50/30 dark:bg-blue-900/10 hover:bg-blue-50/50 dark:hover:bg-blue-900/20" 
-                        : "hover:bg-gray-50 dark:hover:bg-zinc-800/50"
+                        ? "bg-blue-50/40 dark:bg-blue-900/15 hover:bg-blue-50/60 dark:hover:bg-blue-900/25" 
+                        : "hover:bg-gray-50 dark:hover:bg-zinc-800/60"
                     )}
                   >
-                    <div className="shrink-0 mt-0.5 text-gray-400 dark:text-zinc-500 group-hover:text-gray-600 dark:group-hover:text-zinc-400 transition-colors">
+                    <div className={cn(
+                      "shrink-0 mt-0.5 p-2 rounded-xl transition-colors",
+                      isChecked
+                        ? "bg-blue-100 dark:bg-blue-900/50 text-[#002f6c] dark:text-blue-300"
+                        : "bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-500 group-hover:text-gray-600 dark:group-hover:text-zinc-400"
+                    )}>
                       {check.icon}
                     </div>
                     <div className="flex-1">
@@ -93,11 +113,11 @@ export function InledningScreen() {
                         {check.desc}
                       </div>
                     </div>
-                    <div className="shrink-0 flex items-center justify-center">
+                    <div className="shrink-0 flex items-center justify-center pt-1">
                       {isChecked ? (
-                        <CheckCircle className="w-6 h-6 text-[#002f6c] dark:text-blue-500 transition-all scale-110" />
+                        <CheckCircle className="w-6 h-6 text-[#002f6c] dark:text-blue-400 transition-all scale-110" />
                       ) : (
-                        <Circle className="w-6 h-6 text-gray-300 dark:text-zinc-600 transition-all" />
+                        <Circle className="w-6 h-6 text-gray-300 dark:text-zinc-600 group-hover:text-gray-400 transition-all" />
                       )}
                     </div>
                   </button>
