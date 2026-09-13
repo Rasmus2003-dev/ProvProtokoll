@@ -28,7 +28,9 @@ import {
 } from 'lucide-react';
 
 const licenseTypes = [
-  'AM', 'A1', 'A2', 'A', 'B', 'BE', 'C1', 'C1E', 'C', 'CE', 'D1', 'D1E', 'D', 'DE', 'TAXI', 'Lokförare', 'Lokförare (Person)', 'Lokförare (Gods)', 'Spårvagn', 'Tunnelbana'
+  'AM', 'A1', 'A2', 'A', 'B', 'BE', 'B96', 'C1', 'C1E', 'C', 'CE', 'D1', 'D1E', 'D', 'DE', 'TAXI',
+  'Traktor (Traktorkort)', 'Snöskoter (Förarbevis)', 'Terränghjuling (ATV)', 'Truck (A+B)', 'Grävmaskin / Hjullastare',
+  'Lokförare', 'Lokförare (Person)', 'Lokförare (Gods)', 'Spårvagn', 'Tunnelbana'
 ];
 
 export function EgenskaperScreen() {

@@ -247,3 +247,52 @@ TEST_CONTENT['Lokförare (Person)'] = [...TRAIN_SPECIFIC_ITEMS, 'Passagerarhante
 TEST_CONTENT['Lokförare (Gods)'] = [...TRAIN_SPECIFIC_ITEMS, 'Farligt gods hantering (RID)', 'Säkerhetskontroll (yttre och inre lok)', 'Klargöring av fordon', 'Bromsprov och täthetsprov'];
 TEST_CONTENT['Spårvagn'] = ['Körning i blandtrafik', 'Växelomläggning (manuell/radio)', 'Dörrhantering', 'Perrongstopp', 'Signalkunskap för spårvagn', 'Trafikering med optisk signalering', 'Vagnteknik och felavhjälpning'];
 TEST_CONTENT['Tunnelbana'] = ['Stationsuppehåll och dörrhantering', 'Körning i ATC/ATO', 'Signalkunskap för tunnelbana', 'Evakuering i tunnel', 'Kommunikation med TLC (Trafikledningscentral)', 'Klargöring av tunnelvagn'];
+
+// Ytterligare Behörigheter & Förarbevis i Trafikverkets och Transportstyrelsens katalog
+TEST_CONTENT['Traktor (Traktorkort)'] = [
+  'Säkerhetskontroll traktor och draganordning',
+  'Start i motlut/medlut',
+  'Backning med jordbruksvagn/släp',
+  'Körning på allmän väg och vägren',
+  'LGF-skylt och belysningskontroll',
+  'Möte och väjningsplikt på smal väg',
+  'Hydraulik och kraftuttag (PTO-säkerhet)',
+  'Stopp och parkering med lastsäkring'
+];
+
+TEST_CONTENT['Snöskoter (Förarbevis)'] = [
+  'Säkerhetskontroll snöskoter och nödstoppslina',
+  'Start och körställning i varierad terräng',
+  'Körning i djup snö och skråkörning',
+  'Passage av skoterled, allmän väg och järnväg',
+  'Isbedömning och issäkerhetsutrustning (isdubbar)',
+  'Naturvårdshänsyn, skogsplantering och rennäringsområden',
+  'Bogsering och nödsituation i fjällmiljö'
+];
+
+TEST_CONTENT['Terränghjuling (ATV)'] = [
+  'Säkerhetskontroll ATV och skyddsutrustning',
+  'Viktförskjutning och kurvteknik',
+  'Körning över hinder och ojämn mark',
+  'Vinschning och bärgningsteknik',
+  'Körning i backe och vältförebyggande åtgärder',
+  'Regler för körning i terräng vs allmän väg'
+];
+
+TEST_CONTENT['Truck (A+B)'] = [
+  'Daglig tillsyn och batteri/gashantering',
+  'Stabilitetstriangel och tyngdpunktsberäkning',
+  'Stapling i pallställ på hög höjd',
+  'Körning med skymd sikt (backning)',
+  'Hantering av varierande palltyper och laster',
+  'Fotgängarsäkerhet och signalering i lager'
+];
+
+TEST_CONTENT['Grävmaskin / Hjullastare'] = [
+  'Daglig tillsyn, hydraulik och snabbfäste',
+  'Schaktning och släntning med precision',
+  'Planering och lastning på dumper/lastbil',
+  'Stabilitet vid lyft och arbete nära ledningar',
+  'Säkerhet på arbetsplats och signalman'
+];
+

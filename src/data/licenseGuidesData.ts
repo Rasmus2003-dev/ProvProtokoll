@@ -418,5 +418,137 @@ export const LICENSE_GUIDES: Record<string, LicenseGuideItem> = {
       'Självständig navigering mot uppgiven adress',
       'Trafikregler och hastighetsefterlevnad'
     ]
+  },
+
+  'Traktor': {
+    license: 'Traktor',
+    name: 'Traktorkort (Jordbruksdrag & vagn)',
+    category: 'yrke',
+    driveTime: 'Minst 30 minuter.',
+    mandatoryHighlights: [
+      'Säkerhetskontroll traktor, trepunktslyft och kraftuttag (PTO).',
+      'Backning med ledad jordbruksvagn.',
+      'Framförande på allmän väg med LGF-fordon.'
+    ],
+    safetyCheck: {
+      title: 'Säkerhetskontroll Traktor',
+      description: 'Systematisk genomgång av traktor och tillkopplat redskap:',
+      items: [
+        'Kraftuttagsskydd och säkerhetssprintar',
+        'Hydraulslangar och läckagekontroll',
+        'LGF-skylt (Långsamtgående fordon)',
+        'Belysning, blinkers och varningsfyr (saftblandare)',
+        'Styrning, bromsar och styrbromspedallås'
+      ]
+    },
+    maneuverItems: [
+      'Backning med vagn mot avsedd plats',
+      'Tillkoppling och låsning av dragögla med sprint'
+    ],
+    trafficItems: [
+      'Placering på väg och användning av vägren',
+      'Underlättande för omkörande trafik',
+      'Vänstersväng från landsväg med bred last'
+    ]
+  },
+
+  'Snöskoter': {
+    license: 'Snöskoter',
+    name: 'Förarbevis Snöskoter',
+    category: 'yrke',
+    driveTime: 'Praktisk körbedömning i terräng (minst 3 timmar övningsmoment).',
+    mandatoryHighlights: [
+      'Kontroll av nödstoppslina (dödmansgrepp) och personlig skyddsutrustning.',
+      'Säker ledkörning och hastighetsbegränsning (max 70 km/h, 20 km/h vid passage av bebyggelse).',
+      'Isbedömning och lavinsäkerhet.'
+    ],
+    safetyCheck: {
+      title: 'Säkerhetskontroll Snöskoter',
+      description: 'Funktionskontroll före start i vintermiljö:',
+      items: [
+        'Nödstopp och gasreglage (frysrisk)',
+        'Drivmatta och slideskenor',
+        'Skidor, styrstål och framvagn',
+        'Belysning fram/bak samt bromsljus',
+        'Medhavd säkerhetsutrustning (spade, sond, isdubbar)'
+      ]
+    },
+    maneuverItems: [
+      'Start och stopp i djup snö utan fastkörning',
+      'Skråkörning och balansförskjutning',
+      'Vändning i brant sluttning'
+    ],
+    trafficItems: [
+      'Korsande av allmän väg (rak vinkel, hjälmkrav)',
+      'Hänsyn till skidåkare, djurliv och rennäring',
+      'Ledregler och hastighetsanpassning'
+    ]
+  },
+
+  'Terränghjuling': {
+    license: 'Terränghjuling',
+    name: 'Förarbevis Terränghjuling (ATV/Quad)',
+    category: 'yrke',
+    driveTime: 'Praktisk terrängkörning.',
+    mandatoryHighlights: [
+      'Viktförskjutning och aktiv körställning.',
+      'Förbud mot terrängkörning på barmark utan särskilt tillstånd.',
+      'Hjälmkrav och vältförebyggande åtgärder.'
+    ],
+    safetyCheck: {
+      title: 'Säkerhetskontroll ATV',
+      description: 'Genomgång av fyrhjuling inför körning:',
+      items: [
+        'Däcktryck och skador på däck (lågtrycksdäck)',
+        'Färdbroms fram och bak',
+        'Styrleder och glapp',
+        'Dödmansgrepp / nödstopp',
+        'Lastrack och maxlast'
+      ]
+    },
+    maneuverItems: [
+      'Klättring och nedstigning i brant slänt',
+      'Överkörning av stock och sten med balansteknik',
+      'Vinschning och självräddning'
+    ],
+    trafficItems: [
+      'Passage av väg och tillåten vägkörning',
+      'Miljökänsliga marker och markskadeundvikande',
+      'Samspel med friluftsliv'
+    ]
+  },
+
+  'Truck': {
+    license: 'Truck',
+    name: 'Truckförarbevis (Kategori A + B)',
+    category: 'yrke',
+    driveTime: 'Praktiskt uppkörningsprov enligt TLP 10.',
+    mandatoryHighlights: [
+      'Daglig tillsyn och riskbedömning i lager/industrimiljö.',
+      'Lastdiagram och tyngdpunktsavstånd.',
+      'Stapling på hög lyfthöjd med skymd sikt.'
+    ],
+    safetyCheck: {
+      title: 'Daglig tillsyn Truck',
+      description: 'Säkerhetskontroll enligt AFS 2006:4:',
+      items: [
+        'Gafflar och låssprintar (sprickor/deformation)',
+        'Lyftkedjor, slangar och lyftstativ',
+        'Färdbroms, parkeringsbroms och backsignal',
+        'Styrning och däck',
+        'Batteri / gasoltub och nödstoppsknapp'
+      ]
+    },
+    maneuverItems: [
+      'Hämtning och avlämning av pall i hyllställage',
+      'Precisionskörning i trånga lagergångar',
+      'Backning med skymd sikt framåt'
+    ],
+    trafficItems: [
+      'Samspel med gående och signalering i skymda hörn',
+      'Körning på lastramp och till lastbil',
+      'Säker parkering med sänkta gafflar och dragen handbroms'
+    ]
   }
 };
+

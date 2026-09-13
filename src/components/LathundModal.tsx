@@ -1,3 +1,4 @@
+import { useState, useMemo, useEffect } from 'react';
 import { 
   BookOpen, Search, X, ShieldAlert, FileText, CheckCircle2, 
   HelpCircle, ChevronDown, ChevronRight, Truck, Car, GraduationCap,
@@ -16,6 +17,12 @@ interface LathundModalProps {
 export function LathundModal({ isOpen, onClose, defaultDocId, defaultLicense = 'B' }: LathundModalProps) {
   const [activeTab, setActiveTab] = useState<'behorighet' | 'dokument'>('behorighet');
   const [selectedLicense, setSelectedLicense] = useState<string>(defaultLicense);
+
+  useEffect(() => {
+    if (defaultLicense) {
+      setSelectedLicense(defaultLicense);
+    }
+  }, [defaultLicense]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeDocId, setActiveDocId] = useState<string>(defaultDocId || 'tdok-2018-0587');

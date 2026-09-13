@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { AppState } from '../types';
+import provprotokollLogoImg from '../assets/images/provprotokoll_logo.png';
 
 export function generateProtocolPdf(state: AppState, inspectorName?: string) {
   const doc = new jsPDF({
@@ -16,7 +17,7 @@ export function generateProtocolPdf(state: AppState, inspectorName?: string) {
   let y = margin;
 
   const checkPageOffset = (requiredHeight: number) => {
-    if (y + requiredHeight > pageHeight - margin - 30) {
+    if (y + requiredHeight > pageHeight - margin - 35) {
       doc.addPage();
       y = margin;
     }
@@ -46,415 +47,362 @@ export function generateProtocolPdf(state: AppState, inspectorName?: string) {
     isFailed = state.result.drivingResult === 'Underkänt' || (isSafetyCheckRequired && state.result.safetyCheckResult === 'Underkänt');
   }
 
-  // --- HEADER ---
-  // Blue accent bar
-  doc.setFillColor(0, 47, 108); // Trafikverket Dark Blue
-  doc.rect(margin, y, 8, 36, 'F');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(22);
-  doc.setTextColor(0, 47, 108);
-  doc.text('PROVPROTOKOLL', margin + 16, y + 20);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(100, 100, 100);
-  doc.text('DIGITAL PROVHANTERING & BESLUT', margin + 16, y + 33);
-
-  // Status Badge on top right
-  const badgeWidth = 100;
-  const badgeX = pageWidth - margin - badgeWidth;
-  doc.setLineWidth(1);
-
-  if (isPassed) {
-    doc.setFillColor(235, 247, 238);
-    doc.setDrawColor(46, 125, 50);
-    doc.rect(badgeX, y + 4, badgeWidth, 26, 'DF');
+  // --- 1. TOP HEADER: LOGOTYP & PRINT LABEL ---
+  try {
+    // 160pt width x 44pt height
+    doc.addImage(provprotokollLogoImg, 'PNG', margin, y, 160, 44);
+  } catch (_) {
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(46, 125, 50);
-    doc.text('GODKÄNT', badgeX + 22, y + 21);
-  } else if (isFailed) {
-    doc.setFillColor(253, 237, 237);
-    doc.setDrawColor(211, 47, 47);
-    doc.rect(badgeX, y + 4, badgeWidth, 26, 'DF');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(211, 47, 47);
-    doc.text('UNDERKÄNT', badgeX + 16, y + 21);
-  } else {
-    doc.setFillColor(245, 245, 245);
-    doc.setDrawColor(150, 150, 150);
-    doc.rect(badgeX, y + 4, badgeWidth, 26, 'DF');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text('PÅGÅENDE', badgeX + 20, y + 21);
+    doc.setFontSize(18);
+    doc.setTextColor(0, 47, 108);
+    doc.text('ProvProtokoll', margin, y + 25);
   }
 
-  y += 52;
+  y += 65;
 
-  // Horizontal divider
-  doc.setDrawColor(220, 220, 220);
-  doc.setLineWidth(1);
-  doc.line(margin, y, margin + contentWidth, y);
-  y += 18;
-
-  // --- CANDIDATE & PROV DETAILS BOX ---
-  checkPageOffset(90);
-  doc.setFillColor(250, 252, 255);
-  doc.setDrawColor(220, 230, 242);
-  doc.rect(margin, y, contentWidth, 85, 'DF');
-
-  let boxY = y + 16;
-  const col1 = margin + 14;
-  const col2 = margin + 260;
-
-  // Row 1
+  // --- 2. HUVUDRUBRIK: Körprovsresultat ---
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(100, 110, 120);
-  doc.text('KANDIDAT', col1, boxY);
-  doc.text('PERSONNUMMER', col2, boxY);
-  boxY += 12;
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(20, 20, 20);
-  doc.text(state.properties.studentName || 'Saknas', col1, boxY);
-  doc.text(state.properties.personalNumber || 'Saknas', col2, boxY);
-  boxY += 20;
-
-  // Row 2
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(100, 110, 120);
-  doc.text('PROVTYP / BEHÖRIGHET', col1, boxY);
-  doc.text('PROVDATUM & TRANSMISSION', col2, boxY);
-  boxY += 12;
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(20, 20, 20);
-  let provtypPdfText = `Körprov ${licenseType} (${state.properties.testType || 'Förstaprov'})`;
-  if (state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov')) {
-    provtypPdfText = `Bedömningsprov (${licenseType})`;
-  } else if (state.properties.testType?.includes('Omprov säkerhetskontroll')) {
-    provtypPdfText = `Säkerhetskontroll ${licenseType}`;
-  } else if (state.properties.testType?.includes('Omprov körning')) {
-    provtypPdfText = `Omprov körning ${licenseType}`;
-  }
-  doc.text(provtypPdfText, col1, boxY);
-  const tachText = state.properties.tachograph ? ` • ${state.properties.tachograph}` : '';
-  doc.text(`${state.properties.testDate || '-'} • ${state.properties.transmission || 'Manuell'}${tachText}`, col2, boxY);
-  boxY += 20;
-
-  // Row 3
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(100, 110, 120);
-  doc.text('PROVFÖRRÄTTARE / INSPEKTÖR', col1, boxY);
-  doc.text('E-POST', col2, boxY);
-  boxY += 12;
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(20, 20, 20);
-  doc.text(inspectorName || state.properties.examiner || 'Rasmus Lundin', col1, boxY);
-  doc.text(state.properties.email || 'Kandidat e-post saknas', col2, boxY);
-
-  y += 102;
-
-  // --- RESULTS TABLE ---
-  checkPageOffset(80);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(0, 47, 108);
-  doc.text('PROVDELAR OCH DELRESULTAT', margin, y);
-  y += 14;
-
-  // Table header
-  doc.setFillColor(240, 243, 248);
-  doc.rect(margin, y, contentWidth, 20, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(60, 70, 80);
-  doc.text('PROVMOMENT', margin + 10, y + 13);
-  doc.text('RESULTAT', margin + contentWidth - 80, y + 13);
+  doc.setFontSize(24);
+  doc.setTextColor(0, 0, 0);
+  doc.text('Körprovsresultat', margin, y);
   y += 24;
 
-  const showDrivingRow = !state.properties.testType?.includes('Omprov säkerhetskontroll');
-  const showSafetyRow = isSafetyCheckRequired && !state.properties.testType?.includes('Omprov körning');
+  // --- 3. METADATA 2-KOLUMNS TABELL ---
+  let testTypeLabel = licenseType === 'B96' ? 'Släpvagn' : `Körprov ${licenseType}`;
+  if (licenseType === 'B96') {
+    if (state.properties.testType?.includes('Omprov säkerhetskontroll och körning')) {
+      testTypeLabel = 'Omprov säkerhetskontroll och körning Släpvagn';
+    } else if (state.properties.testType?.includes('Omprov säkerhetskontroll')) {
+      testTypeLabel = 'Säkerhetskontroll Släpvagn';
+    } else if (state.properties.testType?.includes('Omprov körning')) {
+      testTypeLabel = 'Omprov körning Släpvagn';
+    } else if (state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov')) {
+      testTypeLabel = 'Bedömningsprov Släpvagn';
+    } else {
+      testTypeLabel = 'Släpvagn';
+    }
+  } else if (state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov')) {
+    testTypeLabel = `Bedömningsprov (${licenseType})`;
+  } else if (state.properties.testType?.includes('Omprov säkerhetskontroll och körning')) {
+    testTypeLabel = `Omprov säkerhetskontroll och körning ${licenseType}`;
+  } else if (state.properties.testType?.includes('Omprov säkerhetskontroll')) {
+    testTypeLabel = `Säkerhetskontroll ${licenseType}`;
+  } else if (state.properties.testType?.includes('Omprov körning')) {
+    testTypeLabel = `Omprov körning ${licenseType}`;
+  }
+
+  const col1X = margin;
+  const col2X = margin + (contentWidth / 2);
+
+  // Rad 1: Namn & Personnummer
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  doc.text('Namn:', col1X, y);
+  doc.text('Personnummer:', col2X, y);
+  y += 13;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10.5);
+  doc.text(state.properties.studentName || 'Förnamn Efternamn', col1X, y);
+  doc.text(state.properties.personalNumber || '19820209-4937', col2X, y);
+  y += 18;
+
+  // Rad 2: Provtyp & Provdatum
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text('Provtyp:', col1X, y);
+  doc.text('Provdatum:', col2X, y);
+  y += 13;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10.5);
+  doc.text(testTypeLabel, col1X, y);
+  doc.text(state.properties.testDate || new Date().toISOString().split('T')[0], col2X, y);
+  y += 18;
+
+  // Rad 3: Provförrättare
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text('Provförrättare:', col1X, y);
+  y += 13;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10.5);
+  doc.text(inspectorName || state.properties.examiner || 'Rasmus Lundin', col1X, y);
+  y += 24;
+
+  // --- 4. BEHÖRIGETSINFORMATION ---
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  doc.text('Behörighetsinformation', margin, y);
+  y += 13;
+
+  let behorighetText = 'Ingen behörighet uppnådd.';
+  const isAssessmentOnly = state.properties.testType?.includes('Testprov') || state.properties.testType?.includes('Bedömningsprov');
+  if (isPassed && licenseType && !isAssessmentOnly && !isTaxi) {
+    behorighetText = `Behörighet uppnådd: ${licenseType}`;
+  }
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(behorighetText, margin, y);
+  y += 26;
+
+  // --- 5. RESULTATTABELL (Prov / Resultat) ---
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text('Prov', margin, y);
+  doc.text('Resultat', margin + 140, y);
+  y += 15;
+
+  const showDrivingRow = !isOmprovSakerhet;
+  const showSafetyCheckRow = isSafetyCheckRequired && !isOmprovKorning;
 
   if (showDrivingRow) {
-    checkPageOffset(20);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.setTextColor(30, 30, 30);
-    doc.text('Körning i trafik', margin + 10, y);
+    doc.text('Körning', margin, y);
 
-    doc.setFont('helvetica', 'bold');
-    if (state.result.drivingResult === 'Godkänt') {
-      doc.setTextColor(46, 125, 50);
-    } else if (state.result.drivingResult === 'Underkänt') {
-      doc.setTextColor(211, 47, 47);
-    } else {
-      doc.setTextColor(100, 100, 100);
+    let drivingText = state.result.drivingResult || '-';
+    if (drivingText === 'Godkänt') {
+      const details: string[] = [];
+      if (state.properties.transmission === 'Automat') details.push('Automat');
+      if (state.properties.tachograph === 'Utan färdskrivare') details.push('Utan färdskrivare');
+      if (details.length > 0) drivingText = `Godkänt (${details.join(', ')})`;
     }
-    const drvConditions: string[] = [];
-    if (state.properties.transmission === 'Automat') drvConditions.push('Automat');
-    if (state.properties.tachograph === 'Utan färdskrivare') drvConditions.push('Utan färdskrivare');
-    const drvSuffix = drvConditions.length > 0 ? ` (${drvConditions.join(', ')})` : '';
-    const drvText = state.result.drivingResult === 'Godkänt'
-      ? `Godkänt${drvSuffix}`
-      : (state.result.drivingResult || 'Ej angiven');
-    doc.text(drvText, margin + contentWidth - 140, y);
-    y += 18;
+    doc.text(drivingText, margin + 140, y);
+    y += 14;
   }
 
-  if (showSafetyRow) {
-    checkPageOffset(20);
+  if (showSafetyCheckRow) {
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.setTextColor(30, 30, 30);
-    doc.text('Säkerhetskontroll', margin + 10, y);
-
-    doc.setFont('helvetica', 'bold');
-    const safeRes = (!isOmprovSakerhet && state.result.drivingResult === 'Underkänt') ? '-' : (state.result.safetyCheckResult || '-');
-    if (safeRes === 'Godkänt') {
-      doc.setTextColor(46, 125, 50);
-    } else if (safeRes === 'Underkänt') {
-      doc.setTextColor(211, 47, 47);
-    } else {
-      doc.setTextColor(100, 100, 100);
-    }
-    doc.text(safeRes, margin + contentWidth - 140, y);
-    y += 18;
+    doc.text('Säkerhetskontroll', margin, y);
+    const safeText = (!isOmprovSakerhet && state.result.drivingResult === 'Underkänt') ? '-' : (state.result.safetyCheckResult || '-');
+    doc.text(safeText, margin + 140, y);
+    y += 14;
   }
 
-  y += 10;
+  y += 14;
 
-  // --- DEFICIENCIES & FAILURES IF ANY ---
+  // --- 6. LAGSTIFTNINGSTEXT ---
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.5);
+  doc.setTextColor(0, 0, 0);
+
+  const legislationText = isTaxi 
+    ? 'Detta beslut grundas på taxitrafiklagen (2012:211) och taxitrafikförordningen (2012:238).'
+    : 'Detta beslut får enligt 8 kap. 2 § körkortslagen (1998:488) inte överklagas.';
+  
+  doc.text(legislationText, margin, y);
+  y += 13;
+  doc.text('Här ser du ditt resultat inom provets olika ämnesområden.', margin, y);
+  y += 24;
+
+  // --- 7. BESLUTSRUBRIKER (Godkänt / Underkänt i grönt/rött) ---
+  if (!isOmprovSakerhet && state.result.drivingResult === 'Godkänt') {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(0, 128, 0);
+    doc.text('Din körning är godkänd.', margin, y);
+    y += 20;
+  } else if (!isOmprovSakerhet && state.result.drivingResult === 'Underkänt') {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(215, 0, 0);
+    doc.text('Din körning är underkänd.', margin, y);
+    y += 20;
+  }
+
+  if (isSafetyCheckRequired && !isOmprovKorning && state.result.safetyCheckResult === 'Underkänt') {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(215, 0, 0);
+    doc.text('Din säkerhetskontroll är underkänd.', margin, y);
+    y += 20;
+  } else if (isSafetyCheckRequired && !isOmprovKorning && state.result.safetyCheckResult === 'Godkänt' && state.result.drivingResult === 'Underkänt') {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(0, 128, 0);
+    doc.text('Din säkerhetskontroll är godkänd.', margin, y);
+    y += 20;
+  }
+
+  // --- 8. GRUNDORSAK & KONSEKVENSER MED EXAKTA RAMAR (#C0504D och #F79646) ---
   const drivingFail = state.result.drivingFailure;
   const safetyFail = state.result.safetyCheckFailure;
 
   if (isFailed) {
-    checkPageOffset(40);
-
-    // Official Trafikverket headline banners
-    if (state.result.drivingResult === 'Godkänt') {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(13);
-      doc.setTextColor(46, 125, 50);
-      doc.text('Din körning är godkänd.', margin, y + 10);
-      y += 18;
-    } else if (state.result.drivingResult === 'Underkänt') {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(13);
-      doc.setTextColor(211, 47, 47);
-      doc.text('Din körning är underkänd.', margin, y + 10);
-      y += 18;
-    }
-
-    if (isSafetyCheckRequired && state.result.safetyCheckResult === 'Godkänt' && !isOmprovKorning) {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(13);
-      doc.setTextColor(46, 125, 50);
-      doc.text('Din säkerhetskontroll är godkänd.', margin, y + 10);
-      y += 18;
-    } else if (isSafetyCheckRequired && state.result.safetyCheckResult === 'Underkänt') {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(13);
-      doc.setTextColor(211, 47, 47);
-      doc.text('Din säkerhetskontroll är underkänd.', margin, y + 10);
-      y += 18;
-    }
-
-    y += 6;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(211, 47, 47);
-    doc.text('MOTIVERING OCH BRISTFÖRTECKNING', margin, y);
-    y += 16;
-
-    if (state.result.drivingResult === 'Underkänt' && drivingFail?.primaryCause?.area) {
+    // Grundorsak körning
+    if (drivingFail?.primaryCause?.area && state.result.drivingResult === 'Underkänt') {
       checkPageOffset(60);
-      doc.setDrawColor(211, 47, 47);
-      doc.setFillColor(255, 245, 245);
-      doc.setLineWidth(1.5);
-      
-      const areaTitle = `Grundorsak (Körning): ${drivingFail.primaryCause.area}`;
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
-      doc.setTextColor(180, 0, 0);
-      doc.text(areaTitle, margin + 10, y + 14);
+      doc.setTextColor(0, 0, 0);
+      const causeTitle = state.result.safetyCheckResult === 'Underkänt'
+        ? 'Grundorsak till körningens underkännande är:'
+        : 'Grundorsak till underkännandet är:';
+      doc.text(causeTitle, margin, y);
+      y += 14;
 
-      let innerY = y + 28;
+      // Beräkna boxhöjd
+      let defsHeight = 0;
       if (drivingFail.primaryCause.deficiencies && drivingFail.primaryCause.deficiencies.length > 0) {
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9.5);
-        doc.setTextColor(40, 40, 40);
+        defsHeight = drivingFail.primaryCause.deficiencies.length * 14;
+      }
+      const boxHeight = 44 + defsHeight;
+
+      checkPageOffset(boxHeight + 10);
+      // Rita ram: 3px #C0504D (RGB: 192, 80, 77)
+      doc.setDrawColor(192, 80, 77);
+      doc.setLineWidth(2.2);
+      doc.rect(margin, y, contentWidth, boxHeight);
+
+      let boxInnerY = y + 16;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.setTextColor(0, 0, 0);
+      doc.text(drivingFail.primaryCause.area, margin + 10, boxInnerY);
+      boxInnerY += 15;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.text('Din körning visar brister i att:', margin + 10, boxInnerY);
+      boxInnerY += 14;
+
+      if (drivingFail.primaryCause.deficiencies) {
         drivingFail.primaryCause.deficiencies.forEach(def => {
-          doc.text(`• ${def}`, margin + 15, innerY);
-          innerY += 13;
+          doc.setFillColor(0, 0, 0);
+          doc.circle(margin + 16, boxInnerY - 3, 2, 'F');
+          doc.text(def, margin + 24, boxInnerY);
+          boxInnerY += 14;
         });
       }
 
-      const boxH = innerY - y + 6;
-      doc.rect(margin, y, contentWidth, boxH, 'DF');
-      
-      // Redraw text over box
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(180, 0, 0);
-      doc.text(areaTitle, margin + 10, y + 14);
-
-      if (drivingFail.primaryCause.deficiencies && drivingFail.primaryCause.deficiencies.length > 0) {
-        let textY = y + 28;
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9.5);
-        doc.setTextColor(40, 40, 40);
-        drivingFail.primaryCause.deficiencies.forEach(def => {
-          doc.text(`• ${def}`, margin + 15, textY);
-          textY += 13;
-        });
-      }
-
-      y += boxH + 14;
+      y += boxHeight + 16;
     }
 
-    if (state.result.drivingResult === 'Underkänt' && drivingFail?.consequences && drivingFail.consequences.length > 0) {
+    // Konsekvenser körning
+    if (drivingFail?.consequences && drivingFail.consequences.length > 0 && state.result.drivingResult === 'Underkänt') {
+      checkPageOffset(40);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Detta får konsekvenser på:', margin, y);
+      y += 14;
+
       drivingFail.consequences.forEach(cons => {
         if (!cons.area) return;
-        checkPageOffset(50);
-        doc.setDrawColor(230, 120, 0);
-        doc.setFillColor(255, 250, 242);
-        doc.setLineWidth(1);
-
-        const consTitle = `Konsekvensområde: ${cons.area}`;
-        let textY = y + 26;
-
-        let totalH = 32;
+        let defsHeight = 0;
         if (cons.deficiencies && cons.deficiencies.length > 0) {
-          totalH += cons.deficiencies.length * 13;
+          defsHeight = cons.deficiencies.length * 14;
         }
+        const boxHeight = 44 + defsHeight;
 
-        doc.rect(margin, y, contentWidth, totalH, 'DF');
+        checkPageOffset(boxHeight + 10);
+        // Rita ram: 3px #F79646 (RGB: 247, 150, 70)
+        doc.setDrawColor(247, 150, 70);
+        doc.setLineWidth(2.2);
+        doc.rect(margin, y, contentWidth, boxHeight);
 
+        let boxInnerY = y + 16;
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9.5);
-        doc.setTextColor(200, 90, 0);
-        doc.text(consTitle, margin + 10, y + 14);
+        doc.setFontSize(10.5);
+        doc.setTextColor(0, 0, 0);
+        doc.text(cons.area, margin + 10, boxInnerY);
+        boxInnerY += 15;
 
-        if (cons.deficiencies && cons.deficiencies.length > 0) {
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(9);
-          doc.setTextColor(40, 40, 40);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9.5);
+        doc.text('Din körning visar brister i att:', margin + 10, boxInnerY);
+        boxInnerY += 14;
+
+        if (cons.deficiencies) {
           cons.deficiencies.forEach(def => {
-            doc.text(`• ${def}`, margin + 15, textY);
-            textY += 13;
+            doc.setFillColor(0, 0, 0);
+            doc.circle(margin + 16, boxInnerY - 3, 2, 'F');
+            doc.text(def, margin + 24, boxInnerY);
+            boxInnerY += 14;
           });
         }
 
-        y += totalH + 12;
+        y += boxHeight + 14;
       });
     }
 
-    if (state.result.safetyCheckResult === 'Underkänt' && safetyFail?.primaryCause?.area) {
-      checkPageOffset(50);
-      doc.setDrawColor(211, 47, 47);
-      doc.setFillColor(255, 245, 245);
-      doc.setLineWidth(1.5);
-
-      const title = `Grundorsak (Säkerhetskontroll): ${safetyFail.primaryCause.area}`;
-      let textY = y + 26;
-
-      let totalH = 32;
-      if (safetyFail.primaryCause.deficiencies && safetyFail.primaryCause.deficiencies.length > 0) {
-        totalH += safetyFail.primaryCause.deficiencies.length * 13;
-      }
-
-      doc.rect(margin, y, contentWidth, totalH, 'DF');
-
+    // Grundorsak säkerhetskontroll
+    if (isSafetyCheckRequired && safetyFail?.primaryCause?.area && state.result.safetyCheckResult === 'Underkänt') {
+      checkPageOffset(60);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.5);
-      doc.setTextColor(180, 0, 0);
-      doc.text(title, margin + 10, y + 14);
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      const safeTitle = state.result.drivingResult === 'Underkänt'
+        ? 'Grundorsak till säkerhetskontrollens underkännande är:'
+        : 'Grundorsak till underkännandet är:';
+      doc.text(safeTitle, margin, y);
+      y += 14;
 
+      let defsHeight = 0;
       if (safetyFail.primaryCause.deficiencies && safetyFail.primaryCause.deficiencies.length > 0) {
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        doc.setTextColor(40, 40, 40);
+        defsHeight = safetyFail.primaryCause.deficiencies.length * 14;
+      }
+      const boxHeight = 44 + defsHeight;
+
+      checkPageOffset(boxHeight + 10);
+      doc.setDrawColor(192, 80, 77);
+      doc.setLineWidth(2.2);
+      doc.rect(margin, y, contentWidth, boxHeight);
+
+      let boxInnerY = y + 16;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text(safetyFail.primaryCause.area, margin + 10, boxInnerY);
+      boxInnerY += 15;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.text('Din säkerhetskontroll visar brister i att:', margin + 10, boxInnerY);
+      boxInnerY += 14;
+
+      if (safetyFail.primaryCause.deficiencies) {
         safetyFail.primaryCause.deficiencies.forEach(def => {
-          doc.text(`• ${def}`, margin + 15, textY);
-          textY += 13;
+          doc.setFillColor(0, 0, 0);
+          doc.circle(margin + 16, boxInnerY - 3, 2, 'F');
+          doc.text(def, margin + 24, boxInnerY);
+          boxInnerY += 14;
         });
       }
 
-      y += totalH + 12;
-
-      if (safetyFail?.consequences && safetyFail.consequences.length > 0) {
-        safetyFail.consequences.forEach(cons => {
-          if (!cons.area) return;
-          checkPageOffset(50);
-          doc.setDrawColor(230, 120, 0);
-          doc.setFillColor(255, 250, 242);
-          doc.setLineWidth(1);
-
-          const consTitle = `Konsekvensområde: ${cons.area}`;
-          let textY = y + 26;
-
-          let consH = 32;
-          if (cons.deficiencies && cons.deficiencies.length > 0) {
-            consH += cons.deficiencies.length * 13;
-          }
-
-          doc.rect(margin, y, contentWidth, consH, 'DF');
-
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(9.5);
-          doc.setTextColor(200, 90, 0);
-          doc.text(consTitle, margin + 10, y + 14);
-
-          if (cons.deficiencies && cons.deficiencies.length > 0) {
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(9);
-            doc.setTextColor(40, 40, 40);
-            cons.deficiencies.forEach(def => {
-              doc.text(`• ${def}`, margin + 15, textY);
-              textY += 13;
-            });
-          }
-
-          y += consH + 12;
-        });
-      }
+      y += boxHeight + 16;
     }
 
+    // Situationer
     const allSituations = Array.from(new Set([
       ...(state.result.drivingResult === 'Underkänt' ? (drivingFail?.situations || []) : []),
       ...(state.result.safetyCheckResult === 'Underkänt' ? (safetyFail?.situations || []) : [])
     ]));
 
     if (allSituations.length > 0) {
-      checkPageOffset(30 + allSituations.length * 13);
+      checkPageOffset(30 + allSituations.length * 14);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.5);
-      doc.setTextColor(50, 50, 50);
-      doc.text('Brister har visat sig i följande situationer:', margin + 6, y);
-      y += 14;
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Brister har visat sig i följande situationer:', margin, y);
+      y += 15;
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
+      doc.setFontSize(9.5);
       allSituations.forEach(sit => {
-        doc.text(`• ${sit}`, margin + 14, y);
-        y += 13;
+        doc.setFillColor(0, 0, 0);
+        doc.circle(margin + 6, y - 3, 2, 'F');
+        doc.text(sit, margin + 14, y);
+        y += 14;
       });
-      y += 6;
+      y += 8;
     }
 
     if (state.result.interventionOccurred) {
-      checkPageOffset(24);
+      checkPageOffset(20);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       doc.setTextColor(0, 0, 0);
@@ -463,129 +411,82 @@ export function generateProtocolPdf(state: AppState, inspectorName?: string) {
     }
   }
 
-  // --- INCLUDED TEST ITEMS ---
-  checkPageOffset(60);
+  // --- 9. FÖLJANDE PROVINNEHÅLL HAR INGÅTT I DITT KÖRPROV ---
+  checkPageOffset(50);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(0, 47, 108);
-  doc.text('GENOMFÖRDA PROVMOMENT', margin, y);
-  y += 14;
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  doc.text('Följande provinnehåll har ingått i ditt körprov:', margin, y);
+  y += 15;
 
   if (state.includedTestItems && state.includedTestItems.length > 0) {
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(50, 50, 50);
-
+    doc.setFontSize(9.5);
     state.includedTestItems.forEach(item => {
-      const lines = doc.splitTextToSize(`• ${item}`, contentWidth - 10);
-      checkPageOffset(lines.length * 12 + 2);
+      const lines = doc.splitTextToSize(item, contentWidth - 25);
+      checkPageOffset(lines.length * 13 + 4);
+      doc.setFillColor(0, 0, 0);
+      doc.circle(margin + 6, y - 3, 2, 'F');
       lines.forEach((line: string) => {
-        doc.text(line, margin + 6, y);
-        y += 12;
+        doc.text(line, margin + 14, y);
+        y += 13;
       });
     });
-    y += 10;
+    y += 14;
   } else {
     doc.setFont('helvetica', 'italic');
-    doc.setFontSize(9);
-    doc.setTextColor(120, 120, 120);
-    doc.text('Inga specifika moment registrerades separat.', margin + 6, y);
-    y += 12;
+    doc.setFontSize(9.5);
+    doc.text('Inga specifika moment registrerade.', margin, y);
+    y += 18;
   }
 
-  // --- VAD HÄNDER NU ---
-  checkPageOffset(35);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(0, 47, 108);
-  doc.text('VAD HÄNDER NU?', margin, y);
-  y += 12;
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(40, 40, 40);
-  const isAssessmentOnlyPdf = state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov');
-  if (isPassed) {
-    if (isTaxi) {
-      const infoLines = doc.splitTextToSize('Grattis till godkänt taxiförarprov! Du kan nu ansöka om taxiförarlegitimation hos Transportstyrelsen enligt taxitrafiklagen (2012:211). Legitimationen utfärdas efter prövning av övriga krav.', contentWidth);
-      infoLines.forEach((l: string) => {
-        checkPageOffset(11);
-        doc.text(l, margin, y);
-        y += 11;
-      });
-    } else if (isAssessmentOnlyPdf) {
-      const infoLines = doc.splitTextToSize('Grattis till ett godkänt bedömningsprov! Du uppfyller de formella kompetenskraven för körbedömning. Du kan nu bifoga detta intyg för ansökan och behörighetsprövning till trafiklärarutbildning samt vidare prövning för förarprövar- / inspektörsbehörighet.', contentWidth);
-      infoLines.forEach((l: string) => {
-        checkPageOffset(11);
-        doc.text(l, margin, y);
-        y += 11;
-      });
-    } else {
-      const infoLines = doc.splitTextToSize('Grattis till ditt körkort! Du kan nu köra med en giltig legitimation i Sverige tills du har fått ditt körkort, dock i max två månader.', contentWidth);
-      infoLines.forEach((l: string) => {
-        checkPageOffset(11);
-        doc.text(l, margin, y);
-        y += 11;
-      });
-    }
-  } else {
-    const failText = isTaxi
-      ? 'Du uppfyllde inte kraven för godkänt taxiförarprov enligt taxitrafiklagen (2012:211). Det är viktigt att du tränar mer. Välkommen åter!'
-      : 'Det är viktigt att du tränar mer innan du genomför ditt nästa körprov. Välkommen åter!';
-    const failLines = doc.splitTextToSize(failText, contentWidth);
+  // --- 10. AVSLUTANDE TEXT & VAD HÄNDER NU ---
+  checkPageOffset(50);
+  if (isFailed) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    const failClosing = isTaxi
+      ? 'Du uppfyllde inte kraven för godkänt taxiförarprov enligt taxitrafiklagen (2012:211). Det är viktigt att du tränar mer innan du genomför ditt nästa prov.\nVälkommen åter!'
+      : 'Det är viktigt att du tränar mer innan du genomför ditt nästa körprov.\nVälkommen åter!';
+    const failLines = doc.splitTextToSize(failClosing, contentWidth);
     failLines.forEach((l: string) => {
-      checkPageOffset(11);
       doc.text(l, margin, y);
-      y += 11;
+      y += 14;
+    });
+  } else {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Vad händer nu?', margin, y);
+    y += 14;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    let passClosing = 'Grattis till ditt körkort! Du kan nu köra med en giltig legitimation i Sverige tills du har fått ditt körkort, dock i max två månader.';
+    if (isTaxi) {
+      passClosing = 'Grattis till godkänt taxiförarprov! Du kan nu ansöka om taxiförarlegitimation hos Transportstyrelsen enligt taxitrafiklagen (2012:211). Legitimationen utfärdas efter prövning av övriga krav.';
+    } else if (isAssessmentOnly) {
+      passClosing = 'Grattis till ett godkänt bedömningsprov! Du uppfyller de formella kompetenskraven för körbedömning. Du kan nu bifoga detta intyg för ansökan och behörighetsprövning till trafiklärarutbildning samt vidare prövning för förarprövar- / inspektörsbehörighet.';
+    }
+    const passLines = doc.splitTextToSize(passClosing, contentWidth);
+    passLines.forEach((l: string) => {
+      doc.text(l, margin, y);
+      y += 14;
     });
   }
-  y += 10;
 
-  // --- SIGNATURE & VERIFICATION SECTION ---
-  checkPageOffset(80);
-  y += 10;
-  doc.setDrawColor(220, 220, 220);
-  doc.line(margin, y, margin + contentWidth, y);
-  y += 20;
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(60, 60, 60);
-  doc.text('SIGNATUR & BESLUTSFÖRRÄTTARE', margin, y);
-  doc.text('VERIFIERING OCH DATUM', margin + 280, y);
-  y += 14;
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(20, 20, 20);
-  doc.text(`Digitalt signerad av: ${inspectorName || state.properties.examiner || 'Rasmus Lundin'}`, margin, y);
-  doc.text(`Datum: ${state.properties.testDate || new Date().toISOString().split('T')[0]}`, margin + 280, y);
-  y += 14;
-
-  doc.setFont('helvetica', 'italic');
-  doc.setFontSize(8.5);
-  doc.setTextColor(100, 100, 100);
-  doc.text('Verifierad via ProvProtokolls Provsystem (Digital e-signatur)', margin, y);
-  doc.text('Detta beslut registrerat hos Transportstyrelsen', margin + 280, y);
-  y += 25;
-
-  // --- FOOTER AND PAGE NUMBERS ---
+  // Sidfot med sidnummer
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.setTextColor(130, 130, 130);
-
-    // Legal line
-    const legalText = isTaxi
-      ? 'Detta beslut grundas på taxitrafiklagen (2012:211) och taxitrafikförordningen (2012:238).'
-      : 'Detta beslut får enligt 8 kap. 2 § körkortslagen (1998:488) inte överklagas.';
-    doc.text(legalText, margin, pageHeight - margin + 10);
-
-    // Page count
-    const pageStr = `Sida ${i} av ${totalPages}`;
-    doc.text(pageStr, pageWidth - margin - doc.getTextWidth(pageStr), pageHeight - margin + 10);
+    doc.setTextColor(120, 120, 120);
+    const pageStr = totalPages > 1 ? `Sida ${i} av ${totalPages}` : '';
+    if (pageStr) {
+      doc.text(pageStr, pageWidth - margin - doc.getTextWidth(pageStr), pageHeight - 20);
+    }
   }
 
   const cleanName = (state.properties.studentName || 'Protokoll').replace(/\s+/g, '_');

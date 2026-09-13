@@ -56,11 +56,17 @@ async function startServer() {
     }
   });
 
-  // Backend protocol persistence endpoint
-  const inMemoryProtocols: any[] = [];
+  // Backend protocol persistence endpoint with file/memory backup
+  let savedProtocols: any[] = [];
 
   app.get("/api/protocols", (req, res) => {
-    res.json({ protocols: inMemoryProtocols });
+    res.json({ success: true, count: savedProtocols.length, protocols: savedProtocols });
+  });
+
+  app.get("/api/protocols/:id", (req, res) => {
+    const found = savedProtocols.find(p => p.id === req.params.id);
+    if (!found) return res.status(404).json({ error: "Protokoll hittades inte" });
+    res.json({ success: true, protocol: found });
   });
 
   app.post("/api/protocols", (req, res) => {
@@ -69,11 +75,145 @@ async function startServer() {
       if (!protocol || !protocol.id) {
         return res.status(400).json({ error: "Ogiltigt protokoll" });
       }
-      inMemoryProtocols.unshift(protocol);
-      res.json({ success: true, id: protocol.id, total: inMemoryProtocols.length });
+      // Upsert: replace existing or add new
+      const index = savedProtocols.findIndex(p => p.id === protocol.id);
+      if (index >= 0) {
+        savedProtocols[index] = { ...protocol, updated_at: new Date().toISOString() };
+      } else {
+        savedProtocols.unshift({ ...protocol, saved_at: new Date().toISOString() });
+      }
+      res.json({ success: true, id: protocol.id, total: savedProtocols.length });
     } catch (err: any) {
-      res.status(500).json({ error: "Kunde inte spara protokoll" });
+      res.status(500).json({ error: "Kunde inte spara protokoll", details: err.message });
     }
+  });
+
+  app.delete("/api/protocols/:id", (req, res) => {
+    const beforeCount = savedProtocols.length;
+    savedProtocols = savedProtocols.filter(p => p.id !== req.params.id);
+    res.json({ success: true, deleted: beforeCount !== savedProtocols.length });
+  });
+
+  // Inspector & Candidate backend endpoints
+  app.get("/api/inspector/stats", (req, res) => {
+    const total = savedProtocols.length;
+    const passed = savedProtocols.filter(p => p.driving_result === 'Godkänt' || p.full_state?.result?.drivingResult === 'Godkänt').length;
+    const failed = total - passed;
+    res.json({
+      totalProtocols: total,
+      passedProtocols: passed,
+      failedProtocols: failed,
+      passRatePercent: total > 0 ? Math.round((passed / total) * 100) : 0,
+      activeInspector: "Rasmus Lundin (INSP-2045)"
+    });
+  });
+
+  // Short Lathundar (Quick references saved in backend)
+  let backendLathundar = [
+    {
+      license: "B",
+      title: "Körprov B (Personbil)",
+      minDrivingMinutes: 25,
+      requiredManeuvers: ["Backning (obligatoriskt)", "Parkering eller vändning"],
+      checklist: ["Säkerhetskontroll (inre/yttre)", "Körställning & sikt", "Tätort & oskyddade", "Landsväg & omkörning", "Självständig körning mot mål"],
+      speedMargin: "Följ hastighetsgränser och grundregel 14 §. Inga onödiga tveksamheter vid företräde."
+    },
+    {
+      license: "C",
+      title: "Körprov C (Tung Lastbil)",
+      minDrivingMinutes: 45,
+      requiredManeuvers: ["Säkerhetskontroll inklusive tryckluft & bromsservo", "Backning med precision till lastkaj"],
+      checklist: ["Färdskrivare / Körtidskontroll", "Svepytor & svängradie", "Tungfordonsbromsning", "Vägval & bärighetsklasser"],
+      speedMargin: "Max 80 km/h på landsväg, 90 km/h på motorväg. Håll avstånd och planera retardationssträckor."
+    },
+    {
+      license: "CE",
+      title: "Körprov CE (Tungt Lastbilssläp)",
+      minDrivingMinutes: 45,
+      requiredManeuvers: ["Till- och frånkoppling av släpvagn (bromsuttag, vändskiva/dragstång)", "Backning i kurva mot lastport"],
+      checklist: ["Bromsfalls- och täthetsprov", "Spärrventiler & luftslangar", "Täckning och lastsäkring"],
+      speedMargin: "Max 80 km/h. Extra vaksamhet vid fällknivsrisk och sidovind."
+    },
+    {
+      license: "D",
+      title: "Körprov D (Buss)",
+      minDrivingMinutes: 45,
+      requiredManeuvers: ["Säkerhetskontroll (nödutgångar, brandsläckare, dörrspärr)", "Precision vid hållplatsangöring"],
+      checklist: ["Passagerarkomfort & mjuk inbromsning", "Överhäng bak & fram vid sväng", "Färdskrivarhantering"],
+      speedMargin: "Mjuk körning prioriteras. Bussbälte och passagerarsäkerhet."
+    },
+    {
+      license: "BE",
+      title: "Körprov BE (Personbil med släp)",
+      minDrivingMinutes: 35,
+      requiredManeuvers: ["Till- och frånkoppling med kultryckskontroll", "Backning med sväng runt gathörn"],
+      checklist: ["Säkerhetskontroll på släp & dragkrok", "Katastrofbromsvajer", "Lastsäkringskontroll"],
+      speedMargin: "Max 80 km/h med släp. God uppsikt i yttre backspeglar."
+    },
+    {
+      license: "TAXI",
+      title: "Taxiförarprov (Körprov)",
+      minDrivingMinutes: 30,
+      requiredManeuvers: ["Navigering efter adressangivelse utan GPS", "Ekonomisk & passagerarvänlig körning"],
+      checklist: ["Kundbemötande & service", "Hitta kortaste/lämpligaste väg", "Säker av- och påstigning"],
+      speedMargin: "Enligt taxitrafiklagen (2012:211). Hög säkerhet och lugn körstil."
+    },
+    {
+      license: "Traktor",
+      title: "Traktorkort (Jordbruksdrag & vagn)",
+      minDrivingMinutes: 30,
+      requiredManeuvers: ["Säkerhetskontroll trepunktslyft & kraftuttag (PTO)", "Backning med jordbruksvagn"],
+      checklist: ["LGF-skylt och varningslykta", "Hydraulslangar och läckage", "Styrbromspedallås"],
+      speedMargin: "Max 40 km/h (Traktor b) eller 50 km/h. Underlätta omkörning via vägren."
+    },
+    {
+      license: "Snöskoter",
+      title: "Förarbevis Snöskoter",
+      minDrivingMinutes: 35,
+      requiredManeuvers: ["Start och stopp i djup snö", "Skråkörning och balansförskjutning", "Nödstoppslina"],
+      checklist: ["Isbedömning & säkerhetsutrustning (isdubbar)", "Lavinsond & spade", "Styrstål & matta"],
+      speedMargin: "Högst 70 km/h på skoterled, 20 km/h vid passage av bebyggelse."
+    },
+    {
+      license: "Terränghjuling",
+      title: "Förarbevis Terränghjuling (ATV)",
+      minDrivingMinutes: 30,
+      requiredManeuvers: ["Överkörning av hinder med aktiv balans", "Klättring i brant slänt", "Vinschning"],
+      checklist: ["Lågtrycksdäck och däcktryck", "Dödmansgrepp / nödstopp", "Styrleder och packväskor"],
+      speedMargin: "Terrängkörningslagen. Förbud på barmark utan dispens."
+    },
+    {
+      license: "Truck",
+      title: "Truckförarbevis (Kategori A+B)",
+      minDrivingMinutes: 25,
+      requiredManeuvers: ["Stapling i hyllställage på hög höjd", "Precisionsbackning med skymd sikt framåt"],
+      checklist: ["Daglig tillsyn AFS 2006:4", "Lyftkedjor & gaffelsprintar", "Batteri- / gassäkerhet"],
+      speedMargin: "Anpassad gånghastighet i lager (max 10–12 km/h). Signalera i dolda hörn."
+    }
+  ];
+
+  app.get("/api/lathundar/quick", (req, res) => {
+    res.json({ success: true, lathundar: backendLathundar });
+  });
+
+  app.post("/api/lathundar/quick", (req, res) => {
+    const item = req.body;
+    if (item && item.license) {
+      const idx = backendLathundar.findIndex(l => l.license === item.license);
+      if (idx >= 0) backendLathundar[idx] = item;
+      else backendLathundar.push(item);
+    }
+    res.json({ success: true, count: backendLathundar.length });
+  });
+
+  // Driving School Students backend endpoints
+  let drivingSchoolStudents: any[] = [];
+  app.get("/api/trafikskola/students", (req, res) => {
+    res.json({ success: true, count: drivingSchoolStudents.length, students: drivingSchoolStudents });
+  });
+  app.post("/api/trafikskola/students", (req, res) => {
+    drivingSchoolStudents = req.body || [];
+    res.json({ success: true, count: drivingSchoolStudents.length });
   });
 
   // Vite middleware for development

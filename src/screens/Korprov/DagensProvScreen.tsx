@@ -97,7 +97,9 @@ export function DagensProvScreen() {
           interventionOccurred: false,
           testAborted: false
         }
-      }
+      },
+      testStartTime: null,
+      testNotes: ''
     }));
     navigate('/korprov/start');
   };

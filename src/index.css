@@ -213,15 +213,24 @@ h1, h2, h3, h4, h5, h6, .font-display {
   animation: scanLaser 1.8s ease-in-out infinite alternate;
 }
 
-/* Officiellt protokoll styling */
-.resultContainer ul {
+/* Officiellt protokoll styling - only for deficiency lists with disc markers, NOT for custom-bullet lists */
+.resultContainer ul[style*="list-style-type: disc"] {
   list-style-type: disc !important;
   list-style-position: outside !important;
   margin-top: 0 !important;
   padding-left: 20px !important;
 }
 
-.resultContainer li {
+.resultContainer ul[style*="list-style-type: disc"] li {
   display: list-item !important;
   list-style-type: disc !important;
 }
+
+/* Tablet Fullscreen Mode (Applicerbart surfplatteläge) */
+html.tablet-fullscreen-mode header {
+  display: none !important;
+}
+html.tablet-fullscreen-mode {
+  overflow: hidden !important;
+}
+

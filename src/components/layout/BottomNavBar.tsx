@@ -1,15 +1,15 @@
 import { NavLink } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Car, Laptop, History, User, BookOpen } from 'lucide-react';
+import { Car, Laptop, History, User, BookOpen, GraduationCap } from 'lucide-react';
 import { triggerHaptic } from '../../lib/utils';
 
 export function BottomNavBar() {
   const navItems = [
     { name: 'PROTOKOLL', path: '/korprov', icon: Car },
+    { name: 'TRAFIKSKOLA', path: '/trafikskola', icon: GraduationCap },
     { name: 'TEORIPROV', path: '/teoriprov', icon: Laptop },
     { name: 'LATHUNDAR', path: '/lathundar', icon: BookOpen },
     { name: 'HISTORIK', path: '/historik', icon: History },
-    { name: 'PROFIL', path: '/profil', icon: User },
   ];
 
   return (

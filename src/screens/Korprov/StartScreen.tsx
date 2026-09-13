@@ -20,7 +20,11 @@ import {
 } from 'lucide-react';
 import { triggerHaptic } from '../../lib/utils';
 
-const COMMON_LICENSES = ['B', 'BE', 'B96', 'C', 'CE', 'C1', 'C1E', 'D', 'DE', 'A', 'AM', 'TAXI', 'Lokförare', 'Lokförare (Person)', 'Lokförare (Gods)', 'Spårvagn', 'Tunnelbana'];
+const COMMON_LICENSES = [
+  'B', 'BE', 'B96', 'C', 'CE', 'C1', 'C1E', 'D', 'DE', 'A', 'A1', 'A2', 'AM', 'TAXI', 
+  'Traktor (Traktorkort)', 'Snöskoter (Förarbevis)', 'Terränghjuling (ATV)', 'Truck (A+B)', 'Grävmaskin / Hjullastare',
+  'Lokförare', 'Lokförare (Person)', 'Lokförare (Gods)', 'Spårvagn', 'Tunnelbana'
+];
 
 // Detailed mock list of today's schedule for full-featured feel
 const DAILY_SCHEDULE = [
@@ -228,35 +232,7 @@ export function StartScreen() {
               id="btn-clear-test"
               onClick={() => {
                 triggerHaptic('heavy');
-                updateState({
-                  properties: {
-                    studentName: '',
-                    personalNumber: '',
-                    licenseType: 'B',
-                    examiner: profile.name,
-                    testDate: new Date().toISOString().split('T')[0],
-                    email: '',
-                    testType: 'Förstaprov',
-                    transmission: 'Manuell',
-                  },
-                  checklist: {
-                    identityChecked: false,
-                    studentInformed: false,
-                    licenseTypeCorrect: false,
-                    vehicleCorrect: false,
-                    questionsAnswered: false,
-                  },
-                  includedTestItems: [],
-                  result: {
-                    drivingResult: null,
-                    drivingScore: null,
-                    safetyCheckResult: null,
-                    interventionOccurred: false,
-                    testAborted: false,
-                    drivingFailure: { primaryCause: { area: '', deficiencies: [] }, consequences: [], situations: [], interventionOccurred: false, testAborted: false },
-                    safetyCheckFailure: { primaryCause: { area: '', deficiencies: [] }, consequences: [], situations: [], interventionOccurred: false, testAborted: false }
-                  }
-                });
+                resetCurrentTest();
               }}
               className="text-[10px] font-bold text-gray-400 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400 bg-gray-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2.5 min-h-10 rounded-lg transition-colors uppercase tracking-wider flex items-center gap-1 cursor-pointer border border-transparent hover:border-red-200 dark:hover:border-red-900/30"
             >
@@ -369,10 +345,11 @@ export function StartScreen() {
 
               <div className="space-y-1.5 sm:col-span-2">
                 <label className="text-[10px] font-black text-gray-500 dark:text-slate-400 tracking-widest uppercase ml-1">Provtyp</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                   {[
                     { id: 'Förstaprov', label: 'Förstaprov' },
                     { id: 'Omprov', label: 'Omprov' },
+                    { id: 'Omprov säkerhetskontroll', label: 'Omprov säkerhet' },
                     { id: 'Omprov körning', label: 'Omprov körning' },
                     { id: 'Bedömningsprov', label: 'Bedömningsprov' }
                   ].map(pt => (
@@ -399,8 +376,8 @@ export function StartScreen() {
                 <label className="text-[10px] font-black text-gray-500 dark:text-slate-400 tracking-widest uppercase ml-1 block">Behörighet</label>
                 <span className="text-xs font-bold text-[#002f6c] dark:text-blue-400">Vald: {licenseType}</span>
               </div>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                {COMMON_LICENSES.slice(0, 12).map((lic) => (
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                {COMMON_LICENSES.map((lic) => (
                   <button
                     key={lic}
                     type="button"
@@ -408,11 +385,12 @@ export function StartScreen() {
                       triggerHaptic('light');
                       handleUpdateProp('licenseType', lic);
                     }}
-                    className={`h-11 text-xs sm:text-sm font-bold rounded-xl transition-all select-none active:scale-95 cursor-pointer flex items-center justify-center ${
+                    className={`h-11 px-2 text-xs font-bold rounded-xl transition-all select-none active:scale-95 cursor-pointer flex items-center justify-center text-center truncate ${
                       licenseType === lic
                         ? 'bg-[#002f6c] dark:bg-blue-600 text-white shadow-md shadow-blue-900/20 ring-2 ring-offset-2 ring-[#002f6c] dark:ring-blue-500 dark:ring-offset-slate-900 font-black'
                         : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-slate-700'
                     }`}
+                    title={lic}
                   >
                     {lic}
                   </button>

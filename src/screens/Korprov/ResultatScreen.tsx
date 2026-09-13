@@ -111,6 +111,24 @@ export function ResultatScreen() {
     );
   };
 
+  const isOmprovSakerhet = state.properties.testType === 'Omprov säkerhetskontroll';
+  const isOmprovKorning = state.properties.testType === 'Omprov körning';
+  const heavyMandatory = SAFETY_CHECK_LICENSES.includes(licenseType) && !isOmprovKorning;
+
+  const drivingDone = isOmprovSakerhet || (Boolean(state.result.drivingResult) && state.result.drivingResult !== '-');
+  const safetyDone = !heavyMandatory || (Boolean(state.result.safetyCheckResult) && state.result.safetyCheckResult !== '-');
+  const isAssessmentComplete = drivingDone && safetyDone;
+
+  let hasFailed = false;
+  if (isOmprovSakerhet) {
+    hasFailed = state.result.safetyCheckResult === 'Underkänt' || Boolean(state.result.testAborted);
+  } else if (isOmprovKorning) {
+    hasFailed = state.result.drivingResult === 'Underkänt' || Boolean(state.result.testAborted);
+  } else {
+    const safetyFailed = heavyMandatory && state.result.safetyCheckResult === 'Underkänt';
+    hasFailed = state.result.drivingResult === 'Underkänt' || safetyFailed || Boolean(state.result.testAborted);
+  }
+
   return (
     <div className="max-w-[1300px] mx-auto space-y-8 px-4 sm:px-6 pb-24">
       {/* Title block */}
@@ -358,7 +376,12 @@ export function ResultatScreen() {
                   Resultat:
                 </h4>
                 
-                {state.result.drivingResult !== 'Underkänt' && state.result.safetyCheckResult !== 'Underkänt' ? (
+                {!isAssessmentComplete ? (
+                  <div className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 p-4 rounded-xl flex items-center gap-3 shadow-sm font-medium">
+                    <span className="text-base text-slate-400">⏳</span>
+                    <span>Väntar på bedömning – markera provresultat ovan.</span>
+                  </div>
+                ) : !hasFailed ? (
                   <div className="text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800/40 p-4 rounded-xl flex items-center gap-3 shadow-sm">
                     <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
                       <svg className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -370,29 +393,38 @@ export function ResultatScreen() {
                 ) : (
                   <div className="space-y-3">
                     {/* Status badges */}
-                    {state.result.drivingResult === 'Godkänt' && state.result.safetyCheckResult === 'Underkänt' ? (
-                      <div className="space-y-2">
+                    <div className="space-y-2">
+                      {!isOmprovSakerhet && state.result.drivingResult === 'Godkänt' && (
                         <div className="text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
                           <span>✓</span> Din körning är godkänd.
                         </div>
-                        <div className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
-                          <span>✗</span> Din säkerhetskontroll är underkänd.
-                        </div>
-                      </div>
-                    ) : state.result.drivingResult === 'Underkänt' && state.result.safetyCheckResult === 'Godkänt' ? (
-                      <div className="space-y-2">
+                      )}
+                      {!isOmprovSakerhet && state.result.drivingResult === 'Underkänt' && (
                         <div className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
                           <span>✗</span> Din körning är underkänd.
                         </div>
+                      )}
+                      {SAFETY_CHECK_LICENSES.includes(licenseType) && !isOmprovKorning && state.result.safetyCheckResult === 'Godkänt' && state.result.drivingResult === 'Underkänt' && (
                         <div className="text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
                           <span>✓</span> Din säkerhetskontroll är godkänd.
                         </div>
-                      </div>
-                    ) : (
-                      <div className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
-                        <span>✗</span> Provet är underkänt.
-                      </div>
-                    )}
+                      )}
+                      {SAFETY_CHECK_LICENSES.includes(licenseType) && !isOmprovKorning && state.result.safetyCheckResult === 'Underkänt' && (
+                        <div className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
+                          <span>✗</span> Din säkerhetskontroll är underkänd.
+                        </div>
+                      )}
+                      {isOmprovSakerhet && state.result.safetyCheckResult === 'Godkänt' && (
+                        <div className="text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
+                          <span>✓</span> Din säkerhetskontroll är godkänd.
+                        </div>
+                      )}
+                      {isOmprovKorning && state.result.drivingResult === 'Godkänt' && (
+                        <div className="text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
+                          <span>✓</span> Din körning är godkänd.
+                        </div>
+                      )}
+                    </div>
 
                     {/* Driving deficiencies */}
                     {state.result.drivingResult === 'Underkänt' && (

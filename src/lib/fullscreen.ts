@@ -48,18 +48,31 @@ export async function exitFullscreen(): Promise<boolean> {
 
 export function isCurrentlyFullscreen(): boolean {
   const doc = document as any;
-  return !!(
+  const isBrowserFs = !!(
     doc.fullscreenElement ||
     doc.webkitFullscreenElement ||
     doc.mozFullScreenElement ||
     doc.msFullscreenElement
   );
+  const isVirtualFs = document.documentElement.classList.contains('tablet-fullscreen-mode');
+  return isBrowserFs || isVirtualFs;
 }
 
-export function toggleAppFullscreen(): Promise<boolean> {
+export async function toggleAppFullscreen(): Promise<boolean> {
+  const docEl = document.documentElement as any;
   if (isCurrentlyFullscreen()) {
-    return exitFullscreen();
+    docEl.classList.remove('tablet-fullscreen-mode');
+    await exitFullscreen();
+    window.dispatchEvent(new Event('appfullscreenchange'));
+    return false;
   } else {
-    return enterFullscreen();
+    const success = await enterFullscreen();
+    if (!success) {
+      // Fallback: Virtual fullscreen mode for mobile webviews / tablet browsers
+      docEl.classList.add('tablet-fullscreen-mode');
+    }
+    window.dispatchEvent(new Event('appfullscreenchange'));
+    return true;
   }
 }
+

@@ -110,3 +110,49 @@ export async function fetchAllProtocols(): Promise<SavedProtocolRow[]> {
     return [];
   }
 }
+
+/**
+ * Delete a protocol from Supabase and local storage
+ */
+export async function deleteProtocolFromBackend(id: string): Promise<boolean> {
+  // Delete from local store
+  try {
+    const existing: SavedProtocolRow[] = JSON.parse(localStorage.getItem('provprotokoll_saved_db') || '[]');
+    const filtered = existing.filter(p => p.id !== id);
+    localStorage.setItem('provprotokoll_saved_db', JSON.stringify(filtered));
+  } catch (_) {}
+
+  // Delete from Supabase
+  if (isSupabaseConfigured()) {
+    try {
+      await supabase.from('protocols').delete().eq('id', id);
+    } catch (_) {}
+  }
+
+  return true;
+}
+
+/**
+ * Supabase Authentication helpers
+ */
+export async function signInWithEmailPassword(email: string, password: string) {
+  return await supabase.auth.signInWithPassword({ email, password });
+}
+
+export async function signUpWithEmailPassword(email: string, password: string) {
+  return await supabase.auth.signUp({ email, password });
+}
+
+export async function signOutSupabase() {
+  return await supabase.auth.signOut();
+}
+
+export async function getSupabaseUser() {
+  const { data } = await supabase.auth.getUser();
+  return data?.user || null;
+}
+
+export async function updateUserPassword(newPassword: string) {
+  return await supabase.auth.updateUser({ password: newPassword });
+}
+

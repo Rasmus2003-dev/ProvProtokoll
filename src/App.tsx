@@ -7,6 +7,7 @@ import { HistorikScreen } from './screens/HistorikScreen';
 import { LathundarScreen } from './screens/LathundarScreen';
 import { TeoriprovScreen } from './screens/TeoriprovScreen';
 import { ElevProvScreen } from './screens/ElevProvScreen';
+import { TrafikskolaScreen } from './screens/TrafikskolaScreen';
 import { KorprovLayout } from './screens/Korprov/KorprovLayout';
 import { DagensProvScreen } from './screens/Korprov/DagensProvScreen';
 import { StartScreen } from './screens/Korprov/StartScreen';
@@ -25,8 +26,11 @@ import { PullToRefresh } from './components/layout/PullToRefresh';
 
 function AppContent() {
   const location = useLocation();
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem('provprotokoll-is-logged-in') === 'true';
+  });
 
-  // Student/candidate screen should run standalone
+  // Student/candidate screen should run standalone without login
   if (location.pathname === '/elevprov') {
     return (
       <>
@@ -37,7 +41,7 @@ function AppContent() {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#f8f9fa] dark:bg-[#0b1120] text-gray-900 dark:text-gray-100">
+    <div className="flex flex-col h-screen overflow-hidden bg-[#f8f9fa] dark:bg-[#0b1120] text-gray-900 dark:text-gray-100 relative">
       <OfflineIndicator />
       <TopAppBar />
       <PullToRefresh>
@@ -56,6 +60,7 @@ function AppContent() {
           </Route>
           
           <Route path="/teoriprov" element={<TeoriprovScreen />} />
+          <Route path="/trafikskola" element={<TrafikskolaScreen />} />
           <Route path="/lathundar" element={<LathundarScreen />} />
           <Route path="/historik" element={<HistorikScreen />} />
           <Route path="/profil" element={<ProfilScreen />} />
@@ -66,6 +71,11 @@ function AppContent() {
         <BottomNavBar />
       </div>
       <PWAInstallBanner />
+
+      {/* When not logged in, show clean white login modal directly over the system */}
+      {!isLoggedIn && (
+        <LoginScreen onLoginSuccess={() => setIsLoggedIn(true)} />
+      )}
     </div>
   );
 }

@@ -44,11 +44,7 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
   const isAssessmentOnly = state.properties.testType?.includes('Testprov') || state.properties.testType?.includes('Bedömningsprov');
 
   if (isGodkand && state.properties.licenseType && !isAssessmentOnly && !isTaxi) {
-    const conditions: string[] = [];
-    if (state.properties.transmission === 'Automat') conditions.push('(Automat)');
-    if (state.properties.tachograph === 'Utan färdskrivare') conditions.push('Utan färdskrivare');
-    const condStr = conditions.length > 0 ? ` [${conditions.join(', ')}]` : '';
-    behorighetText = `Behörighet uppnådd: ${state.properties.licenseType}${condStr}`;
+    behorighetText = `Behörighet uppnådd: ${state.properties.licenseType}`;
   } else if (isAssessmentOnly || isTaxi) {
     behorighetText = 'Ingen behörighet uppnådd.';
   }
@@ -60,8 +56,20 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
     ...(state.result.safetyCheckResult === 'Underkänt' ? (safetyFail?.situations || []) : [])
   ]));
 
-  let testTypeLabel = `Körprov ${state.properties.licenseType || 'B'}`;
-  if (state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov')) {
+  let testTypeLabel = state.properties.licenseType === 'B96' ? 'Släpvagn' : `Körprov ${state.properties.licenseType || 'B'}`;
+  if (state.properties.licenseType === 'B96') {
+    if (state.properties.testType?.includes('Omprov säkerhetskontroll och körning')) {
+      testTypeLabel = 'Omprov säkerhetskontroll och körning Släpvagn';
+    } else if (state.properties.testType?.includes('Omprov säkerhetskontroll')) {
+      testTypeLabel = 'Säkerhetskontroll Släpvagn';
+    } else if (state.properties.testType?.includes('Omprov körning')) {
+      testTypeLabel = 'Omprov körning Släpvagn';
+    } else if (state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov')) {
+      testTypeLabel = 'Bedömningsprov Släpvagn';
+    } else {
+      testTypeLabel = 'Släpvagn';
+    }
+  } else if (state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov')) {
     testTypeLabel = `Bedömningsprov (${state.properties.licenseType || 'B'})`;
   } else if (state.properties.testType?.includes('Omprov säkerhetskontroll och körning')) {
     testTypeLabel = `Omprov säkerhetskontroll och körning ${state.properties.licenseType || 'B'}`;
@@ -81,10 +89,10 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
 
   const failureRowsHtml = isFailed
     ? `
-      ${state.result.drivingResult === 'Godkänt' ? `<h2 style="color: green; font-size: 20px; margin: 0 0 15px 0; font-weight: bold;">Din körning är godkänd.</h2>` : ''}
-      ${state.result.drivingResult === 'Underkänt' ? `<h2 style="color: red; font-size: 20px; margin: 0 0 15px 0; font-weight: bold;">Din körning är underkänd.</h2>` : ''}
-      ${isSafetyCheckRequired && state.result.safetyCheckResult === 'Underkänt' ? `<h2 style="color: red; font-size: 20px; margin: 0 0 15px 0; font-weight: bold;">Din säkerhetskontroll är underkänd.</h2>` : ''}
-      ${isSafetyCheckRequired && state.result.safetyCheckResult === 'Godkänt' && state.result.drivingResult === 'Underkänt' ? `<h2 style="color: green; font-size: 20px; margin: 10px 0; font-weight: bold;">Din säkerhetskontroll är godkänd.</h2>` : ''}
+      ${!isOmprovSakerhet && state.result.drivingResult === 'Godkänt' ? `<h2 style="color: green; font-size: 20px; margin: 0 0 15px 0; font-weight: bold;">Din körning är godkänd.</h2>` : ''}
+      ${!isOmprovSakerhet && state.result.drivingResult === 'Underkänt' ? `<h2 style="color: red; font-size: 20px; margin: 0 0 15px 0; font-weight: bold;">Din körning är underkänd.</h2>` : ''}
+      ${isSafetyCheckRequired && !isOmprovKorning && state.result.safetyCheckResult === 'Underkänt' ? `<h2 style="color: red; font-size: 20px; margin: 0 0 15px 0; font-weight: bold;">Din säkerhetskontroll är underkänd.</h2>` : ''}
+      ${isSafetyCheckRequired && !isOmprovKorning && state.result.safetyCheckResult === 'Godkänt' && state.result.drivingResult === 'Underkänt' ? `<h2 style="color: green; font-size: 20px; margin: 10px 0; font-weight: bold;">Din säkerhetskontroll är godkänd.</h2>` : ''}
       ${drivingFail?.primaryCause?.area && state.result.drivingResult === 'Underkänt' ? `
         <b>${state.result.safetyCheckResult === 'Underkänt' ? 'Grundorsak till körningens underkännande är:' : 'Grundorsak till underkännandet är:'}</b><br />
         <div style="border: 3px #C0504D solid; margin-bottom: 10px; padding: 5px; margin-top: 5px;">
@@ -130,8 +138,8 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
       ${allSituations.length > 0 ? `
         <div>
           <span><b>Brister har visat sig i följande situationer:</b></span>
-          <ul style="margin-top: 0; padding-left: 20px; list-style-type: disc;">
-            ${allSituations.map(s => `<li style="list-style-type: disc;">${s}</li>`).join('')}
+          <ul style="margin-top: 4px; padding-left: 18px; list-style-type: disc;">
+            ${allSituations.map(s => `<li style="margin-bottom: 2px; font-size: 13px;">${s}</li>`).join('')}
           </ul>
         </div>
       ` : ''}
@@ -144,8 +152,8 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
 
   const includedItemsHtml = state.includedTestItems && state.includedTestItems.length > 0
     ? `
-      <ul style="margin-top: 0; padding-left: 20px; list-style-type: disc;">
-        ${state.includedTestItems.map(i => `<li style="list-style-type: disc;">${i}</li>`).join('')}
+      <ul style="margin-top: 4px; padding-left: 18px; list-style-type: disc;">
+        ${state.includedTestItems.map(i => `<li style="margin-bottom: 2px; font-size: 13px;">${i}</li>`).join('')}
       </ul>
     `
     : `<p style="margin-top: 0; font-style: italic;">Inga specifika moment registrerade.</p>`;

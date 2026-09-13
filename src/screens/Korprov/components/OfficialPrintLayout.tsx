@@ -59,11 +59,7 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
   const isAssessmentOnly = state.properties.testType?.includes('Testprov') || state.properties.testType?.includes('Bedömningsprov');
   
   if (isGodkand && state.properties.licenseType && !isAssessmentOnly && !isTaxi) {
-    const conditions: string[] = [];
-    if (state.properties.transmission === 'Automat') conditions.push('(Automat)');
-    if (state.properties.tachograph === 'Utan färdskrivare') conditions.push('Utan färdskrivare');
-    const condStr = conditions.length > 0 ? ` [${conditions.join(', ')}]` : '';
-    behorighetText = `Behörighet uppnådd: ${state.properties.licenseType}${condStr}`;
+    behorighetText = `Behörighet uppnådd: ${state.properties.licenseType}`;
   } else if (isAssessmentOnly || isTaxi) {
     behorighetText = 'Ingen behörighet uppnådd.';
   }
@@ -75,8 +71,20 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
     ...(state.result.safetyCheckResult === 'Underkänt' ? (safetyFail?.situations || []) : [])
   ]));
 
-  let testTypeLabel = `Körprov ${state.properties.licenseType || 'B'}`;
-  if (state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov')) {
+  let testTypeLabel = state.properties.licenseType === 'B96' ? 'Släpvagn' : `Körprov ${state.properties.licenseType || 'B'}`;
+  if (state.properties.licenseType === 'B96') {
+    if (state.properties.testType?.includes('Omprov säkerhetskontroll och körning')) {
+      testTypeLabel = 'Omprov säkerhetskontroll och körning Släpvagn';
+    } else if (state.properties.testType?.includes('Omprov säkerhetskontroll')) {
+      testTypeLabel = 'Säkerhetskontroll Släpvagn';
+    } else if (state.properties.testType?.includes('Omprov körning')) {
+      testTypeLabel = 'Omprov körning Släpvagn';
+    } else if (state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov')) {
+      testTypeLabel = 'Bedömningsprov Släpvagn';
+    } else {
+      testTypeLabel = 'Släpvagn';
+    }
+  } else if (state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov')) {
     testTypeLabel = `Bedömningsprov (${state.properties.licenseType || 'B'})`;
   } else if (state.properties.testType?.includes('Omprov säkerhetskontroll och körning')) {
     testTypeLabel = `Omprov säkerhetskontroll och körning ${state.properties.licenseType || 'B'}`;
@@ -88,13 +96,11 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
 
   return (
     <div 
-      className="resultContainer" 
+      className="resultContainer bg-white dark:bg-slate-950 text-black dark:text-slate-200 print:bg-white print:text-black" 
       style={{ 
         width: '100%', 
         maxWidth: '800px', 
         margin: '0 auto', 
-        backgroundColor: '#fff', 
-        color: '#000', 
         fontFamily: 'Arial, sans-serif',
         fontSize: '13px',
         lineHeight: '1.4'
@@ -134,13 +140,13 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
                     <tbody>
                       <tr>
                         <td style={{ padding: '4px 20px 4px 0', verticalAlign: 'top', width: '50%' }}>
-                          <div className="resultHeaderLabel" style={{ fontWeight: 'bold', color: '#000', marginBottom: '2px' }}>
+                          <div className="resultHeaderLabel" style={{ fontWeight: 'bold', marginBottom: '2px' }}>
                             Namn:
                           </div>
                           <div>{state.properties.studentName || 'Förnamn Efternamn'}</div>
                         </td>
                         <td style={{ padding: '4px 0', verticalAlign: 'top', width: '50%' }}>
-                          <div className="resultHeaderLabel" style={{ fontWeight: 'bold', color: '#000', marginBottom: '2px' }}>
+                          <div className="resultHeaderLabel" style={{ fontWeight: 'bold', marginBottom: '2px' }}>
                             Personnummer:
                           </div>
                           <div>{state.properties.personalNumber || '19820209-4937'}</div>
@@ -148,13 +154,13 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
                       </tr>
                       <tr>
                         <td style={{ padding: '4px 20px 4px 0', verticalAlign: 'top' }}>
-                          <div className="resultHeaderLabel" style={{ fontWeight: 'bold', color: '#000', marginBottom: '2px' }}>
+                          <div className="resultHeaderLabel" style={{ fontWeight: 'bold', marginBottom: '2px' }}>
                             Provtyp:
                           </div>
                           <div>{testTypeLabel}</div>
                         </td>
                         <td style={{ padding: '4px 0', verticalAlign: 'top' }}>
-                          <div className="resultHeaderLabel" style={{ fontWeight: 'bold', color: '#000', marginBottom: '2px' }}>
+                          <div className="resultHeaderLabel" style={{ fontWeight: 'bold', marginBottom: '2px' }}>
                             Provdatum:
                           </div>
                           <div>{state.properties.testDate || new Date().toISOString().split('T')[0]}</div>
@@ -162,7 +168,7 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
                       </tr>
                       <tr>
                         <td style={{ padding: '4px 20px 4px 0', verticalAlign: 'top' }}>
-                          <div className="resultHeaderLabel" style={{ fontWeight: 'bold', color: '#000', marginBottom: '2px' }}>
+                          <div className="resultHeaderLabel" style={{ fontWeight: 'bold', marginBottom: '2px' }}>
                             Provförrättare:
                           </div>
                           <div>{profile?.name || state.properties.examiner || 'Hans Eriksson'}</div>
@@ -233,22 +239,22 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
         {/* Huvudrubrik för beslut */}
         {isFailed ? (
           <div>
-            {state.result.drivingResult === 'Godkänt' && (
+            {!isOmprovSakerhet && state.result.drivingResult === 'Godkänt' && (
               <h2 style={{ color: 'green', fontSize: '20px', margin: '0 0 15px 0', fontWeight: 'bold' }}>
                 Din körning är godkänd.
               </h2>
             )}
-            {state.result.drivingResult === 'Underkänt' && (
+            {!isOmprovSakerhet && state.result.drivingResult === 'Underkänt' && (
               <h2 style={{ color: 'red', fontSize: '20px', margin: '0 0 15px 0', fontWeight: 'bold' }}>
                 Din körning är underkänd.
               </h2>
             )}
-            {isSafetyCheckRequired && state.result.safetyCheckResult === 'Underkänt' && (
+            {isSafetyCheckRequired && !isOmprovKorning && state.result.safetyCheckResult === 'Underkänt' && (
               <h2 style={{ color: 'red', fontSize: '20px', margin: '0 0 15px 0', fontWeight: 'bold' }}>
                 Din säkerhetskontroll är underkänd.
               </h2>
             )}
-            {isSafetyCheckRequired && state.result.safetyCheckResult === 'Godkänt' && state.result.drivingResult === 'Underkänt' && (
+            {isSafetyCheckRequired && !isOmprovKorning && state.result.safetyCheckResult === 'Godkänt' && state.result.drivingResult === 'Underkänt' && (
               <h2 style={{ color: 'green', fontSize: '20px', margin: '10px 0', fontWeight: 'bold' }}>
                 Din säkerhetskontroll är godkänd.
               </h2>
@@ -325,9 +331,11 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
             {allSituations.length > 0 && (
               <div>
                 <span><b>Brister har visat sig i följande situationer:</b></span>
-                <ul style={{ marginTop: 0, paddingLeft: '20px', listStyleType: 'disc', listStyle: 'disc' }}>
+                <ul style={{ marginTop: '4px', paddingLeft: '18px', listStyleType: 'disc' }}>
                   {allSituations.map((sit, idx) => (
-                    <li key={idx} style={{ listStyleType: 'disc', display: 'list-item' }}>{sit}</li>
+                    <li key={idx} style={{ marginBottom: '2px', fontSize: '13px' }}>
+                      {sit}
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -359,9 +367,11 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
         {/* Följande provinnehåll har ingått i ditt körprov */}
         <span><b>Följande provinnehåll har ingått i ditt körprov:</b></span>
         {state.includedTestItems && state.includedTestItems.length > 0 ? (
-          <ul style={{ marginTop: 0, paddingLeft: '20px', listStyleType: 'disc', listStyle: 'disc' }}>
+          <ul style={{ marginTop: '4px', paddingLeft: '18px', listStyleType: 'disc' }}>
             {state.includedTestItems.map((item, idx) => (
-              <li key={idx} style={{ listStyleType: 'disc', display: 'list-item' }}>{item}</li>
+              <li key={idx} style={{ marginBottom: '2px', fontSize: '13px' }}>
+                {item}
+              </li>
             ))}
           </ul>
         ) : (

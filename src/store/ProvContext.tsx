@@ -63,12 +63,12 @@ const defaultState: AppState = {
 const defaultProfile: InspectorProfile = {
   name: "Rasmus Lundin",
   inspectorId: "INSP-2045",
-  email: "rasmus.lundin@provprotokoll.se",
+  email: "rasmus.lundin@gmail.com",
   phone: "070-123 45 67",
-  depot: "Göteborg Hisingen",
+  depot: "Samtliga orter / Hela Sverige",
   signatureText: "Rasmus Lundin / ProvProtokoll",
   autoSign: true,
-  vehicleCategories: ["AM", "A1", "A2", "A", "B", "BE", "C1", "C", "D1", "D", "TAXI"],
+  vehicleCategories: ["AM", "A1", "A2", "A", "B", "BE", "C1", "C", "C1E", "CE", "D1", "D", "D1E", "DE", "TAXI"],
 };
 
 const ProvContext = createContext<ProvContextType | undefined>(undefined);

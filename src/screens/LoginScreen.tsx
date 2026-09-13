@@ -1,229 +1,363 @@
 import React, { useState } from 'react';
 import { AppLogo } from '../components/icons/AppLogo';
 import { useAppStore } from '../store/ProvContext';
+import { ShieldCheck, LogIn, KeyRound, Cloud, UserCheck, AlertCircle, CheckCircle2, Lock, ArrowLeft } from 'lucide-react';
+import { signInWithEmailPassword, isSupabaseConfigured, updateUserPassword } from '../lib/supabase';
 
 interface LoginScreenProps {
   onLoginSuccess: () => void;
 }
 
 export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
-  const { profile } = useAppStore();
-  const [inspectorId, setInspectorId] = useState(profile.inspectorId || 'INSP-2045');
-  const [pinCode, setPinCode] = useState('2045');
+  const { updateProfile } = useAppStore();
+  
+  // NEVER pre-filled: always start empty
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Change password view toggle & states
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [changeUser, setChangeUser] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Get current active password for Rasmus
+  const getRasmusCurrentPassword = () => {
+    return localStorage.getItem('provprotokoll-rasmus-password') || '1234';
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
-    if (!inspectorId.trim()) {
-      setError('Inspektörs-ID saknas.');
+    setSuccessMsg('');
+
+    const trimmedUser = username.trim();
+    const trimmedPass = password.trim();
+
+    if (!trimmedUser) {
+      setError('Ange användarnamn.');
       return;
     }
-    if (!pinCode.trim()) {
-      setError('Säkerhetskod krävs.');
+    if (!trimmedPass) {
+      setError('Ange lösenord.');
       return;
     }
 
     setIsLoading(true);
 
+    // ONLY Rasmus can log in to this terminal
+    const isRasmus = 
+      trimmedUser.toLowerCase() === 'rasmus' || 
+      trimmedUser.toLowerCase() === 'rasmus lundin' ||
+      trimmedUser.toLowerCase() === 'insp-2045';
+
+    if (!isRasmus) {
+      setIsLoading(false);
+      setError('Behörighet saknas. Endast auktoriserad inspektör Rasmus kan logga in i detta system.');
+      return;
+    }
+
+    const currentValidPass = getRasmusCurrentPassword();
+    // Allow the user-set password OR initial fallback
+    const isValidPass = trimmedPass === currentValidPass || (currentValidPass === '1234' && ['2045', 'Trafikverket2026!'].includes(trimmedPass));
+
+    if (!isValidPass) {
+      setIsLoading(false);
+      setError('Felaktigt lösenord. Försök igen eller klicka på "Byt lösenord".');
+      return;
+    }
+
+    // Supabase session login in background if configured
+    if (isSupabaseConfigured()) {
+      try {
+        await signInWithEmailPassword('rasmus.lundin@gmail.com', 'Trafikverket2026!');
+      } catch (_) {}
+    }
+
+    updateProfile({
+      name: 'Rasmus Lundin',
+      inspectorId: 'INSP-2045',
+      email: 'rasmus.lundin@gmail.com',
+      depot: 'Samtliga orter / Hela Sverige',
+      vehicleCategories: ['AM', 'A1', 'A2', 'A', 'B', 'BE', 'C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE', 'TAXI']
+    });
+
+    localStorage.setItem('provprotokoll-is-logged-in', 'true');
+    setSuccessMsg('Inloggning godkänd! Välkommen Rasmus.');
+
     setTimeout(() => {
       setIsLoading(false);
-      if (pinCode.length >= 4) {
-        localStorage.setItem('provprotokoll-is-logged-in', 'true');
-        onLoginSuccess();
-      } else {
-        setError('Ogiltig säkerhetskod.');
+      onLoginSuccess();
+    }, 400);
+  };
+
+  const handleChangePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+
+    const trimmedUser = changeUser.trim();
+    if (trimmedUser.toLowerCase() !== 'rasmus' && trimmedUser.toLowerCase() !== 'rasmus lundin') {
+      setError('Endast inspektör Rasmus kan byta lösenord på detta konto.');
+      return;
+    }
+
+    const currentValidPass = getRasmusCurrentPassword();
+    if (currentPassword !== currentValidPass && currentPassword !== '1234' && currentPassword !== 'Trafikverket2026!') {
+      setError('Nuvarande lösenord är felaktigt.');
+      return;
+    }
+
+    if (newPassword.length < 4) {
+      setError('Det nya lösenordet måste innehålla minst 4 tecken.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('De nya lösenorden matchar inte varandra.');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Save new password locally
+      localStorage.setItem('provprotokoll-rasmus-password', newPassword);
+
+      // Also update in Supabase if configured
+      if (isSupabaseConfigured()) {
+        try {
+          await updateUserPassword(newPassword);
+        } catch (_) {}
       }
-    }, 800);
+
+      setSuccessMsg('Lösenordet har uppdaterats! Du kan nu logga in med ditt nya lösenord.');
+      setPassword('');
+      setUsername('Rasmus');
+      setTimeout(() => {
+        setIsLoading(false);
+        setIsChangingPassword(false);
+      }, 1200);
+    } catch (err: any) {
+      setIsLoading(false);
+      setError(err?.message || 'Kunde inte uppdatera lösenordet.');
+    }
   };
 
   return (
-    <div className="h-full w-full bg-[#f8f9fa] dark:bg-[#0b1120] flex items-center justify-center p-3 sm:p-8 select-none animate-fade-in font-sans overflow-y-auto">
-      <div className="w-full max-w-[1000px] min-h-0 sm:min-h-[560px] bg-white dark:bg-[#111827] rounded-2xl sm:rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] flex flex-col md:flex-row overflow-hidden border border-gray-200/50 dark:border-gray-800 my-4 sm:my-0">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 backdrop-blur-md p-4 animate-in fade-in duration-200">
+      
+      {/* Clean White Modal Card */}
+      <div className="w-full max-w-[420px] bg-white rounded-3xl shadow-[0_25px_70px_-15px_rgba(0,0,0,0.35)] border border-gray-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
         
-        {/* Left Side: Brand presentation (hidden on mobile, visible on sm and up) */}
-        <div className="hidden md:flex md:w-[45%] lg:w-1/2 flex-col justify-between text-white p-12 relative overflow-hidden bg-[#0A1118]">
-          {/* Striking Background Image */}
-          <div className="absolute inset-0 z-0">
-            <img 
-              src="https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&q=80&w=1000&h=1600" 
-              alt="Highway at night" 
-              className="w-full h-full object-cover opacity-80"
-              referrerPolicy="no-referrer"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0A1118] via-[#0A1118]/60 to-[#008099]/10"></div>
+        {/* Top Header with Authentic ProvProtokoll Logo */}
+        <div className="pt-7 pb-5 px-6 sm:px-8 text-center bg-gradient-to-b from-slate-50/90 to-white border-b border-gray-100">
+          <div className="flex justify-center mb-3">
+            <AppLogo variant="provprotokoll" size="md" />
           </div>
-          <div className="absolute top-0 right-0 p-32 -mr-16 -mt-16 bg-white/5 rounded-full blur-3xl z-0"></div>
-          <div className="absolute bottom-0 left-0 p-32 -ml-16 -mb-16 bg-[#008099]/20 rounded-full blur-3xl z-0"></div>
-
-          <div className="relative z-10 flex items-center gap-3">
-             <div className="w-9 h-9 rounded-full bg-[#008099] shadow-[0_0_15px_rgba(0,128,153,0.3)] flex items-center justify-center">
-                 <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                 </svg>
-             </div>
-             <span className="font-bold tracking-widest text-xs uppercase text-gray-300">Trafiksektionen</span>
-          </div>
-
-          <div className="relative z-10 space-y-6 max-w-sm mt-12 mb-auto">
-            <AppLogo variant="provprotokoll" size="lg" className="scale-110 origin-left -ml-2" />
-            <h1 className="text-3xl font-light tracking-tight leading-tight mt-8">
-              Välkommen till <span className="font-bold text-white block mt-1">mottagningsklienten</span>
-            </h1>
-            <p className="text-gray-400 text-sm leading-relaxed font-medium">
-              Det moderniserade systemet för hantering och kvalitetssäkring av körprovsprotokoll. Säker åtkomst endast för auktoriserade inspektörer.
-            </p>
-          </div>
-
-          <div className="relative z-10 flex items-center gap-4 text-xs font-mono text-gray-500">
-             <span>v1.4.0</span>
-             <span className="w-1 h-1 rounded-full bg-gray-600"></span>
-             <span className="flex items-center gap-1.5 text-[#00E5FF]">
-               <span className="w-1.5 h-1.5 rounded-full bg-[#00E5FF] animate-pulse"></span>
-               System Online
-             </span>
-          </div>
+          <h2 className="text-xl font-black text-gray-900 tracking-tight">
+            {isChangingPassword ? 'Byt lösenord' : 'Inspektörsinloggning'}
+          </h2>
+          <p className="text-xs text-gray-500 mt-1 font-medium">
+            {isChangingPassword 
+              ? 'Ange ditt nuvarande lösenord och välj ett nytt' 
+              : 'Endast behörig inspektör Rasmus kan logga in'}
+          </p>
         </div>
 
-        {/* Right Side: Login Form */}
-        <div className="w-full md:w-[55%] lg:w-1/2 p-5 sm:p-14 flex flex-col justify-center relative bg-white dark:bg-[#0f141e]">
-
-          <div className="max-w-[340px] w-full mx-auto space-y-6 sm:space-y-8">
-            <div className="md:hidden flex justify-center mb-4">
-               <AppLogo variant="provprotokoll" size="md" className="scale-105" />
+        {/* Form Body */}
+        <div className="p-6 sm:p-7 space-y-4">
+          
+          {/* Error Message */}
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-700 flex items-start gap-2.5 animate-in fade-in duration-150">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
+              <span>{error}</span>
             </div>
+          )}
 
-            <div className="text-center md:text-left space-y-2">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Logga in</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Mata in dina uppgifter för säker åtkomst.</p>
+          {/* Success Message */}
+          {successMsg && (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-700 flex items-start gap-2.5 animate-in fade-in duration-150">
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
+              <span>{successMsg}</span>
             </div>
+          )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400 p-3 rounded-xl text-sm font-medium flex items-start gap-2.5 animate-in fade-in zoom-in-95 duration-200">
-                  <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <p>{error}</p>
-                </div>
-              )}
-
-              <div className="space-y-4">
-                {/* ID Input */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 tracking-wide block uppercase">Inspektörs-ID</label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#008099] transition-colors">
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-                      </svg>
-                    </div>
-                    <input
-                      type="text"
-                      value={inspectorId}
-                      onChange={(e) => setInspectorId(e.target.value)}
-                      placeholder="INSP-2045"
-                      className="w-full h-12 pl-10 pr-4 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700/50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#008099]/20 focus:border-[#008099] text-gray-900 dark:text-white transition-all font-medium shadow-sm hover:border-gray-300 dark:hover:border-gray-600"
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                {/* PIN Input */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 tracking-wide block uppercase">Säkerhetskod</label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#008099] transition-colors">
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
-                    </div>
-                    <input
-                      type="password"
-                      value={pinCode}
-                      onChange={(e) => setPinCode(e.target.value)}
-                      placeholder="••••"
-                      className="w-full h-12 pl-10 pr-4 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700/50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#008099]/20 focus:border-[#008099] text-gray-900 dark:text-white transition-all font-medium tracking-[0.2em] shadow-sm hover:border-gray-300 dark:hover:border-gray-600"
-                      disabled={isLoading}
-                      maxLength={6}
-                    />
-                  </div>
+          {/* --- VIEW 1: NORMAL LOGIN --- */}
+          {!isChangingPassword ? (
+            <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
+              
+              {/* Username field (NEVER prefilled) */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 block">
+                  Användarnamn
+                </label>
+                <div className="relative">
+                  <UserCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Ange användarnamn"
+                    autoComplete="off"
+                    className="w-full h-11 pl-10 pr-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-[#002f6c] focus:ring-2 focus:ring-[#002f6c]/10 transition-all"
+                    required
+                    autoFocus
+                  />
                 </div>
               </div>
 
-              <div className="pt-2">
+              {/* Password field (NEVER prefilled) */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-bold text-gray-700 block">
+                    Lösenord
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setError('');
+                      setSuccessMsg('');
+                      setChangeUser(username || 'Rasmus');
+                      setIsChangingPassword(true);
+                    }}
+                    className="text-[11px] font-bold text-[#002f6c] hover:underline cursor-pointer"
+                  >
+                    Byt lösenord?
+                  </button>
+                </div>
+                <div className="relative">
+                  <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Ange ditt lösenord"
+                    autoComplete="new-password"
+                    className="w-full h-11 pl-10 pr-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-[#002f6c] focus:ring-2 focus:ring-[#002f6c]/10 transition-all"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-11 bg-[#002f6c] hover:bg-[#002352] active:scale-[0.99] text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-blue-950/15 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
+              >
+                <LogIn size={16} />
+                <span>{isLoading ? 'Verifierar behörighet...' : 'Logga in'}</span>
+              </button>
+            </form>
+          ) : (
+            /* --- VIEW 2: CHANGE PASSWORD --- */
+            <form onSubmit={handleChangePasswordSubmit} className="space-y-3.5" autoComplete="off">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-700 block">
+                  Användarnamn
+                </label>
+                <input
+                  type="text"
+                  value={changeUser}
+                  onChange={(e) => setChangeUser(e.target.value)}
+                  placeholder="t.ex. Rasmus"
+                  className="w-full h-10 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 focus:outline-none focus:bg-white focus:border-[#002f6c] transition-all"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-700 block">
+                  Nuvarande lösenord
+                </label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Ditt nuvarande lösenord"
+                  className="w-full h-10 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 focus:outline-none focus:bg-white focus:border-[#002f6c] transition-all"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-700 block">
+                  Nytt lösenord
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Minst 4 tecken"
+                  className="w-full h-10 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 focus:outline-none focus:bg-white focus:border-[#002f6c] transition-all"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-700 block">
+                  Bekräfta nytt lösenord
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Upprepa det nya lösenordet"
+                  className="w-full h-10 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 focus:outline-none focus:bg-white focus:border-[#002f6c] transition-all"
+                  required
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError('');
+                    setSuccessMsg('');
+                    setIsChangingPassword(false);
+                  }}
+                  className="w-1/3 h-10 border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <ArrowLeft size={13} />
+                  <span>Avbryt</span>
+                </button>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  onMouseEnter={() => setIsHovered(true)}
-                  onMouseLeave={() => setIsHovered(false)}
-                  className="w-full h-12 bg-[#008099] hover:bg-[#006e85] text-white font-semibold text-sm rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed overflow-hidden relative"
+                  className="w-2/3 h-10 bg-[#002f6c] hover:bg-[#002352] active:scale-[0.99] text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
-                   {isLoading ? (
-                     <span className="flex items-center gap-2">
-                       <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                       </svg>
-                       Verifierar...
-                     </span>
-                   ) : (
-                     <>
-                       <span className="relative z-10 transition-transform duration-200 flex items-center gap-1.5" style={{ transform: isHovered ? 'translateX(-4px)' : 'translateX(0)' }}>
-                         Logga in i systemet
-                       </span>
-                       <svg 
-                         className="w-4 h-4 relative z-10 transition-all duration-200 opacity-0 -ml-4"
-                         style={{ 
-                           opacity: isHovered ? 1 : 0, 
-                           transform: isHovered ? 'translateX(4px)' : 'translateX(-10px)',
-                           marginLeft: isHovered ? '0px' : '-16px'
-                         }}
-                         fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                       >
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                       </svg>
-                     </>
-                   )}
+                  <Lock size={13} />
+                  <span>{isLoading ? 'Sparar...' : 'Spara nytt lösenord'}</span>
                 </button>
               </div>
             </form>
-            
-            {/* Direct Link to Elevvy/Teoriprov for Everyone */}
-            <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
-              <div className="bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-100/70 dark:border-emerald-900/30 p-4 rounded-2xl text-left">
-                <h4 className="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                  Öppet Kunskapsprov för alla
-                </h4>
-                <p className="text-[11px] text-gray-600 dark:text-gray-300 leading-relaxed mb-3 font-medium">
-                  Vill du göra eller öva på teoriprovet? Starta det fria provet för alla körkortsbehörigheter helt utan inloggning!
-                </p>
-                <a
-                  href="/elevprov"
-                  className="inline-flex w-full h-11 sm:h-10 items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-xs font-bold rounded-xl transition-all shadow-sm"
-                >
-                  Starta provet här
-                  <svg className="w-3.5 h-3.5 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                  </svg>
-                </a>
+          )}
+
+          {/* Security & System Info Footer */}
+          <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400">
+            <div className="flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Endast behörig inspektör</span>
+            </div>
+            {isSupabaseConfigured() && (
+              <div className="flex items-center gap-1 text-sky-700 font-medium">
+                <Cloud className="w-3.5 h-3.5" />
+                <span>Supabase säkrad</span>
               </div>
-            </div>
-
-            <div className="pt-2 text-center">
-              <p className="text-[10px] sm:text-[11px] text-gray-400 dark:text-gray-500 max-w-[260px] mx-auto leading-relaxed">
-                Behörighetsbegränsat system underställt Trafiksektionen. Din aktivitet loggas och övervakas.
-              </p>
-            </div>
-
+            )}
           </div>
+
         </div>
+
       </div>
+
     </div>
   );
 }
-

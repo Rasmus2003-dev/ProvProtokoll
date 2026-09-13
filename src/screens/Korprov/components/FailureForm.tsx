@@ -11,9 +11,10 @@ type FailureFormProps = {
   onChange: (data: FailureAssessment) => void;
   title: string;
   type?: 'driving' | 'safety';
+  hideSituations?: boolean;
 };
 
-export function FailureForm({ data, onChange, title, type = 'driving' }: FailureFormProps) {
+export function FailureForm({ data, onChange, title, type = 'driving', hideSituations = false }: FailureFormProps) {
   const { state } = useAppStore();
 
   const updateContent = (partial: Partial<FailureAssessment>) => {
@@ -32,7 +33,7 @@ export function FailureForm({ data, onChange, title, type = 'driving' }: Failure
     }
   }, [type, data.primaryCause?.area]);
   
-  // Combine situations: safety specific situations, test items, and all standard situations
+  // Only the moments marked/tested should be available for selection!
   const availableSituations = useMemo(() => {
     const included = state.includedTestItems || [];
     const safetyDefaults = type === 'safety' ? [
@@ -42,8 +43,24 @@ export function FailureForm({ data, onChange, title, type = 'driving' }: Failure
       'Koppling och lastsäkring',
       'Färdskrivare'
     ] : [];
-    return Array.from(new Set([...safetyDefaults, ...included, ...failureSituations]));
+
+    // If test items have been explicitly marked in the test, ONLY allow those marked items!
+    if (included.length > 0) {
+      return Array.from(new Set([...(type === 'safety' ? safetyDefaults : []), ...included]));
+    }
+    return Array.from(new Set([...safetyDefaults, ...failureSituations]));
   }, [state.includedTestItems, type]);
+
+  // Ensure any situations already in state that were not tested get pruned if included items exist
+  React.useEffect(() => {
+    if (state.includedTestItems && state.includedTestItems.length > 0 && data.situations && data.situations.length > 0) {
+      const allowedSet = new Set(availableSituations);
+      const filtered = data.situations.filter(s => allowedSet.has(s));
+      if (filtered.length !== data.situations.length) {
+        updateContent({ situations: filtered });
+      }
+    }
+  }, [state.includedTestItems, availableSituations, data.situations]);
 
   const handlePrimaryCauseAreaChange = (area: string) => {
     updateContent({ primaryCause: { area, deficiencies: [] } });
@@ -294,7 +311,8 @@ export function FailureForm({ data, onChange, title, type = 'driving' }: Failure
           </div>
         </section>
 
-        {/* Situationer */}
+        {/* Situationer - hidden when hideSituations is true (e.g. both driving and safety failed, shown only once) */}
+        {!hideSituations && (
         <section className="space-y-3 pt-4 border-t border-gray-100 dark:border-white/5">
           <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
             <h4 className="font-bold text-base sm:text-lg text-gray-900 dark:text-white uppercase tracking-tight">
@@ -342,6 +360,7 @@ export function FailureForm({ data, onChange, title, type = 'driving' }: Failure
             })}
           </div>
         </section>
+        )}
 
       </CardContent>
     </Card>

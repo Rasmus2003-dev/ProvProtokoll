@@ -2,23 +2,41 @@ import { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../../store/ProvContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AppLogo } from '../icons/AppLogo';
-import { Moon, Sun, Play, Pause, RotateCcw, Timer, History, ExternalLink, Share2, Check, BookOpen, Maximize, Minimize } from 'lucide-react';
+import { Moon, Sun, Play, Pause, RotateCcw, Timer, History, ExternalLink, Share2, Check, BookOpen, Maximize, Minimize, User, LogOut, GraduationCap } from 'lucide-react';
 import { LathundModal } from '../LathundModal';
-
 import { toggleAppFullscreen, isCurrentlyFullscreen } from '../../lib/fullscreen';
-import { LogIn } from 'lucide-react';
-import { LoginModal } from '../LoginModal';
+import { signOutSupabase } from '../../lib/supabase';
 
 export function TopAppBar() {
-  const { profile } = useAppStore();
+  const { profile, state } = useAppStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [time, setTime] = useState('');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [copied, setCopied] = useState(false);
   const [isLathundOpen, setIsLathundOpen] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = async () => {
+    if (window.confirm('Är du säker på att du vill logga ut från provsystemet?')) {
+      await signOutSupabase();
+      localStorage.removeItem('provprotokoll-is-logged-in');
+      window.location.reload();
+    }
+  };
 
   useEffect(() => {
     const handleFsChange = () => {
@@ -26,9 +44,11 @@ export function TopAppBar() {
     };
     document.addEventListener('fullscreenchange', handleFsChange);
     document.addEventListener('webkitfullscreenchange', handleFsChange);
+    window.addEventListener('appfullscreenchange', handleFsChange);
     return () => {
       document.removeEventListener('fullscreenchange', handleFsChange);
       document.removeEventListener('webkitfullscreenchange', handleFsChange);
+      window.removeEventListener('appfullscreenchange', handleFsChange);
     };
   }, []);
 
@@ -182,6 +202,17 @@ export function TopAppBar() {
             Teoriprov
           </button>
           <button 
+            onClick={() => navigate('/trafikskola')}
+            className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+              location.pathname.includes('/trafikskola') 
+                ? 'bg-[#002f6c] text-white shadow-sm' 
+                : 'text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-200/60 dark:hover:bg-slate-800'
+            }`}
+          >
+            <GraduationCap className="w-4 h-4 hidden sm:inline text-emerald-500" />
+            Trafikskola
+          </button>
+          <button 
             onClick={() => navigate('/lathundar')}
             className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
               location.pathname.includes('/lathundar') 
@@ -278,22 +309,76 @@ export function TopAppBar() {
             {isDark ? <Sun size={16} /> : <Moon size={16} />}
           </button>
 
-          {/* User Profile */}
-          <div
-            onClick={() => navigate('/profil')}
-            className="flex items-center gap-2 pl-1 sm:pl-2 cursor-pointer group"
-          >
-            <div className="text-right hidden sm:block">
-              <div className="text-xs md:text-sm font-bold text-gray-900 dark:text-gray-100 leading-none group-hover:text-[#002f6c] dark:group-hover:text-blue-400 transition-colors">
-                {profile.name || 'Rasmus Lundin'}
+          {/* User Profile & Logout Menu */}
+          <div className="relative" ref={profileMenuRef}>
+            <div
+              onClick={() => setIsProfileMenuOpen(prev => !prev)}
+              className="flex items-center gap-2 pl-1 sm:pl-2 cursor-pointer group py-1"
+              title="Profil & Inställningar"
+            >
+              <div className="text-right hidden sm:block">
+                <div className="text-xs md:text-sm font-bold text-gray-900 dark:text-gray-100 leading-none group-hover:text-[#002f6c] dark:group-hover:text-blue-400 transition-colors">
+                  {profile.name || 'Rasmus Lundin'}
+                </div>
+                <div className="text-[10px] text-gray-400 dark:text-gray-500 font-medium leading-tight mt-0.5">
+                  Inspektör
+                </div>
               </div>
-              <div className="text-[10px] text-gray-400 dark:text-gray-500 font-medium leading-tight mt-0.5">
-                Inspektör
+              <div className="w-9 h-9 bg-[#002F6C] text-white font-black text-xs md:text-sm rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-white/10 group-hover:bg-[#001d4a] transition-colors">
+                {profile.name ? profile.name[0].toUpperCase() : 'R'}
               </div>
             </div>
-            <div className="w-9 h-9 md:w-9 md:h-9 bg-[#002F6C] text-white font-black text-xs md:text-sm rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-white/10 group-hover:bg-[#001d4a] transition-colors">
-              {profile.name ? profile.name[0].toUpperCase() : 'R'}
-            </div>
+
+            {/* Profile Dropdown Popup */}
+            {isProfileMenuOpen && (
+              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-200 dark:border-slate-800 py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-4 py-2.5 border-b border-gray-100 dark:border-slate-800">
+                  <div className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate">
+                    {profile.name || 'Rasmus Lundin'}
+                  </div>
+                  <div className="text-[10px] text-gray-400 dark:text-gray-500 font-medium truncate">
+                    {profile.email || 'rasmus.lundin@gmail.com'}
+                  </div>
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mt-1">
+                    INSP-2045 • Alla orter
+                  </div>
+                </div>
+
+                <div className="p-1 space-y-0.5">
+                  <button
+                    onClick={() => {
+                      setIsProfileMenuOpen(false);
+                      navigate('/profil');
+                    }}
+                    className="w-full px-3 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-2.5 cursor-pointer"
+                  >
+                    <User size={14} className="text-[#002f6c] dark:text-blue-400" />
+                    <span>Min profil</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsProfileMenuOpen(false);
+                      navigate('/historik');
+                    }}
+                    className="w-full px-3 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-2.5 cursor-pointer"
+                  >
+                    <History size={14} className="text-gray-500" />
+                    <span>Provhistorik</span>
+                  </button>
+
+                  <div className="my-1 border-t border-gray-100 dark:border-slate-800" />
+
+                  <button
+                    onClick={handleLogout}
+                    className="w-full px-3 py-2 text-left text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors flex items-center gap-2.5 cursor-pointer"
+                  >
+                    <LogOut size={14} />
+                    <span>Logga ut</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
         </div>
@@ -304,7 +389,6 @@ export function TopAppBar() {
         onClose={() => setIsLathundOpen(false)}
         defaultLicense={state.properties.licenseType || 'B'}
       />
-      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
     </header>
   );
 }

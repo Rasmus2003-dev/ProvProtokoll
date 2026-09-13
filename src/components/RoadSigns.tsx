@@ -249,40 +249,63 @@ export const RoadSign = ({ type, icon: Icon, text }: { type: string, icon?: any,
   return null;
 };
 
-// A specific set of options for the postombud question (H-series signs), rendered small.
+// A specific set of options for the postombud question (H-series signs), exactly matching Trafikverket:
+// A: Verkstad (skiftnyckel), B: Postombud (posthorn), C: Vandrarhem / Stuga (hus), D: Informationsplats (i)
 export const PostombudOption = ({ letter }: { letter: 'A' | 'B' | 'C' | 'D' }) => {
-  const shapes: Record<string, { fill: string, glyph: 'post' | 'phone' | 'toilet' | 'first-aid' }> = {
-    A: { fill: '#0056a8', glyph: 'phone' },
-    B: { fill: '#0056a8', glyph: 'post' },
-    C: { fill: '#0056a8', glyph: 'toilet' },
-    D: { fill: '#0056a8', glyph: 'first-aid' },
-  };
-  const s = shapes[letter];
   return (
-    <svg viewBox="0 0 100 100" className="w-full h-full max-h-28">
-      <rect x="4" y="4" width="92" height="92" rx="6" fill={s.fill} stroke="white" strokeWidth="4" />
-      {s.glyph === 'post' && (
-        <path d="M30 68 C30 50, 45 30, 68 32 C72 32, 74 36, 71 39 C58 41, 48 52, 46 66" fill="none" stroke="#fbbf24" strokeWidth="7" strokeLinecap="round" />
-      )}
-      {s.glyph === 'phone' && (
-        <path d="M32 30 C32 26 36 24 40 26 L48 32 C50 34 50 37 48 39 L44 43 C48 52 56 60 65 64 L69 60 C71 58 74 58 76 60 L82 68 C84 72 82 76 78 76 C56 78 34 58 32 34 Z" fill="white" />
-      )}
-      {s.glyph === 'toilet' && (
-        <>
-          <circle cx="38" cy="34" r="8" fill="white" />
-          <path d="M28 72 L30 46 Q38 40 46 46 L48 72 Z" fill="white" />
-          <circle cx="66" cy="34" r="8" fill="white" />
-          <path d="M56 72 L58 46 Q66 40 74 46 L76 72 Z" fill="white" />
-        </>
-      )}
-      {s.glyph === 'first-aid' && (
-        <>
-          <rect x="28" y="28" width="44" height="36" rx="4" fill="white" />
-          <rect x="44" y="34" width="12" height="24" fill={s.fill} />
-          <rect x="34" y="40" width="32" height="12" fill={s.fill} />
-        </>
-      )}
-    </svg>
+    <div className="w-full h-full flex items-center justify-center p-2">
+      <svg viewBox="0 0 100 100" className="w-28 h-28 max-h-36 max-w-36 drop-shadow-sm">
+        {/* Outer blue square with thick white border */}
+        <rect x="5" y="5" width="90" height="90" rx="3" fill="#0057a6" stroke="#0057a6" strokeWidth="2" />
+        <rect x="11" y="11" width="78" height="78" rx="2" fill="white" />
+        
+        {/* A: Verkstad (black adjustable wrench / skiftnyckel) */}
+        {letter === 'A' && (
+          <g fill="#111">
+            {/* Wrench head */}
+            <rect x="42" y="24" width="16" height="52" rx="1" />
+            <rect x="36" y="28" width="28" height="9" />
+            <rect x="36" y="37" width="13" height="7" />
+          </g>
+        )}
+
+        {/* B: Postombud (black posthorn) */}
+        {letter === 'B' && (
+          <g fill="#111">
+            <path
+              d="M26 40 C26 65, 74 65, 74 40 C74 45, 68 53, 50 53 C32 53, 26 45, 26 40 Z"
+            />
+            <path
+              d="M40 50 C44 58, 56 58, 60 50 C57 53, 43 53, 40 50 Z"
+            />
+            <circle cx="27" cy="38" r="4" />
+            <path d="M72 35 L76 35 L76 43 L72 43 Z" />
+          </g>
+        )}
+
+        {/* C: Vandrarhem / Stuga (house with window) */}
+        {letter === 'C' && (
+          <g fill="#111">
+            {/* Roof */}
+            <polygon points="50,26 73,46 27,46" />
+            {/* Body */}
+            <rect x="33" y="46" width="34" height="28" />
+            {/* Window */}
+            <rect x="42" y="54" width="16" height="8" fill="white" />
+          </g>
+        )}
+
+        {/* D: Informationsplats ('i' sign) */}
+        {letter === 'D' && (
+          <g fill="#111">
+            {/* Dot of i */}
+            <circle cx="50" cy="30" r="5" />
+            {/* Stem of i with serif top and bottom */}
+            <path d="M44 41 L54 41 L54 65 L58 65 L58 70 L42 70 L42 65 L46 65 L46 45 L44 45 Z" />
+          </g>
+        )}
+      </svg>
+    </div>
   );
 };
 
