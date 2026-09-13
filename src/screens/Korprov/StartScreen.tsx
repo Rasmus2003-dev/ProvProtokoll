@@ -20,11 +20,42 @@ import {
 } from 'lucide-react';
 import { triggerHaptic } from '../../lib/utils';
 
-const COMMON_LICENSES = [
-  'B', 'B1', 'BE', 'B96', 'C', 'CE', 'C1', 'C1E', 'D', 'DE', 'A', 'A1', 'A2', 'AM', 'TAXI', 
-  'Traktor (Traktorkort)', 'Snöskoter (Förarbevis)', 'Terränghjuling (ATV)', 'Truck (A+B)', 'Grävmaskin / Hjullastare',
-  'Lokförare', 'Lokförare (Person)', 'Lokförare (Gods)', 'Spårvagn', 'Tunnelbana'
+interface LicenseInfo {
+  id: string;
+  label: string;
+  icon: string;
+  category: 'Personbil' | 'Tung bil/Buss' | 'Tvåhjuling' | 'Yrke/Special' | 'Spårtrafik';
+}
+
+const LICENSE_CONFIG: LicenseInfo[] = [
+  { id: 'B', label: 'B', icon: '🚗', category: 'Personbil' },
+  { id: 'B1', label: 'B1', icon: '🚙', category: 'Personbil' },
+  { id: 'BE', label: 'BE (Släp)', icon: '🚐', category: 'Personbil' },
+  { id: 'B96', label: 'B96 (Utökad B)', icon: '🛞', category: 'Personbil' },
+  { id: 'C', label: 'C (Lastbil)', icon: '🚛', category: 'Tung bil/Buss' },
+  { id: 'CE', label: 'CE (Släp)', icon: '🚚', category: 'Tung bil/Buss' },
+  { id: 'C1', label: 'C1 (Medeltung)', icon: '🛻', category: 'Tung bil/Buss' },
+  { id: 'C1E', label: 'C1E (Släp)', icon: '🚛', category: 'Tung bil/Buss' },
+  { id: 'D', label: 'D (Buss)', icon: '🚌', category: 'Tung bil/Buss' },
+  { id: 'DE', label: 'DE (Ledbuss)', icon: '🚍', category: 'Tung bil/Buss' },
+  { id: 'A', label: 'A (Tung MC)', icon: '🏍️', category: 'Tvåhjuling' },
+  { id: 'A2', label: 'A2 (Mellanstor)', icon: '🛵', category: 'Tvåhjuling' },
+  { id: 'A1', label: 'A1 (Lätt MC)', icon: '🏍️', category: 'Tvåhjuling' },
+  { id: 'AM', label: 'AM (Moped)', icon: '🛵', category: 'Tvåhjuling' },
+  { id: 'TAXI', label: 'TAXI', icon: '🚕', category: 'Yrke/Special' },
+  { id: 'Traktor (Traktorkort)', label: 'Traktor', icon: '🚜', category: 'Yrke/Special' },
+  { id: 'Snöskoter (Förarbevis)', label: 'Snöskoter', icon: '🛷', category: 'Yrke/Special' },
+  { id: 'Terränghjuling (ATV)', label: 'ATV / Fyrhjuling', icon: '🏎️', category: 'Yrke/Special' },
+  { id: 'Truck (A+B)', label: 'Truck (A+B)', icon: '🏗️', category: 'Yrke/Special' },
+  { id: 'Grävmaskin / Hjullastare', label: 'Grävmaskin / Hjullastare', icon: '🚜', category: 'Yrke/Special' },
+  { id: 'Lokförare', label: 'Lokförare', icon: '🚆', category: 'Spårtrafik' },
+  { id: 'Lokförare (Person)', label: 'Lokförare (Person)', icon: '🚅', category: 'Spårtrafik' },
+  { id: 'Lokförare (Gods)', label: 'Lokförare (Gods)', icon: '🚂', category: 'Spårtrafik' },
+  { id: 'Spårvagn', label: 'Spårvagn', icon: '🚋', category: 'Spårtrafik' },
+  { id: 'Tunnelbana', label: 'Tunnelbana', icon: '🚇', category: 'Spårtrafik' },
 ];
+
+const COMMON_LICENSES = LICENSE_CONFIG.map(l => l.id);
 
 // Dynamic Schedule reading directly from Elevregistret
 interface ScheduleItem {
@@ -450,29 +481,53 @@ export function StartScreen() {
               <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/5 pb-2">
                 <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 tracking-wide uppercase flex items-center gap-2">
                   <span className="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">3</span>
-                  Körkortsbehörighet
+                  Körkortsbehörighet & Förarbevis
                 </label>
-                <span className="text-xs font-black text-[#002f6c] dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-md">Vald: {licenseType}</span>
+                {(() => {
+                  const currentLic = LICENSE_CONFIG.find(l => l.id === licenseType);
+                  return (
+                    <span className="text-xs font-black text-[#002f6c] dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-lg flex items-center gap-1.5 border border-blue-200 dark:border-blue-800">
+                      <span className="text-sm">{currentLic?.icon || '🚗'}</span>
+                      <span>{licenseType}</span>
+                    </span>
+                  );
+                })()}
               </div>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                {COMMON_LICENSES.map((lic) => (
-                  <button
-                    key={lic}
-                    type="button"
-                    onClick={() => {
-                      triggerHaptic('light');
-                      handleUpdateProp('licenseType', lic);
-                    }}
-                    className={`h-11 px-2 text-xs font-bold rounded-xl transition-all select-none active:scale-95 cursor-pointer flex items-center justify-center text-center border-2 truncate ${
-                      licenseType === lic
-                        ? 'bg-[#002f6c] dark:bg-blue-600 text-white border-[#002f6c] dark:border-blue-500 shadow-md font-black ring-2 ring-blue-500/20'
-                        : 'bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:border-gray-300 hover:bg-gray-50'
-                    }`}
-                    title={lic}
-                  >
-                    {lic}
-                  </button>
-                ))}
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
+                {LICENSE_CONFIG.map((lic) => {
+                  const isSelected = licenseType === lic.id;
+                  return (
+                    <button
+                      key={lic.id}
+                      type="button"
+                      onClick={() => {
+                        triggerHaptic('light');
+                        handleUpdateProp('licenseType', lic.id);
+                      }}
+                      className={`min-h-[58px] p-2.5 rounded-2xl transition-all select-none active:scale-[0.97] cursor-pointer flex flex-col justify-center items-start text-left border-2 relative overflow-hidden group ${
+                        isSelected
+                          ? 'bg-[#002f6c] dark:bg-blue-600 text-white border-[#002f6c] dark:border-blue-500 shadow-md font-black ring-2 ring-blue-500/20'
+                          : 'bg-white dark:bg-slate-900 text-gray-800 dark:text-slate-200 border-gray-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-slate-700 hover:bg-slate-50/80'
+                      }`}
+                      title={lic.label}
+                    >
+                      <div className="flex items-center gap-2 w-full">
+                        <span className="text-lg shrink-0 group-hover:scale-110 transition-transform duration-150">
+                          {lic.icon}
+                        </span>
+                        <div className="truncate flex-1">
+                          <div className={`text-xs font-extrabold truncate ${isSelected ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
+                            {lic.id}
+                          </div>
+                          <div className={`text-[10px] truncate ${isSelected ? 'text-blue-100 font-medium' : 'text-gray-500 dark:text-slate-400'}`}>
+                            {lic.label.includes('(') ? lic.label.split('(')[1].replace(')', '') : lic.category}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -697,8 +752,9 @@ export function StartScreen() {
                           {item.time}
                         </div>
                         <div className="mt-2 text-right">
-                          <span className="inline-block text-[10px] font-black bg-[#002f6c] text-white dark:bg-slate-700 px-2 py-0.5 rounded-md shadow-sm">
-                            {item.licenseType}
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black bg-[#002f6c] text-white dark:bg-blue-900/60 dark:text-blue-200 px-2 py-0.5 rounded-md shadow-sm">
+                            <span>{LICENSE_CONFIG.find(l => l.id === item.licenseType)?.icon || '🚗'}</span>
+                            <span>{item.licenseType}</span>
                           </span>
                         </div>
                       </div>
