@@ -86,9 +86,9 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
 
   const failureRowsHtml = isFailed
     ? `
-      ${!isOmprovSakerhet && state.result.drivingResult === 'Godkänt' ? `<h2 style="color: green; font-size: 20px; margin: 0 0 15px 0; font-weight: bold;">Din körning är godkänd.</h2>` : ''}
-      ${!isOmprovSakerhet && state.result.drivingResult === 'Underkänt' ? `<h2 style="color: red; font-size: 20px; margin: 0 0 15px 0; font-weight: bold;">Din körning är underkänd.</h2>` : ''}
-      ${isSafetyCheckRequired && !isOmprovKorning && state.result.drivingResult !== 'Underkänt' && state.result.safetyCheckResult === 'Underkänt' ? `<h2 style="color: red; font-size: 20px; margin: 0 0 15px 0; font-weight: bold;">Din säkerhetskontroll är underkänd.</h2>` : ''}
+      ${!isOmprovSakerhet && state.result.drivingResult === 'Godkänt' ? `<h2 style="color: green;">Din körning är godkänd.</h2>` : ''}
+      ${!isOmprovSakerhet && state.result.drivingResult === 'Underkänt' ? `<h2 style="color: red;">Din körning är underkänd.</h2>` : ''}
+      ${isSafetyCheckRequired && !isOmprovKorning && state.result.drivingResult !== 'Underkänt' && state.result.safetyCheckResult === 'Underkänt' ? `<h2 style="color: red;">Din säkerhetskontroll är underkänd.</h2>` : ''}
       ${drivingFail?.primaryCause?.area && state.result.drivingResult === 'Underkänt' ? `
         <b>${state.result.safetyCheckResult === 'Underkänt' ? 'Grundorsak till körningens underkännande är:' : 'Grundorsak till underkännandet är:'}</b><br />
         <div style="border: 3px #C0504D solid; margin-bottom: 10px; padding: 5px; margin-top: 5px;">
@@ -142,8 +142,8 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
       ${state.result.interventionOccurred ? `<div style="margin-top: 10px; margin-bottom: 10px;">Ingripande har förekommit.</div>` : ''}
     `
     : `
-      ${!isOmprovSakerhet && state.result.drivingResult === 'Godkänt' ? `<h2 style="color: green; font-size: 20px; margin: 0 0 15px 0; font-weight: bold;">Din körning är godkänd.</h2>` : ''}
-      ${isSafetyCheckRequired && state.result.safetyCheckResult === 'Godkänt' ? `<h2 style="color: green; font-size: 20px; margin: 10px 0; font-weight: bold;">Din säkerhetskontroll är godkänd.</h2>` : ''}
+      ${!isOmprovSakerhet && state.result.drivingResult === 'Godkänt' ? `<h2 style="color: green;">Din körning är godkänd.</h2>` : ''}
+      ${isSafetyCheckRequired && state.result.safetyCheckResult === 'Godkänt' ? `<h2 style="color: green;">Din säkerhetskontroll är godkänd.</h2>` : ''}
     `;
 
   const includedItemsHtml = state.includedTestItems && state.includedTestItems.length > 0
@@ -179,116 +179,123 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
     <meta charset="UTF-8">
     <title>Resultat från ditt prov - ${studentName}</title>
     <style>
-        body { font-family: Arial, sans-serif; color: #000; margin: 0; padding: 20px; background-color: #fff; }
-        .resultContainer { width: 100%; max-width: 800px; margin: 0 auto; }
-        .infoTable td { padding: 8px 24px 8px 0; vertical-align: top; }
-        .resultHeaderLabel { font-size: 12px; font-weight: bold; color: #555; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 3px; }
-        ul { list-style-type: disc !important; padding-left: 20px !important; }
-        li { list-style-type: disc !important; }
+        body { font-family: Arial, Sans-Serif; }
+        .resultContainer { font-family: Arial, sans-serif; font-size: 11pt; max-width: 730px; color: #000; }
+        .resultContainer h1 { font-size: 18pt; margin: 0; }
+        .resultContainer h2 { font-size: 14pt; }
+        .resultContainer h3 { font-size: 12pt; margin: 0; }
+        .resultContainer .resultHeaderLabel { font-size: 8pt; font-weight: bold; }
+        .resultContainer .infoTable td { padding-right: 20px; padding-bottom: 10px; vertical-align: top; }
+        .resultContainer .resultTable td { padding: 3px; }
         @media print {
-            body { padding: 0; }
-            .print-btn { display: none !important; }
+            .resultContainer .print-btn { display: none; visibility: hidden; }
+        }
+        @media screen and (max-width: 735px) {
+            .resultContainer .print-btn { display: none; visibility: hidden; }
         }
     </style>
 </head>
 <body>
     <div class="resultContainer">
-        <table style="width: 100%; border-collapse: collapse;">
-            <tbody>
-                <tr>
-                    <td style="vertical-align: middle; width: 220px; padding-bottom: 6px;">
-                        <img class="logo" src="${provprotokollLogoImg}" alt="ProvProtokoll" style="max-height: 48px; max-width: 200px; object-fit: contain; display: block;" />
-                    </td>
-                    <td></td>
-                    <td style="vertical-align: middle; text-align: right; padding-bottom: 6px;">
-                        <div class="print-btn">
-                            <a href="javascript:window.print()" style="color: #0066cc; text-decoration: underline; font-size: 13px; font-weight: bold;">Skriv ut</a>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="3" style="border-top: 1px solid #ddd; padding-top: 20px;">
-                        <div style="margin-top: 10px;">
-                            <h1 style="font-size: 24px; margin: 0 0 16px 0; font-weight: bold;">Resultat från ditt prov</h1>
-                            <table class="infoTable" style="width: 100%; border-collapse: collapse;">
-                                <tbody>
-                                    <tr>
-                                        <td style="width: 50%;">
-                                            <div class="resultHeaderLabel">Namn:</div>
-                                            <div>${studentName}</div>
-                                        </td>
-                                        <td style="width: 50%;">
-                                            <div class="resultHeaderLabel">Personnummer:</div>
-                                            <div>${pnr}</div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div class="resultHeaderLabel">Provtyp:</div>
-                                            <div>${testTypeLabel}</div>
-                                        </td>
-                                        <td>
-                                            <div class="resultHeaderLabel">Provdatum:</div>
-                                            <div>${testDate}</div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <div class="resultHeaderLabel">Provförrättare:</div>
-                                            <div>${examiner}</div>
-                                        </td>
-                                        <td></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
+        <table style="width:100%">
+            <tr>
+                <td width="195" style="vertical-align: top; width: 195px">
+                    <img class="logo" src="${provprotokollLogoImg}" alt="ProvProtokoll" style="max-width: 195px; max-height: 52px; object-fit: contain;" />
+                </td>
+                <td></td>
+                <td style="vertical-align: top; text-align: right;">
+                    <div class="print-btn">
+                        <a href="javascript:window.print()" style="color: #0066cc; text-decoration: underline; font-size: 9pt;">Skriv ut</a>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3">
+                    <div style="margin-top: 30px;">
+                        <h1>Resultat från ditt prov</h1>
+                        <table class="infoTable">
+                            <tr>
+                                <td>
+                                    <div class="resultHeaderLabel">Namn:</div>
+                                    ${studentName}
+                                </td>
+                                <td>
+                                    <div class="resultHeaderLabel">Personnummer:</div>
+                                    ${pnr}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="resultHeaderLabel">Provtyp:</div>
+                                    ${testTypeLabel}
+                                </td>
+                                <td>
+                                    <div class="resultHeaderLabel">Provdatum:</div>
+                                    ${testDate}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="resultHeaderLabel">Provförrättare:</div>
+                                    ${examiner}
+                                </td>
+                                <td></td>
+                            </tr>
+                        </table>
+                    </div>
+                </td>
+            </tr>
         </table>
+    </div>
+    <br />
+    <div>
+        <b>Behörighetsinformation</b><br />
+        ${behorighetText}
+    </div>
+    <br />
 
+    <div class="resultBody">
+        <table class="resultTable">
+            <tr>
+                <td>
+                    <b>Prov</b>
+                </td>
+                <td>
+                    <b>Resultat</b>
+                </td>
+            </tr>
+            ${showDrivingRow ? `
+            <tr>
+                <td style="padding-right: 50px;">
+                    Körning
+                </td>
+                <td>
+                    ${drivingResultText}
+                </td>
+            </tr>` : ''}
+            ${showSafetyCheckRow ? `
+            <tr>
+                <td style="padding-right: 50px;">
+                    Säkerhetskontroll
+                </td>
+                <td>
+                    ${!isOmprovSakerhet && state.result.drivingResult === 'Underkänt' ? '-' : (state.result.safetyCheckResult || '-')}
+                </td>
+            </tr>` : ''}
+        </table>
         <br />
         <div>
-            <b>Behörighetsinformation</b><br />
-            ${behorighetText}
+            ${legislationText}<br />
+            Här ser du ditt resultat inom provets olika ämnesområden.
         </div>
         <br />
 
-        <div class="resultBody">
-            <table style="border-collapse: collapse; width: 100%;">
-                <tbody>
-                    <tr style="border-bottom: 1px solid #000;">
-                        <td style="padding: 0 50px 8px 0;"><b>Prov</b></td>
-                        <td style="padding: 0 0 8px 0;"><b>Resultat</b></td>
-                    </tr>
-                    ${showDrivingRow ? `
-                    <tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 8px 50px 8px 0;">Körning</td>
-                        <td style="padding: 8px 0;">${drivingResultText}</td>
-                    </tr>` : ''}
-                    ${showSafetyCheckRow ? `
-                    <tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 8px 50px 8px 0;">Säkerhetskontroll</td>
-                        <td style="padding: 8px 0;">${!isOmprovSakerhet && state.result.drivingResult === 'Underkänt' ? '-' : (state.result.safetyCheckResult || '-')}</td>
-                    </tr>` : ''}
-                </tbody>
-            </table>
+        ${failureRowsHtml}
 
-            <br />
-            <div>
-                ${legislationText}<br />
-                Här ser du ditt resultat inom provets olika ämnesområden.
-            </div>
-            <br />
+        <span><b>Följande provinnehåll har ingått i ditt körprov:</b></span>
+        ${includedItemsHtml}
 
-            ${failureRowsHtml}
-
-            <br />
-            <span><b>Följande provinnehåll har ingått i ditt körprov:</b></span>
-            ${includedItemsHtml}
-
-            ${closingHtml}
-        </div>
+        ${closingHtml}
     </div>
 </body>
 </html>`;
@@ -315,14 +322,17 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
   <title>Resultat från ditt prov - ${studentName}</title>
   ${styleTag}
 </head>
-<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial,Helvetica,sans-serif;">
-  <div style="max-width:800px;margin:0 auto;padding:28px 24px;background-color:#ffffff;">
-    <p style="margin:0 0 12px 0;font-size:14px;color:#111;">Hej!</p>
-    <p style="margin:0 0 12px 0;font-size:14px;color:#111;line-height:1.5;">Du har nyligen gjort körprov hos oss. Resultatet kan du läsa nedan.</p>
-    <p style="margin:0 0 24px 0;font-size:13px;color:#555;line-height:1.4;">Vänliga hälsningar,<br />ProvProtokoll</p>
-    <hr style="margin:0 0 28px 0;border:none;border-top:1px solid #e2e8f0;" />
+<body style="font-family: Arial, Sans-Serif;">
+    Hej!<br />
+    <br />
+    Du har nyligen gjort körprov hos oss. Resultatet kan du läsa nedan.<br />
+    <br />
+    Vänliga hälsningar,<br />
+    ProvProtokoll<br />
+    <br />
+    <hr />
+    <br />
     ${bodyContent}
-  </div>
 </body>
 </html>`;
 }
