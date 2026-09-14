@@ -297,12 +297,19 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
 </html>`;
 }
 
+// Mejlklienter kan inte läsa Vites internt bundlade bild-URL:er, så logotypen
+// måste peka på en absolut, publikt nåbar adress i mejlversionen.
+const EMAIL_LOGO_URL = 'https://protokoll.rasmusl.se/provprotokoll_logo.png';
+
 export function generateEmailProtocolHtml(state: AppState, inspectorName?: string): string {
   const studentName = state.properties.studentName || 'Förnamn Efternamn';
   const protocolHtml = generateOfficialProtocolHtml(state, inspectorName);
   const styleMatch = protocolHtml.match(/<style>[\s\S]*?<\/style>/);
   const styleTag = styleMatch ? styleMatch[0] : '';
-  const bodyContent = protocolHtml.replace(/^[\s\S]*<body>/, '').replace(/<\/body>[\s\S]*$/, '');
+  const bodyContent = protocolHtml
+    .replace(/^[\s\S]*<body>/, '')
+    .replace(/<\/body>[\s\S]*$/, '')
+    .replace(/src="[^"]*"(\s+alt="ProvProtokoll")/, `src="${EMAIL_LOGO_URL}"$1`);
 
   return `<!DOCTYPE html>
 <html lang="sv">
@@ -311,12 +318,12 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
   <title>Körprovsresultat - ${studentName}</title>
   ${styleTag}
 </head>
-<body style="margin:0;padding:20px;background-color:#ffffff;font-family:Arial,Helvetica,sans-serif;">
-  <div style="max-width:800px;margin:0 auto;">
-    <p>Hej!</p>
-    <p>Du har nyligen gjort körprov hos oss. Resultatet kan du läsa nedan.</p>
-    <p>Vänliga hälsningar,<br />ProvProtokoll</p>
-    <hr style="margin:24px 0;border:none;border-top:1px solid #e2e8f0;" />
+<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial,Helvetica,sans-serif;">
+  <div style="max-width:800px;margin:0 auto;padding:28px 24px;background-color:#ffffff;">
+    <p style="margin:0 0 12px 0;font-size:14px;color:#111;">Hej!</p>
+    <p style="margin:0 0 12px 0;font-size:14px;color:#111;line-height:1.5;">Du har nyligen gjort körprov hos oss. Resultatet kan du läsa nedan.</p>
+    <p style="margin:0 0 24px 0;font-size:13px;color:#555;line-height:1.4;">Vänliga hälsningar,<br />ProvProtokoll</p>
+    <hr style="margin:0 0 28px 0;border:none;border-top:1px solid #e2e8f0;" />
     ${bodyContent}
   </div>
 </body>
