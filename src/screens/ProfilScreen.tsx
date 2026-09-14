@@ -136,7 +136,7 @@ export function ProfilScreen() {
         <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 rounded-2xl text-emerald-900 dark:text-emerald-300 text-sm font-semibold flex items-center justify-between shadow-sm animate-in fade-in">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-            <span>Profilen och signaturinställningarna har sparats och synkroniserats!</span>
+            <span>Profilen och signaturinställningarna har sparats och synkroniserats.</span>
           </div>
           <button onClick={() => setShowNotification(false)} className="text-emerald-700 dark:text-emerald-400 font-bold text-xs uppercase hover:underline">
             Stäng
@@ -469,7 +469,7 @@ export function ProfilScreen() {
                   }
                   localStorage.setItem('provprotokoll-rasmus-password', newP);
                   updateUserPassword(newP).catch(console.warn);
-                  alert('Lösenordet har uppdaterats framgångsrikt!');
+                  alert('Lösenordet har uppdaterats.');
                   target.reset();
                 }}
                 className="space-y-3 pt-1"

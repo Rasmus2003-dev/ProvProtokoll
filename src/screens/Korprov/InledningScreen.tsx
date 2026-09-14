@@ -56,7 +56,7 @@ export function InledningScreen() {
           <span>Inledning & Information</span>
           {allChecked && (
             <span className="inline-flex items-center gap-1 text-xs font-bold bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 px-2.5 py-0.5 rounded-full">
-              Klar för start ✓
+              Klar för start
             </span>
           )}
         </h1>

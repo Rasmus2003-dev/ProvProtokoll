@@ -174,7 +174,7 @@ export function LathundModal({ isOpen, onClose, defaultDocId, defaultLicense = '
                 </div>
 
                 <div className="p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/40 rounded-xl text-xs sm:max-w-xs text-blue-950 dark:text-blue-200 font-medium">
-                  <div className="font-extrabold uppercase text-[10px] text-blue-700 dark:text-blue-400 tracking-wider mb-0.5">⏱ Körtidskrav</div>
+                  <div className="font-extrabold uppercase text-[10px] text-blue-700 dark:text-blue-400 tracking-wider mb-0.5">Körtidskrav</div>
                   {currentGuide.driveTime}
                 </div>
               </div>

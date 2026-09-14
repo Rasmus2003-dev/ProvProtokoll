@@ -214,17 +214,11 @@ export function generateProtocolPdf(state: AppState, inspectorName?: string) {
     y += 20;
   }
 
-  if (isSafetyCheckRequired && !isOmprovKorning && state.result.safetyCheckResult === 'Underkänt') {
+  if (isSafetyCheckRequired && !isOmprovKorning && state.result.drivingResult !== 'Underkänt' && state.result.safetyCheckResult === 'Underkänt') {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(16);
     doc.setTextColor(215, 0, 0);
     doc.text('Din säkerhetskontroll är underkänd.', margin, y);
-    y += 20;
-  } else if (isSafetyCheckRequired && !isOmprovKorning && state.result.safetyCheckResult === 'Godkänt' && state.result.drivingResult === 'Underkänt') {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.setTextColor(0, 128, 0);
-    doc.text('Din säkerhetskontroll är godkänd.', margin, y);
     y += 20;
   }
 

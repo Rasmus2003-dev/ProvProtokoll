@@ -37,7 +37,7 @@ export const B_PERSONBIL_QUESTIONS: Question[] = [
     sign: { type: "vajningsplikt" },
     question: "Vad innebär detta vägmärke?",
     options: [
-      "Du har stopplikt och muste alltid stanna innan du kör vidare",
+      "Du har stopplikt och måste alltid stanna innan du kör vidare",
       "Du har väjningsplikt mot trafik på den korsande vägen",
       "Varning för en farlig vägkorsning framöver",
       "Märket anger att korsande trafik har väjningsplikt mot dig"
@@ -242,7 +242,7 @@ export const B_PERSONBIL_QUESTIONS: Question[] = [
       "Jag kontrollerar servooljans färg med en teststicka i avgasröret"
     ],
     correct: 1,
-    explanation: "Genom att dra i ratten (belasta styrsystemet) innan du startar motorn, och sedan starta, känner du tydligt när servon slår igång eftersom ratten plötsligt blir mycket lättare å ratta."
+    explanation: "Genom att dra i ratten (belasta styrsystemet) innan du startar motorn, och sedan starta, känner du tydligt när servon slår igång eftersom ratten plötsligt blir mycket lättare att ratta."
   },
   {
     id: 18,
@@ -1004,7 +1004,7 @@ export const HEAVY_QUESTIONS: Question[] = [
       "Ett tillsatsmedel i spolarvätskan för att förhindra isbildning på strålkastarna",
       "En urealösning som sprutas in i avgassystemet (SCR-katalysatorn) för att omvandla skadliga kväveoxider (NOx) till ofarligt kväve och vatten",
       "Ett smörjmedel till växellådan för att minska buller",
-      "Ett bränsleadditiv som ökar motorns hstkrafter med 20%"
+      "Ett bränsleadditiv som ökar motorns hästkrafter med 20%"
     ],
     correct: 1,
     explanation: "AdBlue används i SCR-systemet (Selective Catalytic Reduction) på moderna dieselmotorer för att drastiskt reducera utsläppen av hälsofarliga kväveoxider (NOx) och uppfylla stränga utsläppskrav."
@@ -1231,7 +1231,7 @@ export const CE_SLAP_QUESTIONS: Question[] = [
   {
     id: 802,
     categoryId: 1,
-    question: "Varför har en släpvagn till en tung lastbil en så kallad 'katastrofventil' (avbnytningsventil) på tryckluftsslangen?",
+    question: "Varför har en släpvagn till en tung lastbil en så kallad 'katastrofventil' (avbrytningsventil) på tryckluftsslangen?",
     options: [
       "För att tömma däcken på luft om fordonet välter",
       "För att omedelbart katastrofbromsa släpet automatiskt om det skulle lossna från dragbilen under körning",

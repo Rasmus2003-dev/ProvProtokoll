@@ -337,7 +337,7 @@ export function DagensProvScreen() {
                       }}
                       className="px-4 py-2.5 bg-[#002f6c] dark:bg-blue-600 hover:bg-[#001f48] dark:hover:bg-blue-500 text-white text-xs font-black uppercase tracking-wider rounded-xl flex items-center gap-2 shadow-xs hover:shadow-md transition-all active:scale-95 cursor-pointer"
                     >
-                      <span>Välj & Starta</span>
+                      <span>Välj och starta</span>
                       <ChevronRight className="w-4 h-4 stroke-[3]" />
                     </button>
                   </div>
@@ -361,7 +361,7 @@ export function DagensProvScreen() {
         <div>PROV-ID: <span className="font-bold text-gray-800 dark:text-zinc-200">2026-05-19-0013</span></div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-          Autosync aktiv (Senast 09:24)
+          Automatisk synkronisering aktiv (Senast 09:24)
         </div>
       </div>
 
@@ -463,7 +463,7 @@ export function DagensProvScreen() {
                   type="submit"
                   className="flex-1 px-4 py-4 bg-[#002f6c] dark:bg-blue-600 text-white font-bold text-[13px] rounded-xl hover:bg-[#001d4a] dark:hover:bg-blue-500 uppercase tracking-wider transition-colors shadow-md cursor-pointer active:scale-[0.98]"
                 >
-                  Spara & Lägg Till
+                  Spara och lägg till
                 </button>
               </div>
             </form>

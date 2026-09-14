@@ -97,7 +97,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             name: userName,
             email: data.user.email || sbEmail,
           });
-          setSbMessage({ type: 'success', text: `Inloggad via Supabase som ${userName}!` });
+          setSbMessage({ type: 'success', text: `Inloggad via Supabase som ${userName}.` });
           setTimeout(() => {
             onClose();
           }, 1000);
@@ -107,9 +107,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         if (error) throw error;
         setSbMessage({ 
           type: 'success', 
-          text: data.session 
-            ? 'Konto skapat och inloggad!' 
-            : 'Bekräftelselänk har skickats till din e-post!' 
+          text: data.session
+            ? 'Konto skapat och inloggad.'
+            : 'Bekräftelselänk har skickats till din e-post.'
         });
       }
     } catch (err: any) {

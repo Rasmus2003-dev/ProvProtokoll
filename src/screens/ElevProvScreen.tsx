@@ -408,7 +408,7 @@ export function ElevProvScreen() {
       utterance.rate = 0.95;
       window.speechSynthesis.speak(utterance);
     } else {
-      alert("Hoppsan! Röstuppläsning stöds tyvärr inte i denna webbläsare.");
+      alert("Röstuppläsning stöds inte i denna webbläsare.");
     }
   };
 

@@ -378,8 +378,7 @@ export function ResultatScreen() {
                 
                 {!isAssessmentComplete ? (
                   <div className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 p-4 rounded-xl flex items-center gap-3 shadow-sm font-medium">
-                    <span className="text-base text-slate-400">⏳</span>
-                    <span>Väntar på bedömning – markera provresultat ovan.</span>
+                    <span>Väntar på bedömning. Markera provresultat ovan.</span>
                   </div>
                 ) : !hasFailed ? (
                   <div className="text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800/40 p-4 rounded-xl flex items-center gap-3 shadow-sm">
@@ -404,12 +403,7 @@ export function ResultatScreen() {
                           <span>✗</span> Din körning är underkänd.
                         </div>
                       )}
-                      {SAFETY_CHECK_LICENSES.includes(licenseType) && !isOmprovKorning && state.result.safetyCheckResult === 'Godkänt' && state.result.drivingResult === 'Underkänt' && (
-                        <div className="text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
-                          <span>✓</span> Din säkerhetskontroll är godkänd.
-                        </div>
-                      )}
-                      {SAFETY_CHECK_LICENSES.includes(licenseType) && !isOmprovKorning && state.result.safetyCheckResult === 'Underkänt' && (
+                      {SAFETY_CHECK_LICENSES.includes(licenseType) && !isOmprovKorning && state.result.drivingResult !== 'Underkänt' && state.result.safetyCheckResult === 'Underkänt' && (
                         <div className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
                           <span>✗</span> Din säkerhetskontroll är underkänd.
                         </div>
@@ -559,7 +553,7 @@ export function ResultatScreen() {
                 
                 {state.result.interventionOccurred ? (
                   <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/40 p-3 rounded-xl shadow-sm text-xs font-bold text-red-700 dark:text-red-400 flex items-center gap-2">
-                    <span>⚠️</span> Ja — Ingripande har förekommit.
+                    <span>Ja</span> — Ingripande har förekommit.
                   </div>
                 ) : (
                   <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-3 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 shadow-sm flex items-center gap-2">
@@ -572,7 +566,7 @@ export function ResultatScreen() {
               {state.result.testAborted && (
                 <div className="pt-4 border-t border-slate-100 dark:border-white/5 space-y-2 animate-fade-in">
                   <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/40 text-red-800 dark:text-red-300 p-3 rounded-xl text-xs font-bold shadow-sm flex items-center gap-2">
-                    <span>🚨</span> Ja — Provet har avbrutits i förtid.
+                    <span>Ja</span> — Provet har avbrutits i förtid.
                   </div>
                 </div>
               )}
@@ -625,7 +619,7 @@ export function ResultatScreen() {
                     </span>
                     {state.properties.transmission === 'Automat' && (
                       <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-2xs">
-                        ⚡ Automat (78)
+                        Automat (78)
                       </span>
                     )}
                     {state.properties.tachograph === 'Utan färdskrivare' && (
@@ -804,7 +798,6 @@ export function ResultatScreen() {
                       </div>
                       {(isAssessmentOnly || isTaxi) && complete && !anyFail && (
                         <div className="mt-3 text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2 shadow-2xs">
-                          <span className="text-blue-600 dark:text-blue-400 font-bold">ℹ️</span>
                           <span>Ingen behörighet uppnådd</span>
                         </div>
                       )}

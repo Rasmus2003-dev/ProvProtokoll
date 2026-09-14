@@ -3,7 +3,7 @@ import { useAppStore } from '../../store/ProvContext';
 import { Button } from '../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { OfficialPrintLayout } from './components/OfficialPrintLayout';
-import { AlertTriangle, Send, FileCheck, Mail, Copy, Check } from 'lucide-react';
+import { AlertTriangle, Send, FileCheck, Mail, Copy, Check, Loader2, MailCheck, MailX } from 'lucide-react';
 import { generateProtocolPdf } from '../../lib/generateProtocolPdf';
 import { downloadProtocolHtml, downloadEmailProtocolHtml, generateEmailProtocolHtml } from '../../lib/generateProtocolHtml';
 
@@ -14,21 +14,38 @@ export function ProtokollScreen() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [copiedEmailHtml, setCopiedEmailHtml] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isGeneratingHtml, setIsGeneratingHtml] = useState(false);
+  const [isGeneratingEmailHtml, setIsGeneratingEmailHtml] = useState(false);
+  const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const handlePrint = () => {
     window.print();
   };
 
   const handleDownloadPDF = () => {
-    generateProtocolPdf(state, profile?.name);
+    setIsGeneratingPdf(true);
+    setTimeout(() => {
+      generateProtocolPdf(state, profile?.name);
+      setIsGeneratingPdf(false);
+    }, 50);
   };
 
   const handleDownloadHTML = () => {
-    downloadProtocolHtml(state, profile?.name);
+    setIsGeneratingHtml(true);
+    setTimeout(() => {
+      downloadProtocolHtml(state, profile?.name);
+      setIsGeneratingHtml(false);
+    }, 50);
   };
 
   const handleDownloadEmailHTML = () => {
-    downloadEmailProtocolHtml(state, profile?.name);
+    setIsGeneratingEmailHtml(true);
+    setTimeout(() => {
+      downloadEmailProtocolHtml(state, profile?.name);
+      setIsGeneratingEmailHtml(false);
+    }, 50);
   };
 
   const handleCopyEmailHTML = () => {
@@ -43,6 +60,43 @@ export function ProtokollScreen() {
     saveTest();
     resetCurrentTest();
     navigate('/');
+  };
+
+  const handleSendEmail = async () => {
+    const recipient = state.properties.email;
+    if (!recipient) {
+      setSendStatus('error');
+      setSendError('Kandidatens e-postadress saknas.');
+      return;
+    }
+
+    setSendStatus('sending');
+    setSendError(null);
+
+    try {
+      const html = generateEmailProtocolHtml(state, profile?.name);
+      const res = await fetch('/api/send-protocol', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: recipient,
+          toName: state.properties.studentName,
+          subject: `Resultat på ditt körprov – ${state.properties.testType || 'Körprov'} (${state.properties.licenseType || 'B'})`,
+          html,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Kunde inte skicka mejlet.');
+      }
+
+      setSendStatus('sent');
+      setTimeout(() => setSendStatus('idle'), 4000);
+    } catch (e: any) {
+      setSendStatus('error');
+      setSendError(e.message || 'Ett oväntat fel inträffade.');
+    }
   };
 
   const licenseType = state.properties.licenseType || 'B';
@@ -130,34 +184,44 @@ export function ProtokollScreen() {
               <span>HTML-mejl</span>
             </Button>
 
-            <Button 
-              variant="outline" 
-              onClick={handleDownloadPDF} 
-              className="bg-white rounded-xl px-2.5 sm:px-4 py-2 border border-teal-200 text-teal-700 hover:bg-teal-50 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5"
+            <Button
+              variant="outline"
+              onClick={handleDownloadPDF}
+              disabled={isGeneratingPdf}
+              className="bg-white rounded-xl px-2.5 sm:px-4 py-2 border border-teal-200 text-teal-700 hover:bg-teal-50 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-70 disabled:cursor-wait transition-opacity"
             >
-              <svg className="w-4 h-4 text-teal-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span>Hämta PDF</span>
+              {isGeneratingPdf ? (
+                <Loader2 className="w-4 h-4 text-teal-600 shrink-0 animate-spin" />
+              ) : (
+                <svg className="w-4 h-4 text-teal-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              )}
+              <span>{isGeneratingPdf ? 'Genererar...' : 'Hämta PDF'}</span>
             </Button>
 
-            <Button 
-              variant="outline" 
-              onClick={handleDownloadHTML} 
-              className="bg-white rounded-xl px-2.5 sm:px-4 py-2 border border-indigo-200 text-indigo-700 hover:bg-indigo-50 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5 col-span-1 sm:col-span-auto"
+            <Button
+              variant="outline"
+              onClick={handleDownloadHTML}
+              disabled={isGeneratingHtml}
+              className="bg-white rounded-xl px-2.5 sm:px-4 py-2 border border-indigo-200 text-indigo-700 hover:bg-indigo-50 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5 col-span-1 sm:col-span-auto disabled:opacity-70 disabled:cursor-wait transition-opacity"
               title="Ladda ned officiellt protokoll som HTML-fil"
             >
-              <svg className="w-4 h-4 text-indigo-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-              </svg>
-              <span>HTML</span>
+              {isGeneratingHtml ? (
+                <Loader2 className="w-4 h-4 text-indigo-600 shrink-0 animate-spin" />
+              ) : (
+                <svg className="w-4 h-4 text-indigo-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+              )}
+              <span>{isGeneratingHtml ? 'Genererar...' : 'HTML'}</span>
             </Button>
             
             <Button 
               onClick={() => setShowConfirmModal(true)} 
               className="bg-emerald-600 hover:bg-emerald-700 text-white border-transparent rounded-xl px-3 sm:px-5 py-2 shadow-sm font-bold text-xs transition-all flex items-center justify-center col-span-1 sm:col-span-auto"
             >
-              Spara & Slutför
+              Spara och slutför
             </Button>
           </div>
         </div>
@@ -209,20 +273,22 @@ export function ProtokollScreen() {
                   className="bg-white hover:bg-violet-50 text-violet-700 border-violet-200 text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 font-bold"
                 >
                   {copiedEmailHtml ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
-                  <span>{copiedEmailHtml ? 'Kopierat!' : 'Kopiera HTML-kod'}</span>
+                  <span>{copiedEmailHtml ? 'Kopierat' : 'Kopiera HTML-kod'}</span>
                 </Button>
                 <Button
                   size="sm"
                   onClick={handleDownloadEmailHTML}
-                  className="bg-violet-600 hover:bg-violet-700 text-white text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 font-bold"
+                  disabled={isGeneratingEmailHtml}
+                  className="bg-violet-600 hover:bg-violet-700 text-white text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 font-bold disabled:opacity-70 disabled:cursor-wait transition-opacity"
                 >
-                  <span>Ladda ned HTML-mejl</span>
+                  {isGeneratingEmailHtml && <Loader2 size={13} className="animate-spin" />}
+                  <span>{isGeneratingEmailHtml ? 'Genererar...' : 'Ladda ned HTML-mejl'}</span>
                 </Button>
               </div>
             </div>
             <div className="flex border-b border-gray-200 pb-1">
               <span className="w-16 font-bold text-gray-400 uppercase tracking-wider text-[9px]">Från:</span>
-              <span className="text-gray-950 font-semibold">Digitalt Provprotokoll &lt;noreply@provprotokoll.se&gt;</span>
+              <span className="text-gray-950 font-semibold">ProvProtokoll &lt;info@rasmusl.se&gt;</span>
             </div>
             <div className="flex border-b border-gray-200 pb-1">
               <span className="w-16 font-bold text-gray-400 uppercase tracking-wider text-[9px]">Till:</span>
@@ -235,6 +301,36 @@ export function ProtokollScreen() {
             <div className="flex">
               <span className="w-16 font-bold text-gray-400 uppercase tracking-wider text-[9px]">Ämne:</span>
               <span className="text-black font-bold text-[12px]">Resultat på ditt körprov – {state.properties.testType || 'Körprov'} ({licenseType})</span>
+            </div>
+
+            <div className="pt-3 border-t border-gray-200 flex items-center justify-between gap-3">
+              <div className="text-[11px] text-gray-500">
+                {sendStatus === 'error' && sendError && (
+                  <span className="text-red-600 font-semibold">{sendError}</span>
+                )}
+                {sendStatus === 'sent' && (
+                  <span className="text-emerald-600 font-semibold">Mejlet har skickats till kandidaten.</span>
+                )}
+                {sendStatus === 'idle' && !state.properties.email && (
+                  <span className="text-amber-600 font-semibold">Ingen e-postadress angiven för kandidaten.</span>
+                )}
+              </div>
+              <Button
+                size="sm"
+                onClick={handleSendEmail}
+                disabled={sendStatus === 'sending' || !state.properties.email}
+                className={`text-white text-xs h-9 px-4 rounded-lg flex items-center gap-1.5 font-bold shrink-0 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity ${
+                  sendStatus === 'sent' ? 'bg-emerald-600 hover:bg-emerald-600' : 'bg-emerald-600 hover:bg-emerald-700'
+                }`}
+              >
+                {sendStatus === 'sending' && <Loader2 size={14} className="animate-spin" />}
+                {sendStatus === 'sent' && <MailCheck size={14} />}
+                {sendStatus === 'error' && <MailX size={14} />}
+                {sendStatus === 'idle' && <Send size={14} />}
+                <span>
+                  {sendStatus === 'sending' ? 'Skickar...' : sendStatus === 'sent' ? 'Skickat' : sendStatus === 'error' ? 'Försök igen' : 'Skicka till kandidaten'}
+                </span>
+              </Button>
             </div>
             <div className="pt-2 pb-1 border-t border-gray-200 text-gray-800 text-xs leading-relaxed space-y-2">
               <p>Hej {state.properties.studentName || 'Kandidat'}!</p>
@@ -307,7 +403,7 @@ export function ProtokollScreen() {
                   className="border-gray-300 dark:border-zinc-700 text-xs font-bold flex items-center gap-1.5 h-10 px-4 rounded-xl"
                 >
                   {copiedEmailHtml ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                  <span>{copiedEmailHtml ? 'HTML-kod kopierad!' : 'Kopiera HTML-kod'}</span>
+                  <span>{copiedEmailHtml ? 'HTML-kod kopierad' : 'Kopiera HTML-kod'}</span>
                 </Button>
                 <Button
                   onClick={handleDownloadEmailHTML}

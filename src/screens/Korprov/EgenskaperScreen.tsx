@@ -147,7 +147,7 @@ export function EgenskaperScreen() {
                   {state.properties.studentName || 'Kandidat saknas'}
                 </h3>
                 <span className="text-[10px] font-black tracking-widest uppercase px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-990 text-emerald-800 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/20">
-                  Leg. Klar ✓
+                  Legitimation kontrollerad
                 </span>
               </div>
               <p className="text-xs text-gray-500 dark:text-zinc-400 font-mono mt-0.5">
@@ -233,11 +233,11 @@ export function EgenskaperScreen() {
                   <div className="flex items-center gap-2">
                     <ShieldAlert className={loadedFromHistory ? 'text-emerald-600' : 'text-amber-500'} size={18} />
                     <h4 className={`font-extrabold text-sm sm:text-base ${loadedFromHistory ? 'text-emerald-900 dark:text-emerald-400' : 'text-amber-900 dark:text-amber-400'}`}>
-                      {loadedFromHistory ? 'Information och kuggade moment är överförda!' : 'Kandidaten kuggades i föregående prov'}
+                      {loadedFromHistory ? 'Information och underkända moment har överförts' : 'Kandidaten blev underkänd i föregående prov'}
                     </h4>
                   </div>
                   <p className="text-xs sm:text-sm text-gray-500 dark:text-zinc-400 leading-relaxed max-w-2xl">
-                    Kandidaten fick underkänt i klassen <strong className="font-bold text-gray-800 dark:text-white">{previousFailedTest.properties.licenseType}</strong> på sitt prov den {previousFailedTest.properties.testDate}. Kuggade områden inkluderade <strong className="font-semibold text-red-600 dark:text-red-400 font-mono">{([...(previousFailedTest.result.drivingFailure?.situations || []), ...(previousFailedTest.result.safetyCheckFailure?.situations || [])]).join(', ') || 'prov-moment'}</strong>.
+                    Kandidaten fick underkänt i klassen <strong className="font-bold text-gray-800 dark:text-white">{previousFailedTest.properties.licenseType}</strong> på sitt prov den {previousFailedTest.properties.testDate}. Underkända områden omfattade <strong className="font-semibold text-red-600 dark:text-red-400 font-mono">{([...(previousFailedTest.result.drivingFailure?.situations || []), ...(previousFailedTest.result.safetyCheckFailure?.situations || [])]).join(', ') || 'provmoment'}</strong>.
                   </p>
                 </div>
                 
@@ -253,12 +253,12 @@ export function EgenskaperScreen() {
                   {loadedFromHistory ? (
                     <>
                       <Check size={14} />
-                      <span>Hämtat & Konfigurerat ✓</span>
+                      <span>Hämtat och konfigurerat</span>
                     </>
                   ) : (
                     <>
                       <History size={14} />
-                      <span>Läs in kuggade delar</span>
+                      <span>Läs in underkända delar</span>
                     </>
                   )}
                 </button>
@@ -523,7 +523,7 @@ export function EgenskaperScreen() {
                   <span>Automatisk profil</span>
                 </div>
                 <p className="text-[10px] text-gray-500 dark:text-zinc-400 leading-normal">
-                  När provet körs igång laddas automatiskt bransch-standardiserade moment baserat på lagstiftningen för {state.properties.licenseType || 'B'}-behörighet. De kuggade provsdelarna markeras automatiskt vid körprovssessionen.
+                  När provet startas laddas automatiskt branschstandardiserade moment baserat på lagstiftningen för {state.properties.licenseType || 'B'}-behörighet. De underkända provdelarna markeras automatiskt vid körprovet.
                 </p>
               </div>
             </CardContent>

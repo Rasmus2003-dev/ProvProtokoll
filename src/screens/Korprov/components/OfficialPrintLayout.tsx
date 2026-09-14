@@ -250,14 +250,9 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
                 Din körning är underkänd.
               </h2>
             )}
-            {isSafetyCheckRequired && !isOmprovKorning && state.result.safetyCheckResult === 'Underkänt' && (
+            {isSafetyCheckRequired && !isOmprovKorning && state.result.drivingResult !== 'Underkänt' && state.result.safetyCheckResult === 'Underkänt' && (
               <h2 style={{ color: 'red', fontSize: '20px', margin: '0 0 15px 0', fontWeight: 'bold' }}>
                 Din säkerhetskontroll är underkänd.
-              </h2>
-            )}
-            {isSafetyCheckRequired && !isOmprovKorning && state.result.safetyCheckResult === 'Godkänt' && state.result.drivingResult === 'Underkänt' && (
-              <h2 style={{ color: 'green', fontSize: '20px', margin: '10px 0', fontWeight: 'bold' }}>
-                Din säkerhetskontroll är godkänd.
               </h2>
             )}
 
@@ -391,15 +386,15 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
             <span><b>Vad händer nu?</b></span>
             {isTaxi ? (
               <p style={{ margin: '5px 0 0 0', lineHeight: '1.5' }}>
-                Grattis till godkänt taxiförarprov! Du kan nu ansöka om <strong>taxiförarlegitimation</strong> hos Transportstyrelsen enligt taxitrafiklagen (2012:211). Legitimationen utfärdas efter prövning av övriga krav.
+                Du har blivit godkänd på taxiförarprovet. Du kan nu ansöka om <strong>taxiförarlegitimation</strong> hos Transportstyrelsen enligt taxitrafiklagen (2012:211). Legitimationen utfärdas efter prövning av övriga krav.
               </p>
             ) : isAssessmentOnly ? (
               <p style={{ margin: '5px 0 0 0', lineHeight: '1.5' }}>
-                Grattis till ett godkänt bedömningsprov! Du uppfyller de formella kompetenskraven för körbedömning. Du kan nu bifoga detta intyg för ansökan och behörighetsprövning till <strong>trafiklärarutbildning</strong> samt vidare prövning för <strong>förarprövar- / inspektörsbehörighet</strong>.
+                Du har blivit godkänd på bedömningsprovet. Du uppfyller de formella kompetenskraven för körbedömning. Du kan nu bifoga detta intyg för ansökan och behörighetsprövning till <strong>trafiklärarutbildning</strong> samt vidare prövning för <strong>förarprövar- eller inspektörsbehörighet</strong>.
               </p>
             ) : (
               <p style={{ margin: '5px 0 0 0', lineHeight: '1.5' }}>
-                Grattis till ditt körkort! Du kan nu köra med en giltig legitimation i Sverige tills du har fått ditt körkort, dock i max två månader.
+                Du har blivit godkänd på ditt körprov. Du kan nu köra med en giltig legitimation i Sverige till dess att du har fått ditt körkort, dock i högst två månader.
               </p>
             )}
           </div>

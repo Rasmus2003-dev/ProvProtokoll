@@ -85,7 +85,7 @@ export function PWAInstallBanner() {
             <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5 leading-snug">
               {isIOS 
                 ? 'Tryck på Dela-knappen (mitten längst ner) och välj "Lägg till på hemskärmen".' 
-                : 'Installera appen på din enhet för blixtsnabb åtkomst & offline-stöd.'}
+                : 'Installera appen på din enhet för snabbare åtkomst och stöd för offline-läge.'}
             </p>
           </div>
         </div>

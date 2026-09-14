@@ -1,7 +1,5 @@
-export const config = { runtime: 'edge' };
-
-export default function handler() {
+export const onRequestGet: PagesFunction = async () => {
   return new Response(JSON.stringify({ status: 'ok' }), {
     headers: { 'Content-Type': 'application/json' },
   });
-}
+};

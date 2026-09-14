@@ -1266,7 +1266,7 @@ export function TeoriprovScreen() {
                     }}
                     className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer flex items-center gap-1"
                   >
-                    ✨ Auto-kategorisera från text
+                    Kategorisera automatiskt från text
                   </button>
                 </div>
                 <select 

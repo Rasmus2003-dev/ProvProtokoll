@@ -252,7 +252,7 @@ export function StartScreen() {
           <div className="flex items-center gap-2 mb-3">
             <span className="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200/50 dark:border-red-900/30 flex items-center gap-1.5 shadow-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-red-600 dark:bg-red-500 animate-pulse"></span>
-              Live System
+              Aktivt system
             </span>
             <span className="text-xs font-medium text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2.5 py-1 rounded-md">
               Terminal 4
@@ -287,7 +287,7 @@ export function StartScreen() {
           <div className="flex-1 lg:flex-none bg-emerald-50/50 dark:bg-emerald-900/10 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/30 min-w-[120px] flex flex-col justify-center items-center">
             <span className="block text-[10px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest mb-1">Status</span>
             <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400 flex items-center justify-center gap-1">
-              On-Line
+              Online
             </span>
           </div>
         </div>
@@ -553,7 +553,7 @@ export function StartScreen() {
                             : 'bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:bg-gray-50'
                         }`}
                       >
-                        <span>⚙️ Manuell</span>
+                        <span>Manuell</span>
                       </button>
                       <button
                         type="button"
@@ -567,7 +567,7 @@ export function StartScreen() {
                             : 'bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:bg-gray-50'
                         }`}
                       >
-                        <span>⚡ Automat (78)</span>
+                        <span>Automat (78)</span>
                       </button>
                     </div>
                   </div>
@@ -773,12 +773,12 @@ export function StartScreen() {
                 <Cpu size={18} />
               </span>
               <h3 className="font-black text-sm text-white uppercase tracking-widest">
-                Dev Simuleringsverktyg
+                Simuleringsverktyg (utveckling)
               </h3>
             </div>
-            
+
             <p className="text-sm text-slate-400 leading-relaxed relative z-10">
-              Simulera en historik där en kandidat kuggats, för att i nästa test-vy testa omprovs-hämtning.
+              Simulera en historik där en kandidat blivit underkänd, för att i nästa vy testa hämtning av omprovsuppgifter.
             </p>
 
             <button

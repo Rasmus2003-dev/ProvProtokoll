@@ -1,17 +1,12 @@
-import { buildTestQuestions } from '../../src/data/mockQuestions';
+import { buildTestQuestions } from '../../../src/data/mockQuestions';
 
-export const config = { runtime: 'edge' };
-
-export default async function handler(req: Request) {
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
+export const onRequestPost: PagesFunction = async (context) => {
   try {
-    const { testId, answers } = (await req.json()) as { testId: string; answers: Record<number, number> };
+    const { testId, answers } = (await context.request.json()) as {
+      testId: string;
+      answers: Record<number, number>;
+    };
+
     if (!testId) {
       return new Response(JSON.stringify({ error: 'testId saknas' }), {
         status: 400,
@@ -53,4 +48,4 @@ export default async function handler(req: Request) {
       headers: { 'Content-Type': 'application/json' },
     });
   }
-}
+};
