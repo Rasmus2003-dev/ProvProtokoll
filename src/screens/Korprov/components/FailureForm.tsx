@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { FailureAssessment } from '../../../types';
-import { failureCategories, failureSituations } from '../data/failureData';
+import { failureCategories, failureSituations, TAXI_ONLY_AREAS } from '../data/failureData';
 import { v4 as uuidv4 } from 'uuid';
 import { useAppStore } from '../../../store/ProvContext';
 
@@ -20,6 +20,12 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
   const updateContent = (partial: Partial<FailureAssessment>) => {
     onChange({ ...data, ...partial });
   };
+
+  const isTaxi = state.properties.licenseType === 'TAXI';
+  const availableAreas = useMemo(
+    () => isTaxi ? failureCategories.areas : failureCategories.areas.filter(a => !TAXI_ONLY_AREAS.includes(a)),
+    [isTaxi]
+  );
 
   // Auto-initialize safety check failure to Fordonskännedom
   React.useEffect(() => {
@@ -152,7 +158,7 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
                   onChange={(e) => handlePrimaryCauseAreaChange(e.target.value)}
                 >
                   <option value="">Välj område...</option>
-                  {failureCategories.areas.map(a => <option key={a} value={a}>{a}</option>)}
+                  {availableAreas.map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
                 <div className="absolute inset-y-0 right-3.5 flex items-center pointer-events-none text-[#C0504D]">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -258,7 +264,7 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
                         onChange={(e) => updateConsequenceArea(cons.id, e.target.value)}
                       >
                         <option value="">Välj område...</option>
-                        {failureCategories.areas.map(a => <option key={a} value={a}>{a}</option>)}
+                        {availableAreas.map(a => <option key={a} value={a}>{a}</option>)}
                       </select>
                       <div className="absolute inset-y-0 right-3.5 flex items-center pointer-events-none text-[#F79646]">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

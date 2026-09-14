@@ -1,3 +1,8 @@
+export const TAXI_ONLY_AREAS = [
+  "Passagerarvänlig körning",
+  "Handlings- och omdömesförmåga"
+];
+
 export const failureCategories = {
   areas: [
     "Trafiksäkerhet och beteende",

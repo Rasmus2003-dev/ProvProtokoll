@@ -180,7 +180,7 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
-    <title>Körprovsresultat - ${studentName}</title>
+    <title>Resultat från ditt prov - ${studentName}</title>
     <style>
         body { font-family: Arial, sans-serif; color: #000; margin: 0; padding: 20px; background-color: #fff; }
         .resultContainer { width: 100%; max-width: 800px; margin: 0 auto; }
@@ -212,7 +212,7 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
                 <tr>
                     <td colspan="3">
                         <div style="margin-top: 30px;">
-                            <h1 style="font-size: 26px; margin: 0 0 14px 0; font-weight: bold;">Körprovsresultat</h1>
+                            <h1 style="font-size: 26px; margin: 0 0 14px 0; font-weight: bold;">Resultat från ditt prov</h1>
                             <table class="infoTable" style="width: 100%; border-collapse: collapse;">
                                 <tbody>
                                     <tr>
@@ -315,7 +315,7 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
 <html lang="sv">
 <head>
   <meta charset="utf-8">
-  <title>Körprovsresultat - ${studentName}</title>
+  <title>Resultat från ditt prov - ${studentName}</title>
   ${styleTag}
 </head>
 <body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial,Helvetica,sans-serif;">
