@@ -52,7 +52,7 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
 
     // If test items have been explicitly marked in the test, ONLY allow those marked items!
     if (included.length > 0) {
-      return Array.from(new Set([...(type === 'safety' ? safetyDefaults : []), ...included]));
+      return Array.from(new Set(included));
     }
     return Array.from(new Set([...safetyDefaults, ...failureSituations]));
   }, [state.includedTestItems, type]);

@@ -250,61 +250,6 @@ export function ResultatScreen() {
             </div>
           )}
 
-          {/* Safety check result (Heavy licenses only — for non-heavy licenses this is set already during Körning) */}
-          {!state.properties.testType?.includes('Omprov körning') && SAFETY_CHECK_LICENSES.includes(licenseType) && (
-            <>
-              <div className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm overflow-hidden mb-6">
-                <div className="border-b border-gray-100 dark:border-white/5 bg-gradient-to-r from-gray-50 via-white to-white dark:from-slate-900/40 dark:to-slate-950/20 py-3.5 px-5 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-1.5 h-4 bg-[#c40000] rounded-full shrink-0" />
-                    <h3 className="text-xs font-black text-gray-950 dark:text-gray-200 uppercase tracking-widest">Säkerhetskontroll</h3>
-                  </div>
-                  <span className="text-[10px] font-black text-[#1a73e8] dark:text-blue-300 bg-[#e8f0fe] dark:bg-blue-900/30 px-2.5 py-1 rounded-md uppercase tracking-wider">
-                    Obligatorisk
-                  </span>
-                </div>
-                <div className="p-6">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <OptionButton 
-                      active={state.result.safetyCheckResult === 'Godkänt'} 
-                      onClick={() => updateResult('safetyCheckResult', 'Godkänt')}
-                      variant="success"
-                    >
-                      Godkänd
-                    </OptionButton>
-                    <OptionButton 
-                      active={state.result.safetyCheckResult === 'Underkänt'} 
-                      onClick={() => updateResult('safetyCheckResult', 'Underkänt')}
-                      variant="danger"
-                    >
-                      Underkänd
-                    </OptionButton>
-                    <div className="col-span-2 sm:col-span-1">
-                      <OptionButton 
-                        active={state.result.safetyCheckResult === '-'} 
-                        onClick={() => updateResult('safetyCheckResult', '-')}
-                      >
-                        Ej genomförd
-                      </OptionButton>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Failure on safety check */}
-              {state.result.safetyCheckResult === 'Underkänt' && (
-                <div className="animate-fade-in mb-6">
-                  <FailureForm 
-                    title="Bristförteckning – Säkerhetskontroll"
-                    data={state.result.safetyCheckFailure}
-                    onChange={(data) => updateResult('safetyCheckFailure', data)}
-                    type="safety"
-                  />
-                </div>
-              )}
-            </>
-          )}
-
           {/* Intervention and Aborted states */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
@@ -359,6 +304,56 @@ export function ResultatScreen() {
             </div>
 
           </div>
+
+          {/* Safety check result (Heavy licenses only — for non-heavy licenses this is set already during Körning) */}
+          {!state.properties.testType?.includes('Omprov körning') && SAFETY_CHECK_LICENSES.includes(licenseType) && (
+            <>
+              <div className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm overflow-hidden mt-6">
+                <div className="border-b border-gray-100 dark:border-white/5 py-3.5 px-5 flex items-center gap-2.5">
+                  <span className="w-1.5 h-4 bg-slate-400 rounded-full shrink-0" />
+                  <h3 className="text-xs font-black text-gray-950 dark:text-gray-200 uppercase tracking-widest">Säkerhetskontroll</h3>
+                </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <OptionButton
+                      active={state.result.safetyCheckResult === 'Godkänt'}
+                      onClick={() => updateResult('safetyCheckResult', 'Godkänt')}
+                      variant="success"
+                    >
+                      Godkänd
+                    </OptionButton>
+                    <OptionButton
+                      active={state.result.safetyCheckResult === 'Underkänt'}
+                      onClick={() => updateResult('safetyCheckResult', 'Underkänt')}
+                      variant="danger"
+                    >
+                      Underkänd
+                    </OptionButton>
+                    <div className="col-span-2 sm:col-span-1">
+                      <OptionButton
+                        active={state.result.safetyCheckResult === '-'}
+                        onClick={() => updateResult('safetyCheckResult', '-')}
+                      >
+                        Ej genomförd
+                      </OptionButton>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Failure on safety check */}
+              {state.result.safetyCheckResult === 'Underkänt' && (
+                <div className="animate-fade-in mt-6">
+                  <FailureForm
+                    title="Bristförteckning – Säkerhetskontroll"
+                    data={state.result.safetyCheckFailure}
+                    onChange={(data) => updateResult('safetyCheckFailure', data)}
+                    type="safety"
+                  />
+                </div>
+              )}
+            </>
+          )}
 
           {/* Detailed summary of deficiencies & interventions directly at the bottom of the left column */}
           <div className="bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-white/10 rounded-xl shadow-sm overflow-hidden mt-6">
