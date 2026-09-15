@@ -161,8 +161,19 @@ export function StartScreen() {
   };
 
   const handleStartTest = () => {
-    if (!studentName) handleUpdateProp('studentName', 'Kandidat');
-    if (!licenseType) handleUpdateProp('licenseType', 'B');
+    // Säkerställ att inget från ett tidigare prov (moment, checklista, resultat,
+    // bristförteckningar m.m.) följer med in i ett nytt prov för nästa kandidat.
+    resetCurrentTest({
+      studentName: studentName || 'Kandidat',
+      personalNumber,
+      email,
+      licenseType: licenseType || 'B',
+      examiner,
+      testDate,
+      testType,
+      transmission,
+      tachograph: state.properties.tachograph
+    });
     navigate('/korprov/egenskaper');
   };
 
