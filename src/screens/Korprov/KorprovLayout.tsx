@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { PenTool, X, Clock, Play, Square } from 'lucide-react';
 import { useAppStore } from '../../store/ProvContext';
 import { triggerHaptic } from '../../lib/utils';
+import { AppLogo } from '../../components/icons/AppLogo';
 
 const steps = [
   { id: '1', name: 'Start', path: 'start' },
@@ -81,6 +82,9 @@ export function KorprovLayout() {
           {/* Mobile-Only Progress Stepper Dashboard Card */}
           <div className="block md:hidden px-4 mb-4">
             <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-white/5 rounded-2xl p-4 shadow-sm">
+              <div className="flex justify-center mb-3 select-none">
+                <AppLogo variant="provprotokoll" size="sm" />
+              </div>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex flex-col">
                   <span className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-none">
@@ -90,7 +94,7 @@ export function KorprovLayout() {
                     {activeStepName}
                   </span>
                 </div>
-                
+
                 {/* Mobile Timer Badge inside Dashboard */}
                 <button
                   onClick={() => { triggerHaptic('medium'); toggleTimer(); }}
@@ -119,6 +123,11 @@ export function KorprovLayout() {
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* Desktop logga ovanför steppern så den syns på varje steg (Start/Egenskaper/Inledning/Resultat) */}
+          <div className="hidden md:flex justify-center mb-4 select-none">
+            <AppLogo variant="provprotokoll" size="sm" />
           </div>
 
           {/* Stepper Tabs Bar (Desktop-centered, Mobile-scrollable) */}

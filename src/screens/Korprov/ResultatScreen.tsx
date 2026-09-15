@@ -6,6 +6,7 @@ import { useAppStore } from '../../store/ProvContext';
 import { FailureForm } from './components/FailureForm';
 import { generateProtocolPdf } from '../../lib/generateProtocolPdf';
 import { FileDown, ArrowRight } from 'lucide-react';
+import { PrivacyGuard } from '../../components/PrivacyGuard';
 
 export function ResultatScreen() {
   const navigate = useNavigate();
@@ -130,7 +131,7 @@ export function ResultatScreen() {
   }
 
   return (
-    <div className="max-w-[1300px] mx-auto space-y-8 px-4 sm:px-6 pb-24">
+    <PrivacyGuard className="max-w-[1300px] mx-auto space-y-8 px-4 sm:px-6 pb-24 block">
       {/* Title block */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mt-6 mb-8 pb-6 border-b border-gray-100 dark:border-white/5">
         <div>
@@ -828,6 +829,6 @@ export function ResultatScreen() {
           <ArrowRight className="w-5 h-5" />
         </Button>
       </div>
-    </div>
+    </PrivacyGuard>
   );
 }

@@ -20,6 +20,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/ProvContext';
 import { triggerHaptic } from '../lib/utils';
+import { PrivacyGuard } from '../components/PrivacyGuard';
 
 export interface ElevRecord {
   id: string;
@@ -297,9 +298,11 @@ export function ElevregisterScreen() {
                   <h3 className="text-base font-black text-gray-900 dark:text-white mb-0.5">
                     {elev.name}
                   </h3>
-                  <div className="text-xs font-mono text-gray-500 dark:text-slate-400 mb-3">
-                    {elev.personalNumber}
-                  </div>
+                  <PrivacyGuard className="inline-block">
+                    <div className="text-xs font-mono text-gray-500 dark:text-slate-400 mb-3">
+                      {elev.personalNumber}
+                    </div>
+                  </PrivacyGuard>
 
                   <div className="space-y-1.5 text-xs text-gray-600 dark:text-slate-300 border-t border-gray-100 dark:border-slate-800 pt-3">
                     {elev.phone && (
