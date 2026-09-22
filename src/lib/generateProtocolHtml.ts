@@ -336,9 +336,9 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
 </head>
 <body style="font-family: Arial, Sans-Serif;">
     ${noReplyBanner}
-    Hej!<br />
+    Hej ${studentName}!<br />
     <br />
-    Du har nyligen gjort körprov hos oss. Resultatet kan du läsa nedan.<br />
+    Här kommer ditt resultat.<br />
     <br />
     Vänliga hälsningar,<br />
     ProvProtokoll<br />
