@@ -21,6 +21,10 @@ export function ProtokollScreen() {
   const [isGeneratingEmailHtml, setIsGeneratingEmailHtml] = useState(false);
   const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [sendError, setSendError] = useState<string | null>(null);
+  const [confirmResultChecked, setConfirmResultChecked] = useState(false);
+  const [confirmReportChecked, setConfirmReportChecked] = useState(false);
+  const [confirmEmailChecked, setConfirmEmailChecked] = useState(false);
+  const [isFinalizing, setIsFinalizing] = useState(false);
 
   const handlePrint = () => {
     window.print();
@@ -58,30 +62,11 @@ export function ProtokollScreen() {
     });
   };
 
-  const handleComplete = async () => {
-    const result = await saveTest();
-    if (!result.success) {
-      showToast(
-        `Protokollet är sparat lokalt, men molnsynk misslyckades (${result.error || 'okänt fel'}). Synkas automatiskt när anslutningen är tillbaka.`,
-        'warning'
-      );
-    } else {
-      showToast('Protokollet sparat och synkat.', 'success');
-    }
-    resetCurrentTest();
-    navigate('/');
-  };
-
-  const handleSendEmail = async () => {
+  const sendProtocolEmail = async (): Promise<{ success: boolean; error?: string }> => {
     const recipient = state.properties.email;
     if (!recipient) {
-      setSendStatus('error');
-      setSendError('Kandidatens e-postadress saknas.');
-      return;
+      return { success: false, error: 'Kandidatens e-postadress saknas.' };
     }
-
-    setSendStatus('sending');
-    setSendError(null);
 
     try {
       const html = generateEmailProtocolHtml(state, profile?.name);
@@ -98,15 +83,57 @@ export function ProtokollScreen() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Kunde inte skicka mejlet.');
+        return { success: false, error: data.error || 'Kunde inte skicka mejlet.' };
       }
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Ett oväntat fel inträffade.' };
+    }
+  };
 
+  const handleSendEmail = async () => {
+    setSendStatus('sending');
+    setSendError(null);
+    const result = await sendProtocolEmail();
+    if (result.success) {
       setSendStatus('sent');
       setTimeout(() => setSendStatus('idle'), 4000);
-    } catch (e: any) {
+    } else {
       setSendStatus('error');
-      setSendError(e.message || 'Ett oväntat fel inträffade.');
+      setSendError(result.error || 'Ett oväntat fel inträffade.');
     }
+  };
+
+  // Körs efter att inspektören uttryckligen bockat i alla tre bekräftelserutor
+  // i dialogen: (1) resultatet stämmer, (2) rapportering till Transportstyrelsen,
+  // (3) mejl till kandidaten. Skickar faktiskt mejlet (om e-post finns) istället
+  // för att bara påstå att det görs, sparar protokollet och nollställer provet.
+  const handleComplete = async () => {
+    setIsFinalizing(true);
+
+    if (state.properties.email) {
+      const emailResult = await sendProtocolEmail();
+      if (!emailResult.success) {
+        showToast(
+          `Protokollet sparas ändå, men mejlet gick inte att skicka (${emailResult.error || 'okänt fel'}).`,
+          'warning'
+        );
+      }
+    }
+
+    const saveResult = await saveTest();
+    if (!saveResult.success) {
+      showToast(
+        `Protokollet är sparat lokalt, men molnsynk misslyckades (${saveResult.error || 'okänt fel'}). Synkas automatiskt när anslutningen är tillbaka.`,
+        'warning'
+      );
+    } else {
+      showToast('Protokollet sparat, rapporterat och synkat.', 'success');
+    }
+
+    setIsFinalizing(false);
+    resetCurrentTest();
+    navigate('/');
   };
 
   const licenseType = state.properties.licenseType || 'B';
@@ -227,8 +254,13 @@ export function ProtokollScreen() {
               <span>{isGeneratingHtml ? 'Genererar...' : 'HTML'}</span>
             </Button>
             
-            <Button 
-              onClick={() => setShowConfirmModal(true)} 
+            <Button
+              onClick={() => {
+                setConfirmResultChecked(false);
+                setConfirmReportChecked(false);
+                setConfirmEmailChecked(false);
+                setShowConfirmModal(true);
+              }}
               className="bg-emerald-600 hover:bg-emerald-700 text-white border-transparent rounded-xl px-3 sm:px-5 py-2 shadow-sm font-bold text-xs transition-all flex items-center justify-center col-span-1 sm:col-span-auto"
             >
               Spara och slutför
@@ -445,18 +477,11 @@ export function ProtokollScreen() {
                 {isPassed ? <FileCheck className="w-6 h-6 shrink-0" /> : <AlertTriangle className="w-6 h-6 shrink-0" />}
               </div>
               
-              <div className="space-y-2 w-full">
+              <div className="space-y-3 w-full">
                 <h3 className="text-lg font-black text-gray-950 dark:text-white uppercase tracking-tight font-display">
                   Bekräfta rapportering
                 </h3>
-                
-                <p className="text-sm text-gray-650 dark:text-zinc-300 leading-relaxed font-semibold">
-                  {isPassed 
-                    ? "Vill du verkligen godkänna provet och rapportera till Transportstyrelsen?"
-                    : "Vill du verkligen underkänna provet och rapportera till Transportstyrelsen?"
-                  }
-                </p>
-                
+
                 <div className="bg-gray-50 dark:bg-zinc-800/40 p-3.5 text-xs text-gray-500 dark:text-zinc-400 font-medium space-y-1.5 rounded-lg border border-gray-150 dark:border-zinc-800">
                   <div className="flex justify-between items-center">
                     <span className="uppercase text-[10px] tracking-wider text-gray-400">Kandidat:</span>
@@ -477,18 +502,62 @@ export function ProtokollScreen() {
                     </strong>
                   </div>
                 </div>
-                
-                <p className="text-[10px] text-gray-400 dark:text-zinc-500 leading-relaxed pt-1">
-                  Detta beslut registreras permanent hos Transportstyrelsen och kan inte ändras i efterhand via det här gränssnittet. Resultatet skickas även direkt till kandidatens e-post.
-                </p>
+
+                {/* Obligatoriska bekräftelserutor så man inte råkar skicka fel resultat av misstag */}
+                <div className="space-y-2 pt-1">
+                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={confirmResultChecked}
+                      onChange={(e) => setConfirmResultChecked(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 shrink-0 accent-emerald-600 cursor-pointer"
+                    />
+                    <span className="text-xs text-gray-700 dark:text-zinc-300 font-semibold leading-snug">
+                      Jag har kontrollerat att slutbetyget{' '}
+                      <strong className={isPassed ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#DD1D25] dark:text-red-400'}>
+                        {isPassed ? 'GODKÄNT' : 'UNDERKÄNT'}
+                      </strong>{' '}
+                      är korrekt för {state.properties.studentName || 'kandidaten'}.
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={confirmReportChecked}
+                      onChange={(e) => setConfirmReportChecked(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 shrink-0 accent-emerald-600 cursor-pointer"
+                    />
+                    <span className="text-xs text-gray-700 dark:text-zinc-300 font-semibold leading-snug">
+                      Jag vill godkänna och rapportera detta beslut till Transportstyrelsen. Detta registreras permanent och kan inte ändras i efterhand via det här gränssnittet.
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={confirmEmailChecked}
+                      onChange={(e) => setConfirmEmailChecked(e.target.checked)}
+                      disabled={!state.properties.email}
+                      className="mt-0.5 w-4 h-4 shrink-0 accent-emerald-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                    <span className="text-xs text-gray-700 dark:text-zinc-300 font-semibold leading-snug">
+                      {state.properties.email
+                        ? <>Skicka protokollet till kandidatens e-post: <strong className="text-gray-900 dark:text-zinc-150">{state.properties.email}</strong></>
+                        : 'Ingen e-postadress angiven för kandidaten – mejl kan inte skickas.'
+                      }
+                    </span>
+                  </label>
+                </div>
               </div>
             </div>
-            
+
             <div className="mt-6 flex flex-col sm:flex-row gap-2 justify-end">
               <button
                 type="button"
                 onClick={() => setShowConfirmModal(false)}
-                className="w-full sm:w-auto px-5 py-2.5 bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 border border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer rounded-xl"
+                disabled={isFinalizing}
+                className="w-full sm:w-auto px-5 py-2.5 bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 border border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Avbryt
               </button>
@@ -498,14 +567,15 @@ export function ProtokollScreen() {
                   setShowConfirmModal(false);
                   handleComplete();
                 }}
-                className={`w-full sm:w-auto px-6 py-2.5 text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer rounded-xl flex items-center justify-center gap-1.5 ${
-                  isPassed 
-                    ? 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500' 
+                disabled={!confirmResultChecked || !confirmReportChecked || (!!state.properties.email && !confirmEmailChecked) || isFinalizing}
+                className={`w-full sm:w-auto px-6 py-2.5 text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer rounded-xl flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isPassed
+                    ? 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500'
                     : 'bg-[#DD1D25] hover:bg-[#b51d1b]'
                 }`}
               >
-                <Send className="w-3.5 h-3.5" />
-                <span>Sänd beslut</span>
+                {isFinalizing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                <span>{isFinalizing ? 'Skickar...' : 'Sänd beslut'}</span>
               </button>
             </div>
           </div>

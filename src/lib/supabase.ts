@@ -111,6 +111,172 @@ export async function fetchAllProtocols(): Promise<SavedProtocolRow[]> {
   }
 }
 
+export interface ProtocolQuery {
+  search?: string;
+  resultFilter?: 'all' | 'passed' | 'failed';
+  licenseType?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ProtocolPage {
+  rows: SavedProtocolRow[];
+  total: number;
+  isCloud: boolean;
+}
+
+/**
+ * Server-side filtrerad och paginerad hämtning av protokoll. Görs som
+ * riktiga databasfrågor mot Supabase (sök, resultat- och behörighetsfilter,
+ * pagination) istället för att hämta allt och filtrera i webbläsaren, vilket
+ * blir tungt när registret växer till tusentals rader. Faller tillbaka på
+ * lokal in-memory-filtrering av localStorage-datan om molnet inte är
+ * konfigurerat eller inte svarar.
+ */
+export async function fetchProtocolsPage(query: ProtocolQuery = {}): Promise<ProtocolPage> {
+  const page = query.page ?? 0;
+  const pageSize = query.pageSize ?? 25;
+  const search = query.search?.trim() || '';
+
+  if (isSupabaseConfigured()) {
+    try {
+      let builder = supabase
+        .from('protocols')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false });
+
+      if (search) {
+        builder = builder.or(
+          `student_name.ilike.%${search}%,personal_number.ilike.%${search}%`
+        );
+      }
+      if (query.licenseType && query.licenseType !== 'all') {
+        builder = builder.eq('license_type', query.licenseType);
+      }
+      if (query.resultFilter === 'passed') {
+        builder = builder.eq('driving_result', 'Godkänt');
+      } else if (query.resultFilter === 'failed') {
+        builder = builder.neq('driving_result', 'Godkänt');
+      }
+
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
+      const { data, error, count } = await builder.range(from, to);
+
+      if (!error && data) {
+        return { rows: data as SavedProtocolRow[], total: count || 0, isCloud: true };
+      }
+    } catch (_) {}
+  }
+
+  // Local fallback: filtrera i minnet på samma villkor
+  let rows: SavedProtocolRow[] = [];
+  try {
+    rows = JSON.parse(localStorage.getItem('provprotokoll_saved_db') || '[]');
+  } catch {
+    rows = [];
+  }
+
+  if (search) {
+    const term = search.toLowerCase();
+    rows = rows.filter(r =>
+      (r.student_name || '').toLowerCase().includes(term) ||
+      (r.personal_number || '').toLowerCase().includes(term)
+    );
+  }
+  if (query.licenseType && query.licenseType !== 'all') {
+    rows = rows.filter(r => r.license_type === query.licenseType);
+  }
+  if (query.resultFilter === 'passed') {
+    rows = rows.filter(r => r.driving_result === 'Godkänt');
+  } else if (query.resultFilter === 'failed') {
+    rows = rows.filter(r => r.driving_result !== 'Godkänt');
+  }
+
+  const total = rows.length;
+  const from = page * pageSize;
+  const paged = rows.slice(from, from + pageSize);
+  return { rows: paged, total, isCloud: false };
+}
+
+export interface ProtocolStats {
+  total: number;
+  passed: number;
+  failed: number;
+  passRate: number;
+  availableLicenses: string[];
+}
+
+/**
+ * Snabba aggregat (antal totalt/godkänt/underkänt) via count-frågor istället
+ * för att hämta alla rader till klienten för att räkna dem där.
+ */
+export async function fetchProtocolStats(): Promise<ProtocolStats> {
+  if (isSupabaseConfigured()) {
+    try {
+      const [totalRes, passedRes, licenseRes] = await Promise.all([
+        supabase.from('protocols').select('id', { count: 'exact', head: true }),
+        supabase.from('protocols').select('id', { count: 'exact', head: true }).eq('driving_result', 'Godkänt'),
+        supabase.from('protocols').select('license_type')
+      ]);
+
+      const total = totalRes.count || 0;
+      const passed = passedRes.count || 0;
+      const availableLicenses = Array.from(
+        new Set((licenseRes.data || []).map((r: any) => r.license_type).filter(Boolean))
+      ).sort();
+
+      return {
+        total,
+        passed,
+        failed: total - passed,
+        passRate: total > 0 ? Math.round((passed / total) * 100) : 0,
+        availableLicenses
+      };
+    } catch (_) {}
+  }
+
+  // Local fallback
+  let rows: SavedProtocolRow[] = [];
+  try {
+    rows = JSON.parse(localStorage.getItem('provprotokoll_saved_db') || '[]');
+  } catch {
+    rows = [];
+  }
+  const total = rows.length;
+  const passed = rows.filter(r => r.driving_result === 'Godkänt').length;
+  const availableLicenses = Array.from(new Set(rows.map(r => r.license_type).filter(Boolean))).sort();
+  return {
+    total,
+    passed,
+    failed: total - passed,
+    passRate: total > 0 ? Math.round((passed / total) * 100) : 0,
+    availableLicenses
+  };
+}
+
+/**
+ * Prenumerera på live-ändringar i protokoll-tabellen (t.ex. en annan
+ * inspektör som sparar ett prov på en annan dator). Returnerar en
+ * unsubscribe-funktion.
+ */
+export function subscribeToProtocols(onChange: () => void): () => void {
+  if (!isSupabaseConfigured()) {
+    return () => {};
+  }
+
+  const channel = supabase
+    .channel('protocols-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'protocols' }, () => {
+      onChange();
+    })
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
 /**
  * Delete a protocol from Supabase and local storage
  */

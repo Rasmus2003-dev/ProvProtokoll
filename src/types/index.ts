@@ -57,3 +57,19 @@ export interface AppState {
   testStartTime: number | null;
   testNotes: string;
 }
+
+export interface ElevRecord {
+  id: string;
+  source: 'trv' | 'trafikskola';
+  name: string;
+  personalNumber: string;
+  email: string;
+  phone?: string;
+  licenseType: string;
+  transmission: 'Manuell' | 'Automat';
+  testType?: string; // e.g. 'Förstaprov', 'Omprov'
+  bookingTime?: string;
+  status: 'Inbokad' | 'Klar för start' | 'Aktiv elev' | 'Genomförd';
+  teacher?: string;
+  createdDate: string;
+}

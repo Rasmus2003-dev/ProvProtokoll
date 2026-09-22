@@ -21,31 +21,23 @@ import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/ProvContext';
 import { triggerHaptic } from '../lib/utils';
 import { PrivacyGuard } from '../components/PrivacyGuard';
+import { useToast } from '../components/Toast';
+import { fetchElever, addElev, deleteElev, subscribeToElever } from '../lib/elevregister';
+import { isSupabaseConfigured } from '../lib/supabase';
+import type { ElevRecord } from '../types';
 
-export interface ElevRecord {
-  id: string;
-  source: 'trv' | 'trafikskola';
-  name: string;
-  personalNumber: string;
-  email: string;
-  phone?: string;
-  licenseType: string;
-  transmission: 'Manuell' | 'Automat';
-  testType?: string; // e.g. 'Förstaprov', 'Omprov'
-  bookingTime?: string;
-  status: 'Inbokad' | 'Klar för start' | 'Aktiv elev' | 'Genomförd';
-  teacher?: string;
-  createdDate: string;
-}
+export type { ElevRecord };
 
 export function ElevregisterScreen() {
   const navigate = useNavigate();
-  const { setPresetCandidate } = useAppStore();
+  const { resetCurrentTest } = useAppStore();
+  const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useState<'all' | 'trv' | 'trafikskola'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [modalSource, setModalSource] = useState<'trv' | 'trafikskola'>('trv');
+  const [loading, setLoading] = useState(true);
 
   // Form State
   const [name, setName] = useState('');
@@ -57,35 +49,27 @@ export function ElevregisterScreen() {
   const [testType, setTestType] = useState('Förstaprov');
   const [bookingTime, setBookingTime] = useState('09:00');
 
-  // Register State with LocalStorage and Backend sync
-  const [elever, setElever] = useState<ElevRecord[]>(() => {
-    const saved = localStorage.getItem('provprotokoll_elevregister');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (_) {}
-    }
-    return [];
-  });
+  // Register State: Supabase (delat mellan enheter/inspektörer) med lokal fallback
+  const [elever, setElever] = useState<ElevRecord[]>([]);
 
-  // Save to localStorage
   useEffect(() => {
-    localStorage.setItem('provprotokoll_elevregister', JSON.stringify(elever));
-  }, [elever]);
+    let cancelled = false;
+    fetchElever().then((records) => {
+      if (!cancelled) {
+        setElever(records);
+        setLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
 
-  // Sync to Backend
-  const syncToBackend = async (records: ElevRecord[]) => {
-    try {
-      const trvOnes = records.filter(r => r.source === 'trv');
-      await fetch('/api/trv/candidates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(trvOnes)
-      });
-    } catch (_) {}
-  };
+  // Live-uppdatera registret när andra inspektörer lägger till/tar bort elever
+  useEffect(() => {
+    const unsubscribe = subscribeToElever((records) => setElever(records));
+    return unsubscribe;
+  }, []);
 
-  const handleAddElev = (e: React.FormEvent) => {
+  const handleAddElev = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !personalNumber.trim()) return;
 
@@ -105,9 +89,7 @@ export function ElevregisterScreen() {
       createdDate: new Date().toISOString().split('T')[0]
     };
 
-    const updated = [newRecord, ...elever];
-    setElever(updated);
-    syncToBackend(updated);
+    setElever((prev) => [newRecord, ...prev]);
 
     // Reset Form
     setName('');
@@ -116,17 +98,31 @@ export function ElevregisterScreen() {
     setPhone('');
     setShowAddModal(false);
     triggerHaptic('success');
+
+    const result = await addElev(newRecord);
+    if (!result.success) {
+      showToast(
+        `Eleven är sparad lokalt, men molnsynk misslyckades (${result.error || 'okänt fel'}).`,
+        'warning'
+      );
+    }
   };
 
-  const handleDeleteElev = (id: string) => {
-    const updated = elever.filter(e => e.id !== id);
-    setElever(updated);
-    syncToBackend(updated);
+  const handleDeleteElev = async (id: string) => {
+    setElever((prev) => prev.filter(e => e.id !== id));
     triggerHaptic('light');
+
+    const result = await deleteElev(id);
+    if (!result.success) {
+      showToast(
+        `Borttagning sparades lokalt, men molnsynk misslyckades (${result.error || 'okänt fel'}).`,
+        'warning'
+      );
+    }
   };
 
   const handleStartTestForElev = (elev: ElevRecord) => {
-    setPresetCandidate({
+    resetCurrentTest({
       studentName: elev.name,
       personalNumber: elev.personalNumber,
       email: elev.email,
@@ -168,9 +164,16 @@ export function ElevregisterScreen() {
               Centralt Elevregister
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-gray-900 dark:text-white">
-            Elev- & Kandidatregister
-          </h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-gray-900 dark:text-white">
+              Elev- & Kandidatregister
+            </h1>
+            {isSupabaseConfigured() && (
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+                Synkad live
+              </span>
+            )}
+          </div>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-slate-400 mt-1">
             Gemensam hantering av provkandidater (Trafikverket TRV) och trafikelever (Trafikskolan).
           </p>
@@ -259,7 +262,11 @@ export function ElevregisterScreen() {
       </div>
 
       {/* Elevregister Table / Cards */}
-      {filteredElever.length === 0 ? (
+      {loading ? (
+        <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-slate-800 rounded-3xl p-12 text-center shadow-xs">
+          <div className="w-8 h-8 mx-auto border-[3px] border-gray-200 dark:border-white/10 border-t-[#002f6c] dark:border-t-blue-500 rounded-full animate-spin" />
+        </div>
+      ) : filteredElever.length === 0 ? (
         <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-slate-800 rounded-3xl p-12 text-center shadow-xs">
           <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-gray-400">
             <Users size={32} />

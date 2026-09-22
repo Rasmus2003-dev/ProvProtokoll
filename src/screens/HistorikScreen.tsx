@@ -1,41 +1,84 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '../store/ProvContext';
-import { FileCheck, AlertTriangle, Calendar, FileText, Cloud, RefreshCw, Trash2, Search, ClipboardList, TrendingUp, X } from 'lucide-react';
+import { FileCheck, AlertTriangle, Calendar, FileText, Cloud, RefreshCw, Trash2, Search, ClipboardList, TrendingUp, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { generateProtocolPdf } from '../lib/generateProtocolPdf';
-import { fetchAllProtocols, deleteProtocolFromBackend, SavedProtocolRow, isSupabaseConfigured } from '../lib/supabase';
+import {
+  fetchProtocolsPage,
+  fetchProtocolStats,
+  deleteProtocolFromBackend,
+  subscribeToProtocols,
+  SavedProtocolRow,
+  ProtocolStats,
+  isSupabaseConfigured
+} from '../lib/supabase';
 import { PrivacyGuard } from '../components/PrivacyGuard';
+
+const PAGE_SIZE = 25;
 
 export function HistorikScreen() {
   const { testHistory, profile } = useAppStore();
-  const [cloudProtocols, setCloudProtocols] = useState<SavedProtocolRow[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [rows, setRows] = useState<SavedProtocolRow[]>([]);
+  const [total, setTotal] = useState(0);
+  const [isCloud, setIsCloud] = useState(false);
+  const [stats, setStats] = useState<ProtocolStats>({ total: 0, passed: 0, failed: 0, passRate: 0, availableLicenses: [] });
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+
+  const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [resultFilter, setResultFilter] = useState<'all' | 'passed' | 'failed'>('all');
   const [licenseFilter, setLicenseFilter] = useState<string>('all');
 
-  const loadProtocols = async () => {
+  // Debounce fritextsökning mot databasen (undviker en fråga per tangenttryck)
+  useEffect(() => {
+    const timeout = setTimeout(() => setSearchTerm(searchInput), 350);
+    return () => clearTimeout(timeout);
+  }, [searchInput]);
+
+  const loadPage = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await fetchAllProtocols();
-      setCloudProtocols(data);
-    } catch (e) {
-      console.warn('Could not fetch protocols:', e);
+      const result = await fetchProtocolsPage({
+        search: searchTerm,
+        resultFilter,
+        licenseType: licenseFilter,
+        page,
+        pageSize: PAGE_SIZE
+      });
+      setRows(result.rows);
+      setTotal(result.total);
+      setIsCloud(result.isCloud);
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, resultFilter, licenseFilter, page]);
 
-  useEffect(() => {
-    loadProtocols();
+  const loadStats = useCallback(async () => {
+    const result = await fetchProtocolStats();
+    setStats(result);
   }, []);
 
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (window.confirm('Vill du verkligen radera detta sparade protokoll?')) {
-      await deleteProtocolFromBackend(id);
-      setCloudProtocols(prev => prev.filter(p => p.id !== id));
-    }
-  };
+  // Reset till sida 0 när filter/sök ändras
+  useEffect(() => {
+    setPage(0);
+  }, [searchTerm, resultFilter, licenseFilter]);
+
+  useEffect(() => {
+    loadPage();
+  }, [loadPage]);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  // Live-uppdatera när andra inspektörer sparar/tar bort protokoll på andra enheter
+  useEffect(() => {
+    const unsubscribe = subscribeToProtocols(() => {
+      loadPage();
+      loadStats();
+    });
+    return unsubscribe;
+  }, [loadPage, loadStats]);
 
   const evaluateIsPassed = (item: {
     testType?: string;
@@ -53,17 +96,18 @@ export function HistorikScreen() {
     if (tType.includes('Omprov körning')) {
       return item.drivingResult === 'Godkänt';
     }
-    // Standard test or Omprov båda
     const drivingOk = item.drivingResult === 'Godkänt';
     const safetyOk = !isSafetyRequired || item.safetyResult === 'Godkänt' || !item.safetyResult;
     return drivingOk && safetyOk;
   };
 
-  // Merge cloud protocols with local testHistory if not already present
-  const allDisplayItems = cloudProtocols.length > 0
-    ? cloudProtocols.map(p => ({
+  // Om molnet inte är konfigurerat/nått finns inga rader i "rows" (localStorage-läget
+  // hanteras redan av fetchProtocolsPage), men vi vill fortsatt visa lokal testHistory
+  // som en sista utväg om inget alls finns sparat i backend-lagret ännu.
+  const displayItems = rows.length > 0 || !loading
+    ? rows.map(p => ({
         id: p.id,
-        isCloud: true,
+        isCloud,
         testDate: p.created_at ? p.created_at.split('T')[0] : 'Idag',
         studentName: p.student_name,
         personalNumber: p.personal_number,
@@ -96,39 +140,26 @@ export function HistorikScreen() {
         state: test
       }));
 
-  const availableLicenses = useMemo(() => {
-    return Array.from(new Set(allDisplayItems.map(item => item.licenseType).filter(Boolean))).sort();
-  }, [allDisplayItems]);
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm('Vill du verkligen radera detta sparade protokoll?')) {
+      await deleteProtocolFromBackend(id);
+      loadPage();
+      loadStats();
+    }
+  };
 
-  const filteredItems = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    return allDisplayItems.filter(item => {
-      const matchesSearch = !term ||
-        item.studentName.toLowerCase().includes(term) ||
-        item.personalNumber.toLowerCase().includes(term) ||
-        item.testDate.toLowerCase().includes(term);
-      const matchesResult = resultFilter === 'all' ||
-        (resultFilter === 'passed' && item.isPassed) ||
-        (resultFilter === 'failed' && !item.isPassed);
-      const matchesLicense = licenseFilter === 'all' || item.licenseType === licenseFilter;
-      return matchesSearch && matchesResult && matchesLicense;
-    });
-  }, [allDisplayItems, searchTerm, resultFilter, licenseFilter]);
-
-  const stats = useMemo(() => {
-    const total = allDisplayItems.length;
-    const passed = allDisplayItems.filter(item => item.isPassed).length;
-    const passRate = total > 0 ? Math.round((passed / total) * 100) : 0;
-    return { total, passed, failed: total - passed, passRate };
-  }, [allDisplayItems]);
-
-  const hasActiveFilters = searchTerm.trim() !== '' || resultFilter !== 'all' || licenseFilter !== 'all';
+  const hasActiveFilters = searchInput.trim() !== '' || resultFilter !== 'all' || licenseFilter !== 'all';
 
   const clearFilters = () => {
+    setSearchInput('');
     setSearchTerm('');
     setResultFilter('all');
     setLicenseFilter('all');
   };
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const hasAnyRecords = stats.total > 0 || testHistory.length > 0;
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-4 py-6 sm:py-8 h-full flex flex-col">
@@ -141,7 +172,7 @@ export function HistorikScreen() {
             {isSupabaseConfigured() && (
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1">
                 <Cloud size={12} />
-                Supabase Synkad
+                Synkad live
               </span>
             )}
           </div>
@@ -152,7 +183,7 @@ export function HistorikScreen() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={loadProtocols}
+            onClick={() => { loadPage(); loadStats(); }}
             disabled={loading}
             className="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
@@ -163,7 +194,7 @@ export function HistorikScreen() {
       </div>
 
       {/* Statistik-panel */}
-      {allDisplayItems.length > 0 && (
+      {hasAnyRecords && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-white/10 rounded-2xl p-4 flex items-center gap-3 shadow-xs">
             <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 shrink-0">
@@ -207,16 +238,16 @@ export function HistorikScreen() {
         </div>
       )}
 
-      {/* Sök & filter */}
-      {allDisplayItems.length > 0 && (
+      {/* Sök & filter (server-side) */}
+      {hasAnyRecords && (
         <div className="flex flex-col sm:flex-row gap-2.5 mb-4">
           <div className="relative flex-1">
             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Sök namn, personnummer eller datum..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Sök namn eller personnummer..."
               className="w-full h-11 pl-10 pr-4 text-sm bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
             />
           </div>
@@ -237,7 +268,7 @@ export function HistorikScreen() {
             className="h-11 px-3.5 text-sm font-semibold bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl dark:text-white outline-none focus:border-blue-500 cursor-pointer"
           >
             <option value="all">Alla behörigheter</option>
-            {availableLicenses.map(lic => (
+            {stats.availableLicenses.map(lic => (
               <option key={lic} value={lic}>{lic}</option>
             ))}
           </select>
@@ -255,7 +286,7 @@ export function HistorikScreen() {
       )}
 
       <div className="flex-1 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden flex flex-col">
-        {allDisplayItems.length === 0 ? (
+        {!hasAnyRecords ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gray-50/50 dark:bg-slate-900/40">
             <div className="w-16 h-16 bg-gray-100 dark:bg-white/5 rounded-2xl flex items-center justify-center mb-4 text-gray-400">
               <Calendar className="w-8 h-8" />
@@ -265,7 +296,7 @@ export function HistorikScreen() {
               När du slutför ett prov och klickar på "Spara & Slutför" sparas protokollet automatiskt i backend/Supabase.
             </p>
           </div>
-        ) : filteredItems.length === 0 ? (
+        ) : displayItems.length === 0 && !loading ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gray-50/50 dark:bg-slate-900/40">
             <div className="w-16 h-16 bg-gray-100 dark:bg-white/5 rounded-2xl flex items-center justify-center mb-4 text-gray-400">
               <Search className="w-8 h-8" />
@@ -283,12 +314,12 @@ export function HistorikScreen() {
           </div>
         ) : (
           <div className="divide-y divide-gray-100 dark:divide-white/5 overflow-y-auto">
-            {filteredItems.map((item) => (
+            {displayItems.map((item) => (
               <div key={item.id} className="p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                 {/* Status Indicator */}
                 <div className={`p-3 shrink-0 rounded-xl flex items-center justify-center ${
-                  item.isPassed 
-                    ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-450' 
+                  item.isPassed
+                    ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-450'
                     : 'bg-red-50 dark:bg-red-950/30 text-[#DD1D25] dark:text-red-400'
                 }`}>
                   {item.isPassed ? <FileCheck className="w-6 h-6 shrink-0" /> : <AlertTriangle className="w-6 h-6 shrink-0" />}
@@ -311,7 +342,7 @@ export function HistorikScreen() {
                       </span>
                     )}
                   </div>
-                  
+
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 font-medium">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5" />
@@ -331,8 +362,8 @@ export function HistorikScreen() {
                 {/* Actions & Result Pill */}
                 <div className="shrink-0 flex items-center justify-between sm:justify-end gap-2.5 w-full sm:w-auto mt-2 sm:mt-0">
                   <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
-                    item.isPassed 
-                      ? 'border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400' 
+                    item.isPassed
+                      ? 'border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
                       : 'border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
                   }`}>
                     {item.isPassed ? 'Godkänt' : 'Underkänt'}
@@ -357,6 +388,31 @@ export function HistorikScreen() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {isCloud && total > PAGE_SIZE && (
+          <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-gray-100 dark:border-white/5 shrink-0">
+            <span className="text-xs font-semibold text-gray-500 dark:text-slate-400">
+              Sida {page + 1} av {totalPages} ({total} protokoll)
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="p-2 rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+                className="p-2 rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
         )}
       </div>
