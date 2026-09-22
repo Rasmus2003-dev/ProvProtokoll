@@ -315,6 +315,12 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
     .replace(/<\/body>[\s\S]*$/, '')
     .replace(/src="[^"]*"(\s+alt="ProvProtokoll")/, `src="${EMAIL_LOGO_URL}"$1`);
 
+  const noReplyBanner = `
+    <div style="background: #f2f4f7; border: 1px solid #d8dde3; border-radius: 6px; padding: 10px 14px; margin-bottom: 18px; font-size: 10pt; color: #555;">
+      <strong>OBS: Detta mejl går inte att besvara (Do not reply).</strong><br />
+      Svar till denna adress läses inte. Vid frågor om ditt provresultat, kontakta din provförrättare eller Trafikverket direkt.
+    </div>`;
+
   return `<!DOCTYPE html>
 <html lang="sv">
 <head>
@@ -323,6 +329,7 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
   ${styleTag}
 </head>
 <body style="font-family: Arial, Sans-Serif;">
+    ${noReplyBanner}
     Hej!<br />
     <br />
     Du har nyligen gjort körprov hos oss. Resultatet kan du läsa nedan.<br />
@@ -333,6 +340,11 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
     <hr />
     <br />
     ${bodyContent}
+    <br />
+    <hr />
+    <p style="font-size: 9pt; color: #888;">
+      Detta är ett automatiskt genererat mejl som inte kan besvaras. Kontakta din provförrättare eller Trafikverket om du har frågor om resultatet.
+    </p>
 </body>
 </html>`;
 }
