@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppStore } from '../store/ProvContext';
-import { FileCheck, AlertTriangle, Calendar, FileText, Cloud, RefreshCw, Trash2, ArrowUpDown } from 'lucide-react';
+import { FileCheck, AlertTriangle, Calendar, FileText, Cloud, RefreshCw, Trash2, Search, ClipboardList, TrendingUp, X } from 'lucide-react';
 import { generateProtocolPdf } from '../lib/generateProtocolPdf';
 import { fetchAllProtocols, deleteProtocolFromBackend, SavedProtocolRow, isSupabaseConfigured } from '../lib/supabase';
+import { PrivacyGuard } from '../components/PrivacyGuard';
 
 export function HistorikScreen() {
   const { testHistory, profile } = useAppStore();
   const [cloudProtocols, setCloudProtocols] = useState<SavedProtocolRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeSource, setActiveSource] = useState<'all' | 'cloud' | 'local'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [resultFilter, setResultFilter] = useState<'all' | 'passed' | 'failed'>('all');
+  const [licenseFilter, setLicenseFilter] = useState<string>('all');
 
   const loadProtocols = async () => {
     setLoading(true);
@@ -93,6 +96,40 @@ export function HistorikScreen() {
         state: test
       }));
 
+  const availableLicenses = useMemo(() => {
+    return Array.from(new Set(allDisplayItems.map(item => item.licenseType).filter(Boolean))).sort();
+  }, [allDisplayItems]);
+
+  const filteredItems = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    return allDisplayItems.filter(item => {
+      const matchesSearch = !term ||
+        item.studentName.toLowerCase().includes(term) ||
+        item.personalNumber.toLowerCase().includes(term) ||
+        item.testDate.toLowerCase().includes(term);
+      const matchesResult = resultFilter === 'all' ||
+        (resultFilter === 'passed' && item.isPassed) ||
+        (resultFilter === 'failed' && !item.isPassed);
+      const matchesLicense = licenseFilter === 'all' || item.licenseType === licenseFilter;
+      return matchesSearch && matchesResult && matchesLicense;
+    });
+  }, [allDisplayItems, searchTerm, resultFilter, licenseFilter]);
+
+  const stats = useMemo(() => {
+    const total = allDisplayItems.length;
+    const passed = allDisplayItems.filter(item => item.isPassed).length;
+    const passRate = total > 0 ? Math.round((passed / total) * 100) : 0;
+    return { total, passed, failed: total - passed, passRate };
+  }, [allDisplayItems]);
+
+  const hasActiveFilters = searchTerm.trim() !== '' || resultFilter !== 'all' || licenseFilter !== 'all';
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setResultFilter('all');
+    setLicenseFilter('all');
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-4 py-6 sm:py-8 h-full flex flex-col">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -125,6 +162,98 @@ export function HistorikScreen() {
         </div>
       </div>
 
+      {/* Statistik-panel */}
+      {allDisplayItems.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-white/10 rounded-2xl p-4 flex items-center gap-3 shadow-xs">
+            <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 shrink-0">
+              <ClipboardList size={18} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-lg font-black text-gray-900 dark:text-white leading-none">{stats.total}</div>
+              <div className="text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide truncate">Totalt prov</div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-white/10 rounded-2xl p-4 flex items-center gap-3 shadow-xs">
+            <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shrink-0">
+              <TrendingUp size={18} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-lg font-black text-gray-900 dark:text-white leading-none">{stats.passRate}%</div>
+              <div className="text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide truncate">Godkänt-kvot</div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-white/10 rounded-2xl p-4 flex items-center gap-3 shadow-xs">
+            <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shrink-0">
+              <FileCheck size={18} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-lg font-black text-gray-900 dark:text-white leading-none">{stats.passed}</div>
+              <div className="text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide truncate">Godkända</div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-white/10 rounded-2xl p-4 flex items-center gap-3 shadow-xs">
+            <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/40 text-[#DD1D25] dark:text-red-400 shrink-0">
+              <AlertTriangle size={18} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-lg font-black text-gray-900 dark:text-white leading-none">{stats.failed}</div>
+              <div className="text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide truncate">Underkända</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sök & filter */}
+      {allDisplayItems.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-2.5 mb-4">
+          <div className="relative flex-1">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Sök namn, personnummer eller datum..."
+              className="w-full h-11 pl-10 pr-4 text-sm bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+            />
+          </div>
+
+          <select
+            value={resultFilter}
+            onChange={(e) => setResultFilter(e.target.value as 'all' | 'passed' | 'failed')}
+            className="h-11 px-3.5 text-sm font-semibold bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl dark:text-white outline-none focus:border-blue-500 cursor-pointer"
+          >
+            <option value="all">Alla resultat</option>
+            <option value="passed">Godkänt</option>
+            <option value="failed">Underkänt</option>
+          </select>
+
+          <select
+            value={licenseFilter}
+            onChange={(e) => setLicenseFilter(e.target.value)}
+            className="h-11 px-3.5 text-sm font-semibold bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl dark:text-white outline-none focus:border-blue-500 cursor-pointer"
+          >
+            <option value="all">Alla behörigheter</option>
+            {availableLicenses.map(lic => (
+              <option key={lic} value={lic}>{lic}</option>
+            ))}
+          </select>
+
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="h-11 px-3.5 flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl transition-colors cursor-pointer shrink-0"
+            >
+              <X size={14} />
+              <span className="hidden sm:inline">Rensa</span>
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="flex-1 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden flex flex-col">
         {allDisplayItems.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gray-50/50 dark:bg-slate-900/40">
@@ -136,9 +265,25 @@ export function HistorikScreen() {
               När du slutför ett prov och klickar på "Spara & Slutför" sparas protokollet automatiskt i backend/Supabase.
             </p>
           </div>
+        ) : filteredItems.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gray-50/50 dark:bg-slate-900/40">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-white/5 rounded-2xl flex items-center justify-center mb-4 text-gray-400">
+              <Search className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Inga träffar</h3>
+            <p className="text-sm text-gray-500 max-w-sm mt-2">
+              Inga protokoll matchar din sökning eller dina filter.
+            </p>
+            <button
+              onClick={clearFilters}
+              className="mt-4 px-4 py-2 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 text-[#002f6c] dark:text-blue-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+            >
+              Rensa filter
+            </button>
+          </div>
         ) : (
           <div className="divide-y divide-gray-100 dark:divide-white/5 overflow-y-auto">
-            {allDisplayItems.map((item) => (
+            {filteredItems.map((item) => (
               <div key={item.id} className="p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                 {/* Status Indicator */}
                 <div className={`p-3 shrink-0 rounded-xl flex items-center justify-center ${
@@ -155,9 +300,11 @@ export function HistorikScreen() {
                     <span className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight truncate">
                       {item.studentName}
                     </span>
-                    <span className="text-xs bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded font-mono">
-                      {item.personalNumber}
-                    </span>
+                    <PrivacyGuard className="inline-block">
+                      <span className="text-xs bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded font-mono">
+                        {item.personalNumber}
+                      </span>
+                    </PrivacyGuard>
                     {item.isCloud && (
                       <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded flex items-center gap-1">
                         <Cloud size={10} /> Cloud

@@ -11,7 +11,7 @@ export interface ProvContextType {
   syncQueue: AppState[];
   testHistory: AppState[];
   isSyncing: boolean;
-  saveTest: () => void;
+  saveTest: () => Promise<{ success: boolean; error?: string }>;
   syncTests: () => Promise<void>;
   addTestToHistory: (test: AppState) => void;
 }
@@ -202,7 +202,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const saveTest = () => {
+  const saveTest = async (): Promise<{ success: boolean; error?: string }> => {
     // Add current active test state to queue and history
     setTestHistory((prev) => {
       const updated = [...prev, state];
@@ -215,18 +215,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
 
-    // Save directly to Supabase & backend database
-    saveProtocolToBackend(state, profile?.name).catch(console.warn);
+    // Save directly to Supabase & backend database. Protokollet är redan
+    // säkrat lokalt ovan (historik + syncQueue) oavsett vad som händer här,
+    // men anroparen ska kunna informera inspektören om molnsynken misslyckades.
+    try {
+      const result = await saveProtocolToBackend(state, profile?.name);
+      if (result.error) {
+        return { success: false, error: result.error };
+      }
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Nätverksfel vid molnsynk' };
+    }
   };
 
   const syncTests = React.useCallback(async () => {
     if (!navigator.onLine) return;
     setIsSyncing(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setSyncQueue([]);
-    localStorage.setItem('provprotokoll-sync-queue', JSON.stringify([]));
+
+    let remaining: AppState[] = [];
+    setSyncQueue((current) => {
+      remaining = current;
+      return current;
+    });
+
+    const stillFailing: AppState[] = [];
+    for (const queuedTest of remaining) {
+      try {
+        const result = await saveProtocolToBackend(queuedTest, profile?.name);
+        if (result.error) {
+          stillFailing.push(queuedTest);
+        }
+      } catch (_) {
+        stillFailing.push(queuedTest);
+      }
+    }
+
+    setSyncQueue(stillFailing);
+    localStorage.setItem('provprotokoll-sync-queue', JSON.stringify(stillFailing));
     setIsSyncing(false);
-  }, []);
+  }, [profile?.name]);
 
   // Automatically flush the sync queue once the connection returns
   useEffect(() => {

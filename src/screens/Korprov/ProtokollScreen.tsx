@@ -6,10 +6,12 @@ import { OfficialPrintLayout } from './components/OfficialPrintLayout';
 import { AlertTriangle, Send, FileCheck, Mail, Copy, Check, Loader2, MailCheck, MailX } from 'lucide-react';
 import { generateProtocolPdf } from '../../lib/generateProtocolPdf';
 import { downloadProtocolHtml, downloadEmailProtocolHtml, generateEmailProtocolHtml } from '../../lib/generateProtocolHtml';
+import { useToast } from '../../components/Toast';
 
 export function ProtokollScreen() {
   const { state, saveTest, resetCurrentTest, profile } = useAppStore();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'email' | 'beslut'>('beslut');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -56,8 +58,16 @@ export function ProtokollScreen() {
     });
   };
 
-  const handleComplete = () => {
-    saveTest();
+  const handleComplete = async () => {
+    const result = await saveTest();
+    if (!result.success) {
+      showToast(
+        `Protokollet är sparat lokalt, men molnsynk misslyckades (${result.error || 'okänt fel'}). Synkas automatiskt när anslutningen är tillbaka.`,
+        'warning'
+      );
+    } else {
+      showToast('Protokollet sparat och synkat.', 'success');
+    }
     resetCurrentTest();
     navigate('/');
   };
