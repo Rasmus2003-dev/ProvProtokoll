@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '../store/ProvContext';
 import { FileCheck, AlertTriangle, Calendar, FileText, Cloud, RefreshCw, Trash2, Search, ClipboardList, TrendingUp, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { generateProtocolPdf } from '../lib/generateProtocolPdf';
+import { printProtocol } from '../lib/generateProtocolHtml';
 import {
   fetchProtocolsPage,
   fetchProtocolStats,
@@ -370,12 +370,12 @@ export function HistorikScreen() {
                   </div>
 
                   <button
-                    onClick={() => generateProtocolPdf(item.state, profile?.name)}
+                    onClick={() => printProtocol(item.state, profile?.name)}
                     className="px-3 py-2 min-h-[40px] bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
-                    title="Ladda ner officiellt PDF-protokoll"
+                    title="Öppnar utskriftsdialogen - välj 'Spara som PDF' för att ladda ner"
                   >
                     <FileText size={14} />
-                    <span>Hämta PDF</span>
+                    <span>Skriv ut / PDF</span>
                   </button>
 
                   <button

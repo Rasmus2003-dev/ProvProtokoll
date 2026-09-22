@@ -899,7 +899,7 @@ export function TeoriprovScreen() {
               {/* Question Bank Stats & Presets */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-5 bg-slate-50 dark:bg-slate-900 border border-slate-150 dark:border-white/5 rounded-2xl">
-                  <h3 className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-white mb-3">Svenska Prov-Presets (Trafikverket)</h3>
+                  <h3 className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-white mb-3">Svenska Prov-Presets</h3>
                   <div className="space-y-2">
                     {THEORY_TESTS.map(t => (
                       <div key={t.id} className="flex justify-between items-center text-xs p-2.5 bg-white dark:bg-slate-950 rounded-lg border border-slate-100 dark:border-white/5 font-mono">
@@ -1097,7 +1097,7 @@ export function TeoriprovScreen() {
             {/* Header */}
             <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-150 dark:border-white/5 bg-slate-50 dark:bg-slate-900/50 shrink-0 pt-safe">
               <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#d2232a] block">Trafikverket Resultatbesked</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#d2232a] block">Officiellt Resultatbesked</span>
                 <h2 className="text-base sm:text-xl font-bold dark:text-white uppercase tracking-tight">KUNSKAPSPROV DETALJRAPPORT</h2>
               </div>
               <button onClick={() => setShowProtocolModal(false)} className="flex items-center justify-center min-w-10 min-h-10 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors cursor-pointer shrink-0">

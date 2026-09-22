@@ -84,52 +84,62 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
   const testDate = state.properties.testDate || new Date().toISOString().split('T')[0];
   const examiner = inspectorName || state.properties.examiner || 'Hans Eriksson';
 
+  // Grundorsaker (körning + säkerhetskontroll) slås ihop till EN enda
+  // sammanhängande text under en gemensam rubrik, utan att särskilja vilket
+  // delprov (körning/säkerhetskontroll) som orsakade det - bara kompetens-
+  // området och de markerade bristerna ska synas. Om samma område valts för
+  // båda delproven slås bristerna ihop under en enda rubrik för det området.
+  const primaryCauseAreas = new Map<string, Set<string>>();
+  const addPrimaryCause = (area: string, deficiencies: string[]) => {
+    if (!primaryCauseAreas.has(area)) primaryCauseAreas.set(area, new Set());
+    deficiencies.forEach(d => primaryCauseAreas.get(area)!.add(d));
+  };
+  if (drivingFail?.primaryCause?.area && state.result.drivingResult === 'Underkänt') {
+    addPrimaryCause(drivingFail.primaryCause.area, drivingFail.primaryCause.deficiencies);
+  }
+  if (isSafetyCheckRequired && safetyFail?.primaryCause?.area && state.result.safetyCheckResult === 'Underkänt') {
+    addPrimaryCause(safetyFail.primaryCause.area, safetyFail.primaryCause.deficiencies);
+  }
+  const primaryCauseEntries = Array.from(primaryCauseAreas.entries()).map(([area, deficiencies]) => ({
+    area,
+    deficiencies: Array.from(deficiencies)
+  }));
+
+  const allConsequences = [
+    ...(state.result.drivingResult === 'Underkänt' ? (drivingFail?.consequences || []) : []),
+    ...(isSafetyCheckRequired && state.result.safetyCheckResult === 'Underkänt' ? (safetyFail?.consequences || []) : [])
+  ];
+
   const failureRowsHtml = isFailed
     ? `
       ${!isOmprovSakerhet && state.result.drivingResult === 'Godkänt' ? `<h2 style="color: green;">Din körning är godkänd.</h2>` : ''}
       ${!isOmprovSakerhet && state.result.drivingResult === 'Underkänt' ? `<h2 style="color: red;">Din körning är underkänd.</h2>` : ''}
       ${isSafetyCheckRequired && !isOmprovKorning && state.result.drivingResult !== 'Underkänt' && state.result.safetyCheckResult === 'Underkänt' ? `<h2 style="color: red;">Din säkerhetskontroll är underkänd.</h2>` : ''}
-      ${drivingFail?.primaryCause?.area && state.result.drivingResult === 'Underkänt' ? `
-        <b>${state.result.safetyCheckResult === 'Underkänt' ? 'Grundorsak till körningens underkännande är:' : 'Grundorsak till underkännandet är:'}</b><br />
-        <div style="border: 3px #C0504D solid; margin-bottom: 10px; padding: 5px; margin-top: 5px;">
-          <div style="margin-bottom: 10px;">${drivingFail.primaryCause.area}</div>
-          Din körning visar brister i att:
-          <ul style="margin-top: 0; padding-left: 20px; list-style-type: disc;">
-            ${drivingFail.primaryCause.deficiencies.map(d => `<li style="list-style-type: disc;">${d}</li>`).join('')}
-          </ul>
+      ${primaryCauseEntries.length > 0 ? `
+        <b>Grundorsak till underkännandet är:</b><br />
+        <div style="border: 3px #C0504D solid; margin-bottom: 10px; padding: 5px 10px; margin-top: 5px;">
+          ${primaryCauseEntries.map((entry, idx) => `
+            <div style="${idx > 0 ? 'margin-top: 12px; padding-top: 10px; border-top: 1px solid #e8cac9;' : ''}">
+              <div style="margin-bottom: 8px;">${entry.area}</div>
+              Visar brister i att:
+              <ul style="margin-top: 0; padding-left: 20px; list-style-type: disc;">
+                ${entry.deficiencies.map(d => `<li style="list-style-type: disc;">${d}</li>`).join('')}
+              </ul>
+            </div>
+          `).join('')}
         </div>
       ` : ''}
-      ${drivingFail?.consequences && drivingFail.consequences.length > 0 && state.result.drivingResult === 'Underkänt' ? `
+      ${allConsequences.length > 0 ? `
         <div style="margin-top: 15px;"><b>Detta får konsekvenser på: </b></div>
-        ${drivingFail.consequences.map(c => `
+        ${allConsequences.map(c => `
           <div style="border: 3px #F79646 solid; margin-bottom: 10px; padding: 5px; margin-top: 5px;">
             <div style="margin-bottom: 10px;">${c.area}</div>
-            Din körning visar brister i att:
+            Visar brister i att:
             <ul style="margin-top: 0; padding-left: 20px; list-style-type: disc;">
               ${c.deficiencies.map(d => `<li style="list-style-type: disc;">${d}</li>`).join('')}
             </ul>
           </div>
         `).join('')}
-      ` : ''}
-      ${isSafetyCheckRequired && safetyFail?.primaryCause?.area && state.result.safetyCheckResult === 'Underkänt' ? `
-        <div style="margin-top: 15px;"><b>${state.result.drivingResult === 'Underkänt' ? 'Grundorsak till säkerhetskontrollens underkännande är:' : 'Grundorsak till underkännandet är:'}</b></div>
-        <div style="border: 3px #C0504D solid; margin-bottom: 10px; padding: 6px 10px; margin-top: 5px;">
-          <div style="margin-bottom: 6px; font-weight: 800; font-size: 14px; color: #111;">${safetyFail.primaryCause.area}</div>
-          <ul style="margin-top: 0; padding-left: 20px; list-style-type: disc;">
-            ${safetyFail.primaryCause.deficiencies.map(d => `<li style="list-style-type: disc;">${d}</li>`).join('')}
-          </ul>
-        </div>
-        ${safetyFail?.consequences && safetyFail.consequences.length > 0 ? `
-          <div style="margin-top: 15px;"><b>Detta får konsekvenser på: </b></div>
-          ${safetyFail.consequences.map(c => `
-            <div style="border: 3px #F79646 solid; margin-bottom: 10px; padding: 6px 10px; margin-top: 5px;">
-              <div style="margin-bottom: 6px; font-weight: 800; font-size: 14px; color: #111;">${c.area}</div>
-              <ul style="margin-top: 0; padding-left: 20px; list-style-type: disc;">
-                ${c.deficiencies.map(d => `<li style="list-style-type: disc;">${d}</li>`).join('')}
-              </ul>
-            </div>
-          `).join('')}
-        ` : ''}
       ` : ''}
       ${allSituations.length > 0 ? `
         <div>
@@ -318,8 +328,7 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
 
   const noReplyBanner = `
     <div style="background: #f7f9fc; border: 1px solid #dde3ea; border-left: 3px solid #99a6b8; border-radius: 4px; padding: 12px 16px; margin-bottom: 22px; font-size: 10pt; color: #555; line-height: 1.5;">
-      <strong>OBS: Detta mejl går inte att besvara (Do not reply).</strong><br />
-      Svar till denna adress läses inte. Vid frågor om ditt provresultat, kontakta din provförrättare eller Trafikverket direkt.
+      <strong>Svara ej – detta mejl går inte att besvara.</strong>
     </div>`;
 
   return `<!DOCTYPE html>
@@ -347,10 +356,31 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
     ${bodyContent}
     <hr style="border: none; border-top: 1px solid #e2e6ea; margin: 24px 0 12px;" />
     <p style="font-size: 9pt; color: #888;">
-      Detta är ett automatiskt genererat mejl som inte kan besvaras. Kontakta din provförrättare eller Trafikverket om du har frågor om resultatet.
+      Svara ej – detta är ett automatiskt genererat mejl som inte kan besvaras.
     </p>
 </body>
 </html>`;
+}
+
+/**
+ * Öppnar det officiella protokollet i ett nytt fönster och triggar
+ * webbläsarens utskriftsdialog direkt. Använder exakt samma HTML-källa
+ * (generateOfficialProtocolHtml) som PDF-nedladdningen och mejlet, så
+ * "Skriv ut" garanterat visar identisk layout - inte en separat manuellt
+ * uppbyggd version som kan hamna i otakt.
+ */
+export function printProtocol(state: AppState, inspectorName?: string) {
+  const html = generateOfficialProtocolHtml(state, inspectorName);
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) return;
+
+  printWindow.document.write(html);
+  printWindow.document.close();
+
+  printWindow.onload = () => {
+    printWindow.focus();
+    printWindow.print();
+  };
 }
 
 export function downloadProtocolHtml(state: AppState, inspectorName?: string) {

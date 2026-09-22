@@ -535,7 +535,7 @@ export function ElevProvScreen() {
       <div className="h-full overflow-y-auto bg-[#eaedf1] flex flex-col items-center justify-center py-6 px-3 sm:py-12 sm:px-4 font-sans select-none">
         <div className="w-full max-w-md bg-white border border-gray-300 shadow-xl rounded-sm">
           <div className="bg-[#002f6c] text-white p-5 sm:p-6 border-b-4 border-[#d2232a] text-center">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight uppercase">Trafikverket</h1>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight uppercase">ProvProtokoll</h1>
             <p className="text-[10px] sm:text-xs uppercase tracking-widest text-slate-300 font-bold mt-1">Kunskapsprov Portal</p>
           </div>
           
@@ -570,7 +570,7 @@ export function ElevProvScreen() {
             <form onSubmit={handleLoginSubmit} className="p-5 sm:p-8 space-y-4 sm:space-y-6">
               <div className="text-center">
                 <p className="text-xs sm:text-sm text-gray-600 leading-relaxed font-semibold">
-                  Välkommen till Trafikverkets teoriprovs-sal. Vänligen logga in med ditt personnummer.
+                  Välkommen till teoriprovs-salen. Vänligen logga in med ditt personnummer.
                 </p>
               </div>
 
@@ -663,7 +663,7 @@ export function ElevProvScreen() {
         title: t.title,
         duration: `${Math.round(t.duration / 60)} min`,
         limit: t.questionsCount,
-        category: t.category === 'Standardprov' ? 'Trafikverket Prov' : (t.category === 'Övningsprov' ? 'Träningsprov' : 'Snabbprov')
+        category: t.category === 'Standardprov' ? 'Officiellt Prov' : (t.category === 'Övningsprov' ? 'Träningsprov' : 'Snabbprov')
       }));
 
     return (
@@ -671,7 +671,7 @@ export function ElevProvScreen() {
         <div className="w-full max-w-4xl">
           <div className="mb-6 border-b border-gray-300 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-[#d2232a] uppercase tracking-tight">Trafikverket</h1>
+              <h1 className="text-2xl sm:text-3xl font-black text-[#d2232a] uppercase tracking-tight">ProvProtokoll</h1>
               <h2 className="text-lg sm:text-xl font-medium text-gray-800 mt-0.5">Kunskapsprov för körkort</h2>
             </div>
             <div className="bg-white border border-gray-300 px-3 py-2 sm:px-4 sm:py-3 rounded text-xs sm:text-sm text-gray-700">
@@ -708,7 +708,7 @@ export function ElevProvScreen() {
                   >
                     <div className="col-span-3">
                       <span className={`px-2 py-0.5 sm:px-2.5 sm:py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded ${
-                        test.category === 'Trafikverket Prov' 
+                        test.category === 'Officiellt Prov'
                           ? 'bg-amber-100 text-amber-800' 
                           : 'bg-slate-100 text-slate-700'
                       }`}>
@@ -750,7 +750,7 @@ export function ElevProvScreen() {
           <div className="bg-white max-w-md w-full p-8 rounded shadow-2xl">
             <h3 className="text-2xl font-black text-gray-950 mb-3 uppercase tracking-tight">LÄMNA IN PROVET?</h3>
             <p className="text-gray-600 mb-6 leading-relaxed text-sm font-semibold">
-              Är du helt färdig? Detta beslut går inte att ångra och dina svar registreras omedelbart för rättning hos Trafikverket.
+              Är du helt färdig? Detta beslut går inte att ångra och dina svar registreras omedelbart för rättning.
             </p>
             <div className="flex gap-4">
               <button 
@@ -794,7 +794,7 @@ export function ElevProvScreen() {
       {/* 3c. HEADER */}
       <header className="bg-white border-b border-gray-300 px-4 py-2 sm:px-6 sm:py-2.5 flex items-center justify-between z-10 shrink-0 shadow-xs select-none">
         <div className="flex items-center gap-3">
-          <h1 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">Trafikverket</h1>
+          <h1 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">ProvProtokoll</h1>
           <div className="h-5 w-px bg-gray-300 hidden sm:block"></div>
           <h2 className="text-xs sm:text-sm font-semibold text-gray-600 hidden sm:block">Kunskapsprov – {activeCandidate?.auth || 'B'}</h2>
         </div>
@@ -865,7 +865,7 @@ export function ElevProvScreen() {
         ) : isSubmitted && testResult ? (
 
           <div className="w-full flex flex-col items-center justify-center min-h-[65vh] py-8">
-            {/* Trafikverket Authentic Result Screen */}
+            {/* Authentic Result Screen */}
             <div className="w-full max-w-xl bg-white border border-gray-300 rounded-lg p-10 sm:p-14 shadow-lg text-center flex flex-col items-center">
               
               {/* Green checkmark or Red crossmark */}
@@ -909,7 +909,7 @@ export function ElevProvScreen() {
           </div>
         ) : (
           
-          // Question Sandbox Testing Layout (Trafikverket Official Interface)
+          // Question Sandbox Testing Layout (Official Interface)
           <div id="test-view" className="flex-1 flex flex-col items-stretch gap-3 min-h-0 w-full relative">
             
             {/* Main Outer Box with Floating Chevrons */}
@@ -1030,7 +1030,7 @@ export function ElevProvScreen() {
                 {/* RIGHT CARD (Media Panel: 2x2 Image Grid or Single Image) */}
                 <div id="media-panel" className="lg:col-span-7 bg-[#f9fafb] border border-gray-300 rounded-lg p-4 sm:p-6 flex flex-col items-center justify-center min-h-[200px] lg:h-full">
                   
-                  {/* Case 1: 4 Option Signs (2x2 Grid like in Trafikverket screenshot!) */}
+                  {/* Case 1: 4 Option Signs (2x2 Grid) */}
                   {currentTestQuestions[currentQuestion]?.optionSignLetters ? (
                     <div className="w-full h-full grid grid-cols-2 gap-4 max-w-2xl mx-auto">
                       {(['A', 'B', 'C', 'D'] as const).map((letter, idx) => {
@@ -1083,7 +1083,7 @@ export function ElevProvScreen() {
               </div>
             </div>
 
-            {/* LOWER INDEX CAROUSEL & STATS BAR (Trafikverkets autentiska provutseende) */}
+            {/* LOWER INDEX CAROUSEL & STATS BAR (autentiskt provutseende) */}
             <div className="shrink-0 w-full bg-[#dfe3e8] border border-gray-300 p-2 sm:p-3 rounded-lg flex flex-col xl:flex-row items-center justify-between gap-3 select-none">
               
               {/* Question Number Matrix (Rows of 30 questions) */}
@@ -1100,7 +1100,7 @@ export function ElevProvScreen() {
                           const isMarked = marked[i] === true;
                           const isActive = i === currentQuestion;
 
-                          // Trafikverket authentic style:
+                          // Authentic exam style:
                           // - Answered: solid black background with white text ("besvarad blir svart")
                           // - Unanswered: white/very light background with black text
                           // - Active: marked with distinct border/ring

@@ -21,6 +21,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/ProvContext';
 import { triggerHaptic } from '../lib/utils';
 import { PrivacyGuard } from '../components/PrivacyGuard';
+import { VtrStatusBadge } from '../components/VtrStatusBadge';
+import { VtrDetailsPanel } from '../components/VtrDetailsPanel';
 import { useToast } from '../components/Toast';
 import { fetchElever, addElev, deleteElev, subscribeToElever } from '../lib/elevregister';
 import { isSupabaseConfigured } from '../lib/supabase';
@@ -37,6 +39,7 @@ export function ElevregisterScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [modalSource, setModalSource] = useState<'trv' | 'trafikskola'>('trv');
+  const [expandedVtrId, setExpandedVtrId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Form State
@@ -175,7 +178,7 @@ export function ElevregisterScreen() {
             )}
           </div>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-slate-400 mt-1">
-            Gemensam hantering av provkandidater (Trafikverket TRV) och trafikelever (Trafikskolan).
+            Gemensam hantering av provkandidater (körkortsprov TRV) och trafikelever (Trafikskolan).
           </p>
         </div>
 
@@ -228,7 +231,7 @@ export function ElevregisterScreen() {
             }`}
           >
             <Building2 size={14} className="text-blue-600" />
-            <span>Trafikverket (TRV)</span>
+            <span>Körkortsprov (TRV)</span>
             <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 font-black">
               {trvCount}
             </span>
@@ -295,7 +298,7 @@ export function ElevregisterScreen() {
                         : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-900'
                     }`}>
                       {isTrv ? <Building2 size={12} /> : <GraduationCap size={12} />}
-                      {isTrv ? 'Trafikverket' : 'Trafikskola'}
+                      {isTrv ? 'Körkortsprov' : 'Trafikskola'}
                     </span>
                     <span className="text-xs font-black font-mono px-2 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-[#002f6c] dark:text-blue-400">
                       {elev.licenseType}
@@ -305,11 +308,14 @@ export function ElevregisterScreen() {
                   <h3 className="text-base font-black text-gray-900 dark:text-white mb-0.5">
                     {elev.name}
                   </h3>
-                  <PrivacyGuard className="inline-block">
-                    <div className="text-xs font-mono text-gray-500 dark:text-slate-400 mb-3">
-                      {elev.personalNumber}
-                    </div>
-                  </PrivacyGuard>
+                  <div className="flex items-center gap-2 mb-3 flex-wrap">
+                    <PrivacyGuard className="inline-block">
+                      <div className="text-xs font-mono text-gray-500 dark:text-slate-400">
+                        {elev.personalNumber}
+                      </div>
+                    </PrivacyGuard>
+                    <VtrStatusBadge personalNumber={elev.personalNumber} compact />
+                  </div>
 
                   <div className="space-y-1.5 text-xs text-gray-600 dark:text-slate-300 border-t border-gray-100 dark:border-slate-800 pt-3">
                     {elev.phone && (
@@ -331,6 +337,19 @@ export function ElevregisterScreen() {
                       )}
                     </div>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setExpandedVtrId(expandedVtrId === elev.id ? null : elev.id)}
+                    className="w-full text-left text-[11px] font-bold text-[#002f6c] dark:text-blue-400 hover:underline pt-2 cursor-pointer"
+                  >
+                    {expandedVtrId === elev.id ? '▾ Dölj vägtrafikregister' : '▸ Visa vägtrafikregister'}
+                  </button>
+                  {expandedVtrId === elev.id && (
+                    <div className="pt-2 pb-1 animate-in fade-in duration-150">
+                      <VtrDetailsPanel personalNumber={elev.personalNumber} />
+                    </div>
+                  )}
                 </div>
 
                 <div className="border-t border-gray-100 dark:border-slate-800 pt-3 mt-4 flex items-center justify-between gap-2">
@@ -395,7 +414,7 @@ export function ElevregisterScreen() {
                     }`}
                   >
                     <Building2 size={14} />
-                    <span>Trafikverket (TRV)</span>
+                    <span>Körkortsprov (TRV)</span>
                   </button>
                   <button
                     type="button"

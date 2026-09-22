@@ -325,7 +325,7 @@ export function KorningScreen() {
         </div>
       </div>
 
-      {/* RENT 3-KOLUMNERS RUTNÄT SOM PÅ TRAFIKVERKETS SKÄRM */}
+      {/* RENT 3-KOLUMNERS RUTNÄT */}
       {state.properties?.testType !== 'Omprov säkerhetskontroll' && (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 lg:gap-x-8 gap-y-2.5 pt-2">
 

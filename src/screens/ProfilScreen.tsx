@@ -67,6 +67,7 @@ export function ProfilScreen() {
     if (window.confirm('Är du säker på att du vill logga ut från provsystemet?')) {
       await signOutSupabase();
       localStorage.removeItem('provprotokoll-is-logged-in');
+      localStorage.removeItem('provprotokoll-logged-in-inspector-id');
       window.location.reload();
     }
   };
@@ -159,7 +160,7 @@ export function ProfilScreen() {
               <div className="flex items-center gap-2.5">
                 <AppLogo variant="icon" size="sm" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-blue-300">
-                  Trafikverket Förarprov
+                  ProvProtokoll Förarprov
                 </span>
               </div>
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400/50" />
@@ -205,6 +206,17 @@ export function ProfilScreen() {
 
           {/* Quick Actions Card */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-gray-200/80 dark:border-white/5 shadow-sm space-y-3">
+            {(profile.role === 'admin' || profile.inspectorId === 'insp-rasmus') && (
+              <button
+                onClick={() => navigate('/inspektorer')}
+                className="w-full py-3 px-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-xs font-bold text-amber-800 dark:text-amber-300 transition-colors flex items-center justify-between cursor-pointer border border-amber-200/60 dark:border-amber-900/40"
+              >
+                <div className="flex items-center gap-2">
+                  <Shield size={15} className="text-amber-600 dark:text-amber-400" />
+                  <span>Hantera inspektörer</span>
+                </div>
+              </button>
+            )}
             <button
               onClick={() => navigate('/historik')}
               className="w-full py-3 px-4 rounded-xl bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-gray-800 dark:text-gray-200 transition-colors flex items-center justify-between cursor-pointer border border-gray-200/60 dark:border-slate-700/60"

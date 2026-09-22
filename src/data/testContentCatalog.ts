@@ -174,7 +174,7 @@ heavyTypes.forEach(type => {
 TEST_CONTENT['BE'] = Array.from(new Set([...baseContent, ...BE_SAFETY_ITEMS]));
 TEST_CONTENT['B96'] = Array.from(new Set([...baseContent, ...BE_SAFETY_ITEMS]));
 
-// Officiella moment för motorcykelprov (A, A1, A2) enligt Trafikverkets protokoll
+// Officiella moment för motorcykelprov (A, A1, A2) enligt gällande provprotokoll
 export const MC_SPECIFIC_ITEMS = [
   'Säkerhetskontroll',
   'Lågfart',

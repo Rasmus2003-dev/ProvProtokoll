@@ -7,6 +7,7 @@ export interface InspectorProfile {
   signatureText: string;
   autoSign: boolean;
   vehicleCategories: string[];
+  role?: 'admin' | 'inspector';
 }
 
 export interface Consequence {
@@ -72,4 +73,29 @@ export interface ElevRecord {
   status: 'Inbokad' | 'Klar för start' | 'Aktiv elev' | 'Genomförd';
   teacher?: string;
   createdDate: string;
+}
+
+export interface Inspector {
+  id: string;
+  username: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'inspector';
+  depots: string[];
+  vehicleCategories: string[];
+  mustChangePassword: boolean;
+  active: boolean;
+}
+
+export type LicenseStatus = 'Giltigt' | 'Indraget' | 'Spärrat' | 'Återkallat tillfälligt' | 'Saknar körkort';
+
+export interface VagtrafikregisterEntry {
+  personalNumber: string;
+  licenseStatus: LicenseStatus;
+  licenseClasses: string[];
+  statusReason?: string;
+  statusSince?: string;
+  remarks: string[];
+  previousRevocations: number;
+  medicalRestriction?: string;
 }

@@ -1,4 +1,4 @@
-// Lightweight Mini-SQL database engine for Trafikverket Prov-system
+// Lightweight Mini-SQL database engine for ProvProtokoll Prov-system
 // Provides table schema, SQL-like queries (SELECT, INSERT, UPDATE, DELETE), and localStorage/IndexedDB persistence.
 
 export interface UserRow {

@@ -34,6 +34,7 @@ export function TopAppBar() {
     if (window.confirm('Är du säker på att du vill logga ut från provsystemet?')) {
       await signOutSupabase();
       localStorage.removeItem('provprotokoll-is-logged-in');
+      localStorage.removeItem('provprotokoll-logged-in-inspector-id');
       window.location.reload();
     }
   };
@@ -134,7 +135,7 @@ export function TopAppBar() {
     return `${m}:${s}`;
   };
 
-  // I fullskärmsläge döljs toppmenyn helt så att applikationen blir identisk med Trafikverkets surfplatta
+  // I fullskärmsläge döljs toppmenyn helt så att applikationen blir identisk med provplattans surfplatta
   if (isFullscreen) {
     return (
       <>

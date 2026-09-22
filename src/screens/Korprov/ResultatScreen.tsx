@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import { Button } from '../../components/ui/Button';
 import { useAppStore } from '../../store/ProvContext';
 import { FailureForm } from './components/FailureForm';
-import { generateProtocolPdf } from '../../lib/generateProtocolPdf';
+import { printProtocol } from '../../lib/generateProtocolHtml';
 import { FileDown, ArrowRight } from 'lucide-react';
 import { PrivacyGuard } from '../../components/PrivacyGuard';
 
@@ -812,12 +812,12 @@ export function ResultatScreen() {
         <Button
           type="button"
           variant="outline"
-          onClick={() => generateProtocolPdf(state)}
+          onClick={() => printProtocol(state)}
           size="lg"
           className="rounded-xl px-6 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 h-14 font-bold text-[14px] flex items-center justify-center gap-2 shadow-sm transition-all"
         >
           <FileDown className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-          <span>Ladda ner PDF (Protokoll)</span>
+          <span>Skriv ut / PDF (Protokoll)</span>
         </Button>
 
         <Button

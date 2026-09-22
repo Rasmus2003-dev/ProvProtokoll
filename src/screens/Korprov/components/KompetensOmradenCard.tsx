@@ -10,7 +10,7 @@ export interface CompetenceArea {
   icon: React.ReactNode;
 }
 
-// Custom SVGs matching Trafikverket's tablet system exactly as in the photo
+// Custom SVGs matching the official tablet system
 export const CompetenceIcons = {
   Fordonskannedom: (
     <svg className="w-8 h-8 sm:w-10 sm:h-10 text-[#002f6c] dark:text-blue-400" viewBox="0 0 24 24" fill="currentColor">
@@ -167,7 +167,7 @@ export function KompetensOmradenCard() {
         </div>
       </div>
 
-      {/* FULLSCREEN ASPIRANT PRESENTATION MODAL - TRAFIKVERKET CLEAN DESIGN */}
+      {/* FULLSCREEN ASPIRANT PRESENTATION MODAL - CLEAN DESIGN */}
       {isAspirantModalOpen && (
         <div className="fixed inset-0 z-50 bg-[#f4f6f9] dark:bg-slate-950 flex flex-col p-4 sm:p-8 animate-in fade-in duration-200 overflow-y-auto">
           

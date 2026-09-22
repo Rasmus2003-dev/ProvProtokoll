@@ -30,6 +30,7 @@ const InledningScreen = lazy(() => import('./screens/Korprov/InledningScreen').t
 const KorningScreen = lazy(() => import('./screens/Korprov/KorningScreen').then(m => ({ default: m.KorningScreen })));
 const ResultatScreen = lazy(() => import('./screens/Korprov/ResultatScreen').then(m => ({ default: m.ResultatScreen })));
 const ProtokollScreen = lazy(() => import('./screens/Korprov/ProtokollScreen').then(m => ({ default: m.ProtokollScreen })));
+const InspektorerScreen = lazy(() => import('./screens/InspektorerScreen').then(m => ({ default: m.InspektorerScreen })));
 
 function AppContent() {
   const location = useLocation();
@@ -75,6 +76,7 @@ function AppContent() {
             <Route path="/lathundar" element={<LathundarScreen />} />
             <Route path="/historik" element={<HistorikScreen />} />
             <Route path="/profil" element={<ProfilScreen />} />
+            <Route path="/inspektorer" element={<InspektorerScreen />} />
             <Route path="*" element={<Navigate to="/korprov/start" replace />} />
           </Routes>
         </Suspense>

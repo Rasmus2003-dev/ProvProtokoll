@@ -135,7 +135,7 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
       
       <CardContent className="space-y-8 p-5 sm:p-7">
         
-        {/* Grundorsak - inramad med Trafikverkets officiella 3px röda ram */}
+        {/* Grundorsak - inramad med officiell 3px röd ram */}
         <section className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 border-b border-gray-100 dark:border-white/5 pb-2">
             <h4 className="font-bold text-base sm:text-lg text-gray-900 dark:text-white leading-tight uppercase tracking-tight flex items-center gap-2">
@@ -214,7 +214,7 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
           </div>
         </section>
 
-        {/* Konsekvenser - inramade med Trafikverkets officiella 3px orangea ram */}
+        {/* Konsekvenser - inramade med officiell 3px orange ram */}
         <section className="space-y-4 pt-4 border-t border-gray-100 dark:border-white/5">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>

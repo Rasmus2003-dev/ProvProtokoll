@@ -2,7 +2,7 @@ import { HTMLAttributes, CSSProperties } from 'react';
 import provprotokollLogoImg from '../../assets/images/provprotokoll_logo.png';
 
 interface AppLogoProps extends HTMLAttributes<HTMLDivElement> {
-  variant?: 'icon' | 'full' | 'horizontal' | 'badge' | 'trafikverket' | 'provprotokoll';
+  variant?: 'icon' | 'full' | 'horizontal' | 'badge' | 'provprotokoll';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   style?: CSSProperties;
@@ -34,41 +34,6 @@ export function AppLogo({
           style={{ height: imgHeight, width: 'auto', objectFit: 'contain' }}
           className="drop-shadow-xs"
         />
-      </div>
-    );
-  }
-
-  // Autentisk Trafikverket Förarprov-logotyp (röd rektangel med kungakrona)
-  if (variant === 'trafikverket') {
-    return (
-      <div 
-        className={`inline-flex flex-col items-center justify-center bg-[#c40000] text-white px-5 py-2 select-none shadow-sm ${className}`}
-        style={{ minWidth: '130px', ...style }}
-        {...props}
-      >
-        <div className="flex items-center justify-center gap-1.5 mb-0.5">
-          {/* Autentisk svensk kungakrona / riksvapen-krona */}
-          <svg className="w-5 h-4 text-white" viewBox="0 0 24 20" fill="currentColor">
-            {/* Äpplet / korset på toppen */}
-            <circle cx="12" cy="1.5" r="1.2" />
-            <path d="M11.3 2.7h1.4v2.5h-1.4z" />
-            {/* Bågarna och spirorna */}
-            <path d="M12 4.8c-2.8 0-4.8 1.8-6.8 4.2C3.8 10.7 2 12.2 2 13.5c0 1.2 1.2 2 3 2.2V17h14v-1.3c1.8-.2 3-1 3-2.2 0-1.3-1.8-2.8-3.2-4.5-2-2.4-4-4.2-6.8-4.2zm-6.2 9c-.8-.2-1.3-.6-1.3-1 0-.7 1.4-1.9 2.5-3.1 1.4-1.6 2.8-2.8 4.5-3.2v6.8c-2 .1-4.2.3-5.7.5zm7.7-.5V6.5c1.7.4 3.1 1.6 4.5 3.2 1.1 1.2 2.5 2.4 2.5 3.1 0 .4-.5.8-1.3 1-1.5-.2-3.7-.4-5.7-.5z" />
-            {/* Kronringens juveler / bas */}
-            <path d="M4 17.5h16v1.8H4z" />
-            <circle cx="6" cy="18.4" r="0.6" fill="#c40000" />
-            <circle cx="9" cy="18.4" r="0.6" fill="#c40000" />
-            <circle cx="12" cy="18.4" r="0.6" fill="#c40000" />
-            <circle cx="15" cy="18.4" r="0.6" fill="#c40000" />
-            <circle cx="18" cy="18.4" r="0.6" fill="#c40000" />
-          </svg>
-          <span className="text-[12px] font-black tracking-widest uppercase font-sans leading-none">
-            FÖRARPROV
-          </span>
-        </div>
-        <span className="text-[7.5px] font-bold tracking-widest uppercase text-white/90 font-sans leading-none">
-          TRAFIKVERKET
-        </span>
       </div>
     );
   }

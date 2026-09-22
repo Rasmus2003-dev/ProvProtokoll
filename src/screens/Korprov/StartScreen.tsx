@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/ProvContext';
 import { TEST_CONTENT } from '../../data/testContentCatalog';
+import { VtrStatusBadge } from '../../components/VtrStatusBadge';
 import { 
   User, 
   FileText, 
@@ -375,7 +376,10 @@ export function StartScreen() {
                           >
                             <div>
                               <div className="text-sm font-bold text-gray-900 dark:text-white">{c.studentName}</div>
-                              <div className="text-xs font-mono text-gray-500 dark:text-slate-400">{c.personalNumber || 'Saknar personnummer'}</div>
+                              <div className="flex items-center gap-1.5">
+                                <div className="text-xs font-mono text-gray-500 dark:text-slate-400">{c.personalNumber || 'Saknar personnummer'}</div>
+                                {c.personalNumber && <VtrStatusBadge personalNumber={c.personalNumber} compact />}
+                              </div>
                             </div>
                             <div className="flex items-center gap-1.5">
                               <span className="text-[10px] font-black px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200">
@@ -752,6 +756,7 @@ export function StartScreen() {
                               Omprov
                             </span>
                           )}
+                          <VtrStatusBadge personalNumber={item.personalNumber} compact />
                         </div>
                         <div className="text-[11px] text-gray-500 dark:text-slate-400 font-mono flex items-center gap-2">
                           {item.personalNumber} <span className="opacity-50">•</span> {item.transmission}

@@ -4,8 +4,7 @@ import { Button } from '../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { OfficialPrintLayout } from './components/OfficialPrintLayout';
 import { AlertTriangle, Send, FileCheck, Mail, Copy, Check, Loader2, MailCheck, MailX } from 'lucide-react';
-import { generateProtocolPdf } from '../../lib/generateProtocolPdf';
-import { downloadProtocolHtml, downloadEmailProtocolHtml, generateEmailProtocolHtml } from '../../lib/generateProtocolHtml';
+import { downloadProtocolHtml, downloadEmailProtocolHtml, generateEmailProtocolHtml, printProtocol } from '../../lib/generateProtocolHtml';
 import { useToast } from '../../components/Toast';
 
 export function ProtokollScreen() {
@@ -27,14 +26,18 @@ export function ProtokollScreen() {
   const [confirmEmailChecked, setConfirmEmailChecked] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
 
+  // Både "Skriv ut" och "Hämta PDF" går via samma printProtocol-funktion,
+  // som renderar exakt samma HTML-källa som mejlet och HTML-nedladdningen -
+  // garanterat identisk layout istället för en separat manuellt uppbyggd
+  // PDF som kan hamna i otakt med protokollets faktiska utseende.
   const handlePrint = () => {
-    window.print();
+    printProtocol(state, profile?.name);
   };
 
   const handleDownloadPDF = () => {
     setIsGeneratingPdf(true);
     setTimeout(() => {
-      generateProtocolPdf(state, profile?.name);
+      printProtocol(state, profile?.name);
       setIsGeneratingPdf(false);
     }, 50);
   };
@@ -273,6 +276,7 @@ export function ProtokollScreen() {
               variant="outline"
               onClick={handleDownloadPDF}
               disabled={isGeneratingPdf}
+              title="Öppnar utskriftsdialogen - välj 'Spara som PDF' för att ladda ner"
               className="bg-white rounded-xl px-2.5 sm:px-4 py-2 border border-teal-200 text-teal-700 hover:bg-teal-50 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-70 disabled:cursor-wait transition-opacity"
             >
               {isGeneratingPdf ? (
@@ -282,7 +286,7 @@ export function ProtokollScreen() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               )}
-              <span>{isGeneratingPdf ? 'Genererar...' : 'Hämta PDF'}</span>
+              <span>{isGeneratingPdf ? 'Öppnar...' : 'Spara som PDF'}</span>
             </Button>
 
             <Button
