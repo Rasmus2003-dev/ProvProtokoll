@@ -118,6 +118,23 @@ export function KorningScreen() {
     }));
   };
 
+  // Markera/rensa bara säkerhetskontrollens egna moment, utan att röra
+  // körmomenten i huvudrutnätet ovanför.
+  const selectAllSafety = () => {
+    updateState((prev) => {
+      const items = new Set(prev.includedTestItems || []);
+      selectedSafetyItems.forEach(item => items.add(item));
+      return { ...prev, includedTestItems: Array.from(items) };
+    });
+  };
+
+  const clearAllSafety = () => {
+    updateState((prev) => ({
+      ...prev,
+      includedTestItems: (prev.includedTestItems || []).filter(item => !selectedSafetyItems.includes(item))
+    }));
+  };
+
   const setIntervention = () => {
     updateState((prev) => ({
       ...prev,
@@ -350,17 +367,34 @@ export function KorningScreen() {
               </p>
             </div>
 
-            {/* Funktionsfråga knapp (särskilt anpassad för tunga fordon C, CE, D, DE etc.) */}
-            {HEAVY_LICENSES.includes(licenseType) && (
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
-                onClick={() => setIsQuestionModalOpen(true)}
-                className="px-4 py-2.5 bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shadow-md hover:shadow-lg cursor-pointer active:scale-95 shrink-0 border border-amber-400/40"
+                onClick={clearAllSafety}
+                className="px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-700 text-gray-500 hover:text-red-600 hover:border-red-200 dark:text-zinc-400 dark:hover:text-red-400 bg-white dark:bg-zinc-900 hover:bg-red-50 dark:hover:bg-red-900/20 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
               >
-                <Dice5 size={16} className="animate-pulse" />
-                <span>Generera fråga & följdfrågor ({licenseType})</span>
+                Rensa
               </button>
-            )}
+              <button
+                type="button"
+                onClick={selectAllSafety}
+                className="px-3.5 py-2.5 rounded-xl border border-[#002f6c]/20 dark:border-blue-500/30 text-[#002f6c] dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+              >
+                Markera alla
+              </button>
+
+              {/* Funktionsfråga knapp (särskilt anpassad för tunga fordon C, CE, D, DE etc.) */}
+              {HEAVY_LICENSES.includes(licenseType) && (
+                <button
+                  type="button"
+                  onClick={() => setIsQuestionModalOpen(true)}
+                  className="px-4 py-2.5 bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shadow-md hover:shadow-lg cursor-pointer active:scale-95 shrink-0 border border-amber-400/40"
+                >
+                  <Dice5 size={16} className="animate-pulse" />
+                  <span>Generera fråga & följdfrågor ({licenseType})</span>
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 lg:gap-x-12 gap-y-3">

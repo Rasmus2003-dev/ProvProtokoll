@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
@@ -7,10 +8,60 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  app.use(express.json({ limit: "5mb" }));
 
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
+  });
+
+  // Skickar resultatmejl via Brevo. Speglar functions/api/send-protocol.ts
+  // (Cloudflare Pages Function i produktion) så mejlutskicket fungerar
+  // identiskt lokalt under `npm run dev` istället för att tyst falla igenom
+  // till Vites SPA-fallback (index.html) på en route som annars inte fanns
+  // i dev-servern.
+  app.post("/api/send-protocol", async (req, res) => {
+    try {
+      const { to, toName, subject, html } = req.body as {
+        to: string;
+        toName?: string;
+        subject: string;
+        html: string;
+      };
+
+      if (!to || !subject || !html) {
+        return res.status(400).json({ error: "to, subject och html krävs" });
+      }
+
+      const apiKey = process.env.BREVO_API_KEY;
+      if (!apiKey) {
+        return res.status(503).json({ error: "E-posttjänsten är inte konfigurerad (BREVO_API_KEY saknas i .env)" });
+      }
+
+      const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "api-key": apiKey,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          sender: { name: "ProvProtokoll (Svara inte)", email: "info@rasmusl.se" },
+          replyTo: { name: "Svara inte på detta mejl", email: "noreply@rasmusl.se" },
+          to: [{ email: to, name: toName || undefined }],
+          subject,
+          htmlContent: html,
+        }),
+      });
+
+      if (!brevoRes.ok) {
+        const errBody = await brevoRes.text();
+        return res.status(502).json({ error: "Kunde inte skicka mejlet", detail: errBody });
+      }
+
+      res.json({ status: "sent" });
+    } catch (e: any) {
+      res.status(500).json({ error: "Ett oväntat fel inträffade", detail: e?.message });
+    }
   });
 
   // Authoritative server-side grading for a completed theory exam.
