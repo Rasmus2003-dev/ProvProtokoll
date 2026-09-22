@@ -76,7 +76,7 @@ export function ProtokollScreen() {
         body: JSON.stringify({
           to: recipient,
           toName: state.properties.studentName,
-          subject: `Resultat från ditt prov – ${state.properties.testType || 'Körprov'} (${state.properties.licenseType || 'B'})`,
+          subject: `Körprovsresultat – ${state.properties.testType || 'Körprov'} (${state.properties.licenseType || 'B'})`,
           html,
         }),
       });
@@ -342,7 +342,7 @@ export function ProtokollScreen() {
             </div>
             <div className="flex">
               <span className="w-16 font-bold text-gray-400 uppercase tracking-wider text-[9px]">Ämne:</span>
-              <span className="text-black font-bold text-[12px]">Resultat från ditt prov – {state.properties.testType || 'Körprov'} ({licenseType})</span>
+              <span className="text-black font-bold text-[12px]">Körprovsresultat – {state.properties.testType || 'Körprov'} ({licenseType})</span>
             </div>
 
             <div className="pt-3 border-t border-gray-200 flex items-center justify-between gap-3">

@@ -135,7 +135,7 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
               <td colSpan={3}>
                 <div style={{ marginTop: '30px' }}>
                   <h1 style={{ fontSize: '26px', margin: '0 0 14px 0', fontWeight: 'bold' }}>
-                    Resultat från ditt prov
+                    Körprovsresultat
                   </h1>
                   <table className="infoTable" style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <tbody>

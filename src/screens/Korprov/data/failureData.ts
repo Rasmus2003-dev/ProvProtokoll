@@ -77,7 +77,8 @@ export const failureCategories = {
       "Lokalisering och kontroll av säkerhetsbälten och krockkuddar",
       "Manövrering av defroster, vindrutetorkare, spolare och klimatanläggning under färd",
       "Säkerhetskontroll av broms- och styrservo",
-      "Bedömning av lastens surrning och lastsäkerhet (för tunga fordonsklasser/släp)"
+      "Bedömning av lastens surrning och lastsäkerhet (för tunga fordonsklasser/släp)",
+      "Korrekt till- och frånkoppling av släpvagn (bromsuttag, vändskiva/dragstång, katastrofbromswire)"
     ],
     "Miljömedveten körning": [
       "Köra fordonet med god planering och framförhållning",

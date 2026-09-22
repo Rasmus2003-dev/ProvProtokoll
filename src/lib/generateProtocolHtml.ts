@@ -177,7 +177,7 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
-    <title>Resultat från ditt prov - ${studentName}</title>
+    <title>Körprovsresultat - ${studentName}</title>
     <style>
         body { font-family: Arial, Sans-Serif; }
         .resultContainer { font-family: Arial, sans-serif; font-size: 11pt; max-width: 730px; color: #000; }
@@ -212,7 +212,7 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
             <tr>
                 <td colspan="3">
                     <div style="margin-top: 30px;">
-                        <h1>Resultat från ditt prov</h1>
+                        <h1>Körprovsresultat</h1>
                         <table class="infoTable">
                             <tr>
                                 <td>
@@ -326,7 +326,7 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
 <html lang="sv">
 <head>
   <meta charset="utf-8">
-  <title>Resultat från ditt prov - ${studentName}</title>
+  <title>Körprovsresultat - ${studentName}</title>
   ${styleTag}
   <style>
     body { line-height: 1.6; }

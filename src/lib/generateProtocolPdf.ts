@@ -60,11 +60,11 @@ export function generateProtocolPdf(state: AppState, inspectorName?: string) {
 
   y += 65;
 
-  // --- 2. HUVUDRUBRIK: Resultat från ditt prov ---
+  // --- 2. HUVUDRUBRIK: Körprovsresultat ---
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(24);
   doc.setTextColor(0, 0, 0);
-  doc.text('Resultat från ditt prov', margin, y);
+  doc.text('Körprovsresultat', margin, y);
   y += 24;
 
   // --- 3. METADATA 2-KOLUMNS TABELL ---
