@@ -313,10 +313,11 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
   const bodyContent = protocolHtml
     .replace(/^[\s\S]*<body>/, '')
     .replace(/<\/body>[\s\S]*$/, '')
-    .replace(/src="[^"]*"(\s+alt="ProvProtokoll")/, `src="${EMAIL_LOGO_URL}"$1`);
+    .replace(/src="[^"]*"(\s+alt="ProvProtokoll")/, `src="${EMAIL_LOGO_URL}"$1`)
+    .replace(/max-width:\s*195px;\s*max-height:\s*52px;/, 'max-width: 210px; max-height: 62px;');
 
   const noReplyBanner = `
-    <div style="background: #f2f4f7; border: 1px solid #d8dde3; border-radius: 6px; padding: 10px 14px; margin-bottom: 18px; font-size: 10pt; color: #555;">
+    <div style="background: #f7f9fc; border: 1px solid #dde3ea; border-left: 3px solid #99a6b8; border-radius: 4px; padding: 12px 16px; margin-bottom: 22px; font-size: 10pt; color: #555; line-height: 1.5;">
       <strong>OBS: Detta mejl går inte att besvara (Do not reply).</strong><br />
       Svar till denna adress läses inte. Vid frågor om ditt provresultat, kontakta din provförrättare eller Trafikverket direkt.
     </div>`;
@@ -327,6 +328,11 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
   <meta charset="utf-8">
   <title>Resultat från ditt prov - ${studentName}</title>
   ${styleTag}
+  <style>
+    body { line-height: 1.6; }
+    .resultContainer table.infoTable td { padding-bottom: 14px; }
+    .resultContainer table.resultTable { margin-top: 4px; }
+  </style>
 </head>
 <body style="font-family: Arial, Sans-Serif;">
     ${noReplyBanner}
@@ -337,11 +343,9 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
     Vänliga hälsningar,<br />
     ProvProtokoll<br />
     <br />
-    <hr />
-    <br />
+    <hr style="border: none; border-top: 1px solid #e2e6ea; margin: 20px 0;" />
     ${bodyContent}
-    <br />
-    <hr />
+    <hr style="border: none; border-top: 1px solid #e2e6ea; margin: 24px 0 12px;" />
     <p style="font-size: 9pt; color: #888;">
       Detta är ett automatiskt genererat mejl som inte kan besvaras. Kontakta din provförrättare eller Trafikverket om du har frågor om resultatet.
     </p>
