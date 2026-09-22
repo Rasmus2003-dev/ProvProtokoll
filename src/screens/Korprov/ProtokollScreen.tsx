@@ -21,6 +21,7 @@ export function ProtokollScreen() {
   const [isGeneratingEmailHtml, setIsGeneratingEmailHtml] = useState(false);
   const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [sendError, setSendError] = useState<string | null>(null);
+  const [deliveryStatus, setDeliveryStatus] = useState<'idle' | 'checking' | 'delivered' | 'bounced' | 'blocked' | 'spam' | 'pending' | 'unknown'>('idle');
   const [confirmResultChecked, setConfirmResultChecked] = useState(false);
   const [confirmReportChecked, setConfirmReportChecked] = useState(false);
   const [confirmEmailChecked, setConfirmEmailChecked] = useState(false);
@@ -62,7 +63,7 @@ export function ProtokollScreen() {
     });
   };
 
-  const sendProtocolEmail = async (): Promise<{ success: boolean; error?: string }> => {
+  const sendProtocolEmail = async (): Promise<{ success: boolean; error?: string; messageId?: string | null }> => {
     const recipient = state.properties.email;
     if (!recipient) {
       return { success: false, error: 'Kandidatens e-postadress saknas.' };
@@ -85,19 +86,66 @@ export function ProtokollScreen() {
         const data = await res.json().catch(() => ({}));
         return { success: false, error: data.error || 'Kunde inte skicka mejlet.' };
       }
-      return { success: true };
+      const data = await res.json().catch(() => ({}));
+      return { success: true, messageId: data.messageId || null };
     } catch (e: any) {
       return { success: false, error: e?.message || 'Ett oväntat fel inträffade.' };
     }
   };
 
+  // "sent" från Brevo betyder bara att mejlet togs emot för utskick, inte att
+  // det faktiskt nådde mottagarens inkorg. Poll:ar Brevos event-API några
+  // gånger (leveranshändelser dyker ofta upp med någon sekunds fördröjning)
+  // för att visa den faktiska leveransstatusen istället för att bara lita på
+  // att skicka-anropet lyckades.
+  const pollDeliveryStatus = async (recipient: string, messageId: string | null | undefined) => {
+    setDeliveryStatus('checking');
+    const maxAttempts = 5;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      try {
+        const params = new URLSearchParams();
+        if (messageId) params.set('messageId', messageId);
+        params.set('email', recipient);
+        const res = await fetch(`/api/send-protocol-status?${params.toString()}`);
+        if (!res.ok) continue;
+        const data = await res.json();
+
+        if (data.status === 'delivered' || data.status === 'opened' || data.status === 'clicks') {
+          setDeliveryStatus('delivered');
+          return;
+        }
+        if (data.status === 'hardBounces' || data.status === 'softBounces') {
+          setDeliveryStatus('bounced');
+          return;
+        }
+        if (data.status === 'blocked' || data.status === 'invalid' || data.status === 'error') {
+          setDeliveryStatus('blocked');
+          return;
+        }
+        if (data.status === 'spam') {
+          setDeliveryStatus('spam');
+          return;
+        }
+        // 'sent' eller 'pending': fortsätt polla
+      } catch (_) {
+        // fortsätt polla vid tillfälligt nätverksfel
+      }
+    }
+    setDeliveryStatus('pending');
+  };
+
   const handleSendEmail = async () => {
     setSendStatus('sending');
     setSendError(null);
+    setDeliveryStatus('idle');
     const result = await sendProtocolEmail();
     if (result.success) {
       setSendStatus('sent');
-      setTimeout(() => setSendStatus('idle'), 4000);
+      const recipient = state.properties.email;
+      if (recipient) {
+        pollDeliveryStatus(recipient, result.messageId);
+      }
     } else {
       setSendStatus('error');
       setSendError(result.error || 'Ett oväntat fel inträffade.');
@@ -350,8 +398,25 @@ export function ProtokollScreen() {
                 {sendStatus === 'error' && sendError && (
                   <span className="text-red-600 font-semibold">{sendError}</span>
                 )}
-                {sendStatus === 'sent' && (
-                  <span className="text-emerald-600 font-semibold">Mejlet har skickats till kandidaten.</span>
+                {sendStatus === 'sent' && deliveryStatus === 'checking' && (
+                  <span className="text-blue-600 font-semibold flex items-center gap-1.5">
+                    <Loader2 size={12} className="animate-spin" /> Skickat, kontrollerar leverans...
+                  </span>
+                )}
+                {sendStatus === 'sent' && deliveryStatus === 'delivered' && (
+                  <span className="text-emerald-600 font-semibold">✓ Levererat till kandidatens inkorg.</span>
+                )}
+                {sendStatus === 'sent' && deliveryStatus === 'bounced' && (
+                  <span className="text-red-600 font-semibold">✗ Levererades inte (studsade) – kontrollera e-postadressen.</span>
+                )}
+                {sendStatus === 'sent' && deliveryStatus === 'blocked' && (
+                  <span className="text-red-600 font-semibold">✗ Blockerades av mottagarens mejlserver.</span>
+                )}
+                {sendStatus === 'sent' && deliveryStatus === 'spam' && (
+                  <span className="text-amber-600 font-semibold">⚠ Markerades som skräppost hos mottagaren.</span>
+                )}
+                {sendStatus === 'sent' && deliveryStatus === 'pending' && (
+                  <span className="text-amber-600 font-semibold">Skickat – leveransstatus inte bekräftad än (kan ta någon minut).</span>
                 )}
                 {sendStatus === 'idle' && !state.properties.email && (
                   <span className="text-amber-600 font-semibold">Ingen e-postadress angiven för kandidaten.</span>
@@ -370,7 +435,7 @@ export function ProtokollScreen() {
                 {sendStatus === 'error' && <MailX size={14} />}
                 {sendStatus === 'idle' && <Send size={14} />}
                 <span>
-                  {sendStatus === 'sending' ? 'Skickar...' : sendStatus === 'sent' ? 'Skickat' : sendStatus === 'error' ? 'Försök igen' : 'Skicka till kandidaten'}
+                  {sendStatus === 'sending' ? 'Skickar...' : sendStatus === 'sent' ? 'Skickat igen' : sendStatus === 'error' ? 'Försök igen' : 'Skicka till kandidaten'}
                 </span>
               </Button>
             </div>

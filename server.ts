@@ -58,7 +58,70 @@ async function startServer() {
         return res.status(502).json({ error: "Kunde inte skicka mejlet", detail: errBody });
       }
 
-      res.json({ status: "sent" });
+      const brevoBody: any = await brevoRes.json().catch(() => ({}));
+      res.json({ status: "sent", messageId: brevoBody?.messageId || null });
+    } catch (e: any) {
+      res.status(500).json({ error: "Ett oväntat fel inträffade", detail: e?.message });
+    }
+  });
+
+  // Slår upp faktisk leveransstatus (Delivered/Bounced/Blocked/Spam) hos Brevo.
+  // Speglar functions/api/send-protocol-status.ts. Ett lyckat svar från
+  // /api/send-protocol betyder bara att Brevo tog emot mejlet, inte att det
+  // faktiskt nått mottagarens inkorg - den här routen ger den riktiga statusen.
+  const EVENT_PRIORITY: Record<string, number> = {
+    sent: 1,
+    delivered: 2,
+    opened: 3,
+    clicks: 3,
+    softBounces: 4,
+    hardBounces: 5,
+    blocked: 5,
+    spam: 5,
+    error: 5,
+    invalid: 5,
+  };
+
+  app.get("/api/send-protocol-status", async (req, res) => {
+    try {
+      const email = req.query.email as string | undefined;
+      const messageId = req.query.messageId as string | undefined;
+
+      if (!email && !messageId) {
+        return res.status(400).json({ error: "email eller messageId krävs" });
+      }
+
+      const apiKey = process.env.BREVO_API_KEY;
+      if (!apiKey) {
+        return res.status(503).json({ error: "E-posttjänsten är inte konfigurerad (BREVO_API_KEY saknas i .env)" });
+      }
+
+      const params = new URLSearchParams({ limit: "20", offset: "0", days: "2" });
+      if (email) params.set("email", email);
+      if (messageId) params.set("messageId", messageId);
+
+      const brevoRes = await fetch(`https://api.brevo.com/v3/smtp/statistics/events?${params.toString()}`, {
+        headers: { "api-key": apiKey, Accept: "application/json" },
+      });
+
+      if (!brevoRes.ok) {
+        const errBody = await brevoRes.text();
+        return res.status(502).json({ error: "Kunde inte hämta leveransstatus", detail: errBody });
+      }
+
+      const data: any = await brevoRes.json();
+      const events: any[] = data.events || [];
+      const relevant = messageId ? events.filter((e) => e.messageId === messageId) : events;
+
+      if (relevant.length === 0) {
+        return res.json({ status: "pending", events: [] });
+      }
+
+      const best = relevant.reduce((acc, e) =>
+        (EVENT_PRIORITY[e.event] || 0) > (EVENT_PRIORITY[acc.event] || 0) ? e : acc
+      );
+
+      res.json({ status: best.event, reason: best.reason || null, date: best.date, events: relevant });
     } catch (e: any) {
       res.status(500).json({ error: "Ett oväntat fel inträffade", detail: e?.message });
     }

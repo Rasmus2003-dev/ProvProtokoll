@@ -49,7 +49,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       });
     }
 
-    return new Response(JSON.stringify({ status: 'sent' }), {
+    const brevoBody = await brevoRes.json().catch(() => ({} as any));
+
+    // messageId behövs för att i efterhand kunna slå upp den faktiska
+    // leveransstatusen (Delivered/Bounced/Blocked/Spam) hos Brevo — ett
+    // lyckat svar här betyder bara att Brevo tog emot mejlet för utskick,
+    // inte att det faktiskt nått mottagarens inkorg.
+    return new Response(JSON.stringify({ status: 'sent', messageId: brevoBody?.messageId || null }), {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (e) {
