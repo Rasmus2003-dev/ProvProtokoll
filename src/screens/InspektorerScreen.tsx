@@ -5,7 +5,8 @@ import { useToast } from '../components/Toast';
 import {
   Users, Plus, ShieldCheck, Trash2, KeyRound, Power, X, UserPlus
 } from 'lucide-react';
-import { fetchAllInspectors, createInspector, deleteInspector, setInspectorActive } from '../lib/inspectors';
+import { fetchAllInspectors, createInspector, deleteInspector, setInspectorActive, resetInspectorPassword } from '../lib/inspectors';
+import { MIN_PASSWORD_LENGTH } from '../lib/authConfig';
 import type { Inspector } from '../types';
 
 const VEHICLE_CATEGORIES = ['AM', 'A1', 'A2', 'A', 'B', 'BE', 'C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE', 'TAXI'];
@@ -29,7 +30,9 @@ export function InspektorerScreen() {
   const [tempPassword, setTempPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const isAdmin = profile.role === 'admin' || profile.inspectorId === 'insp-rasmus';
+  // Bara ett UI-skydd – databasen (RLS) och servern kontrollerar admin-rollen på riktigt
+  const isAdmin = profile.role === 'admin';
+  const isSelf = (inspector: Inspector) => inspector.id === profile.inspectorId;
 
   const load = async () => {
     setLoading(true);
@@ -92,22 +95,44 @@ export function InspektorerScreen() {
   };
 
   const handleDeactivate = async (inspector: Inspector) => {
-    if (inspector.id === 'insp-rasmus') {
-      showToast('Superadmin-kontot kan inte inaktiveras.', 'warning');
+    if (isSelf(inspector)) {
+      showToast('Du kan inte inaktivera ditt eget konto.', 'warning');
       return;
     }
-    await setInspectorActive(inspector.id, !inspector.active);
+    const result = await setInspectorActive(inspector.id, !inspector.active);
+    if (!result.success) showToast(result.error || 'Kunde inte ändra kontot.', 'error');
+    else showToast(inspector.active ? `${inspector.name} är inaktiverad och kan inte logga in.` : `${inspector.name} är aktiverad igen.`, 'success');
+    load();
+  };
+
+  const handleResetPassword = async (inspector: Inspector) => {
+    if (isSelf(inspector)) {
+      showToast('Byt ditt eget lösenord under Min profil.', 'warning');
+      return;
+    }
+    const temp = window.prompt(
+      `Nytt tillfälligt lösenord för ${inspector.name} (minst ${MIN_PASSWORD_LENGTH} tecken).\nInspektören måste byta det vid nästa inloggning.`
+    );
+    if (temp === null) return;
+    if (temp.trim().length < MIN_PASSWORD_LENGTH) {
+      showToast(`Lösenordet måste vara minst ${MIN_PASSWORD_LENGTH} tecken.`, 'error');
+      return;
+    }
+    const result = await resetInspectorPassword(inspector.id, temp.trim());
+    if (!result.success) showToast(result.error || 'Kunde inte återställa lösenordet.', 'error');
+    else showToast(`Lösenordet för ${inspector.name} är återställt.`, 'success');
     load();
   };
 
   const handleDelete = async (inspector: Inspector) => {
-    if (inspector.id === 'insp-rasmus') {
-      showToast('Superadmin-kontot kan inte tas bort.', 'warning');
+    if (isSelf(inspector)) {
+      showToast('Du kan inte ta bort ditt eget konto.', 'warning');
       return;
     }
-    if (!window.confirm(`Vill du verkligen ta bort inspektören ${inspector.name}?`)) return;
-    await deleteInspector(inspector.id);
-    showToast('Inspektör borttagen.', 'success');
+    if (!window.confirm(`Vill du verkligen ta bort inspektören ${inspector.name}? Kontot och inloggningen raderas permanent.`)) return;
+    const result = await deleteInspector(inspector.id);
+    if (!result.success) showToast(result.error || 'Kunde inte ta bort inspektören.', 'error');
+    else showToast('Inspektör borttagen.', 'success');
     load();
   };
 
@@ -202,9 +227,20 @@ export function InspektorerScreen() {
               </div>
 
               <div className="border-t border-gray-100 dark:border-slate-800 pt-3 mt-4 flex items-center justify-end gap-2">
+                {isSelf(inspector) && (
+                  <span className="mr-auto text-[10px] font-bold uppercase tracking-wider text-gray-400">Du</span>
+                )}
+                <button
+                  onClick={() => handleResetPassword(inspector)}
+                  disabled={isSelf(inspector)}
+                  className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Återställ lösenord"
+                >
+                  <KeyRound size={15} />
+                </button>
                 <button
                   onClick={() => handleDeactivate(inspector)}
-                  disabled={inspector.id === 'insp-rasmus'}
+                  disabled={isSelf(inspector)}
                   className="p-2 text-gray-400 hover:text-amber-600 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                   title={inspector.active ? 'Inaktivera' : 'Aktivera'}
                 >
@@ -212,7 +248,7 @@ export function InspektorerScreen() {
                 </button>
                 <button
                   onClick={() => handleDelete(inspector)}
-                  disabled={inspector.id === 'insp-rasmus'}
+                  disabled={isSelf(inspector)}
                   className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                   title="Ta bort"
                 >
@@ -369,7 +405,8 @@ export function InspektorerScreen() {
                   required
                   value={tempPassword}
                   onChange={(e) => setTempPassword(e.target.value)}
-                  placeholder="Minst 4 tecken"
+                  placeholder={`Minst ${MIN_PASSWORD_LENGTH} tecken`}
+                  minLength={MIN_PASSWORD_LENGTH}
                   className="w-full h-11 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-semibold font-mono focus:outline-none focus:ring-2 focus:ring-[#002f6c] dark:focus:ring-blue-500 dark:text-white"
                 />
                 <p className="text-[10px] text-gray-400 mt-1">

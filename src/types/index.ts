@@ -38,6 +38,9 @@ export interface AppState {
     licenseType: string;
     transmission: string;
     tachograph?: 'Med färdskrivare' | 'Utan färdskrivare' | 'Ej tillämpligt' | string;
+    specialConditions?: string[];
+    interpreterPresent?: boolean;
+    interpreterLanguage?: string;
   };
   checklist: {
     identityChecked: boolean;
@@ -60,6 +63,32 @@ export interface AppState {
   testNotes: string;
   // Senaste steget i provflödet, så att ett avbrutet/kraschat prov kan återupptas
   activeStep?: string | null;
+  // Händelser markerade under körningen (brist, ingripande, notering), med position om GPS finns
+  events?: DrivingEvent[];
+  // Inspelad körväg (Navigator)
+  route?: RouteRecording;
+  // Slumpade förslag för säkerhetskontroll, lätta fordon (id:n i lightSafetyCheck)
+  lightSafetyTasks?: string[];
+}
+
+export type DrivingEventKind = 'brist' | 'ingripande' | 'notering';
+
+export interface DrivingEvent {
+  id: string;
+  t: number; // epoch ms
+  kind: DrivingEventKind;
+  situation?: string;
+  note?: string;
+  lat?: number;
+  lng?: number;
+}
+
+export interface RouteRecording {
+  recording: boolean;
+  startedAt: number | null;
+  stoppedAt?: number | null;
+  // Kompakt format för att hålla nere lagringen: [lat, lng, epoch ms]
+  points: [number, number, number][];
 }
 
 export interface ElevRecord {

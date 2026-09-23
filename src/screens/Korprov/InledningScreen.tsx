@@ -133,8 +133,13 @@ export function InledningScreen() {
         </div>
       </div>
 
-      <div className="pt-8 flex justify-end">
-        <Button 
+      <div className="pt-8 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3">
+        {!allChecked && (
+          <p className="text-xs font-semibold text-gray-500 dark:text-zinc-400 text-center sm:text-right">
+            Bocka av {checks.length - checks.filter(c => state.checklist?.[c.id]).length} kvarvarande punkt{checks.length - checks.filter(c => state.checklist?.[c.id]).length === 1 ? '' : 'er'} i checklistan för att fortsätta.
+          </p>
+        )}
+        <Button
           onClick={handleNext}
           disabled={!allChecked}
           className={cn(

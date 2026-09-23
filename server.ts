@@ -3,12 +3,52 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { buildTestQuestions } from "./src/data/mockQuestions";
+import { AuthEnv, handleAdminInspectors, verifyInspector } from "./server-lib/supabaseAuth";
+
+// Samma miljövariabler som Cloudflare-funktionerna får i produktion
+const authEnv: AuthEnv = {
+  SUPABASE_URL: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
+  SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY,
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+};
+
+// Express-anrop -> Fetch Request, så att den delade serverlogiken kan användas
+function toFetchRequest(req: express.Request): Request {
+  const headers = new Headers();
+  Object.entries(req.headers).forEach(([k, v]) => {
+    if (typeof v === "string") headers.set(k, v);
+  });
+  return new Request(`http://localhost${req.originalUrl}`, {
+    method: req.method,
+    headers,
+    body: req.method === "GET" || req.method === "HEAD" ? undefined : JSON.stringify(req.body ?? {}),
+  });
+}
+
+async function sendFetchResponse(res: express.Response, response: Response) {
+  res.status(response.status).type("application/json").send(await response.text());
+}
+
+// Middleware: kräver inloggad, aktiv inspektör
+const requireInspector: express.RequestHandler = async (req, res, next) => {
+  const verified = await verifyInspector(toFetchRequest(req), authEnv);
+  if ("error" in verified) return sendFetchResponse(res, verified.error);
+  next();
+};
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
   app.use(express.json({ limit: "5mb" }));
+
+  app.post("/api/admin/inspectors", async (req, res) => {
+    try {
+      await sendFetchResponse(res, await handleAdminInspectors(toFetchRequest(req), authEnv));
+    } catch (e: any) {
+      res.status(500).json({ error: "Ett oväntat fel inträffade", detail: e?.message });
+    }
+  });
 
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
@@ -19,7 +59,7 @@ async function startServer() {
   // identiskt lokalt under `npm run dev` istället för att tyst falla igenom
   // till Vites SPA-fallback (index.html) på en route som annars inte fanns
   // i dev-servern.
-  app.post("/api/send-protocol", async (req, res) => {
+  app.post("/api/send-protocol", requireInspector, async (req, res) => {
     try {
       const { to, toName, subject, html } = req.body as {
         to: string;
@@ -82,7 +122,7 @@ async function startServer() {
     invalid: 5,
   };
 
-  app.get("/api/send-protocol-status", async (req, res) => {
+  app.get("/api/send-protocol-status", requireInspector, async (req, res) => {
     try {
       const email = req.query.email as string | undefined;
       const messageId = req.query.messageId as string | undefined;

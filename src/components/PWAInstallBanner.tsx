@@ -1,12 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { Download, X, Smartphone, Check } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { isTestStepPath } from '../lib/activeTest';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
+const DISMISS_KEY = 'pwa_banner_dismissed_at';
+const DISMISS_DAYS = 30;
+
+// Stängd banner visas inte igen på 30 dagar (gällde tidigare bara iOS)
+function wasDismissed(): boolean {
+  try {
+    const at = Number(localStorage.getItem(DISMISS_KEY));
+    if (at && Date.now() - at < DISMISS_DAYS * 86400000) return true;
+    return localStorage.getItem('pwa_ios_banner_dismissed') === 'true'; // äldre nyckel (iOS)
+  } catch (_) {
+    return false;
+  }
+}
+
 export function PWAInstallBanner() {
+  const location = useLocation();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showBanner, setShowBanner] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -28,17 +45,14 @@ export function PWAInstallBanner() {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setShowBanner(true);
+      if (!wasDismissed()) setShowBanner(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     // Show banner on iOS if not standalone
-    if (iosDevice && !isStandalone) {
-      const dismissed = localStorage.getItem('pwa_ios_banner_dismissed');
-      if (!dismissed) {
-        setShowBanner(true);
-      }
+    if (iosDevice && !isStandalone && !wasDismissed()) {
+      setShowBanner(true);
     }
 
     return () => {
@@ -59,12 +73,11 @@ export function PWAInstallBanner() {
 
   const handleDismiss = () => {
     setShowBanner(false);
-    if (isIOS) {
-      localStorage.setItem('pwa_ios_banner_dismissed', 'true');
-    }
+    try { localStorage.setItem(DISMISS_KEY, String(Date.now())); } catch (_) {}
   };
 
-  if (isInstalled || !showBanner) return null;
+  // Aldrig mitt i ett prov – bannern skymmer momenten
+  if (isInstalled || !showBanner || isTestStepPath(location.pathname)) return null;
 
   return (
     <div className="fixed bottom-20 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-md z-50 bg-white dark:bg-zinc-900 border border-blue-200 dark:border-blue-900 rounded-2xl p-4 shadow-xl backdrop-blur-md animate-in slide-in-from-bottom duration-300">

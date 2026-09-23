@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { OfficialPrintLayout } from './components/OfficialPrintLayout';
 import { AlertTriangle, Send, FileCheck, Mail, Copy, Check, Loader2, MailCheck, MailX } from 'lucide-react';
 import { downloadProtocolHtml, downloadEmailProtocolHtml, generateEmailProtocolHtml, printProtocol } from '../../lib/generateProtocolHtml';
+import { authHeaders } from '../../lib/inspectors';
 import { useToast } from '../../components/Toast';
 
 export function ProtokollScreen() {
@@ -76,7 +77,7 @@ export function ProtokollScreen() {
       const html = generateEmailProtocolHtml(state, profile?.name);
       const res = await fetch('/api/send-protocol', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
         body: JSON.stringify({
           to: recipient,
           toName: state.properties.studentName,
@@ -110,7 +111,7 @@ export function ProtokollScreen() {
         const params = new URLSearchParams();
         if (messageId) params.set('messageId', messageId);
         params.set('email', recipient);
-        const res = await fetch(`/api/send-protocol-status?${params.toString()}`);
+        const res = await fetch(`/api/send-protocol-status?${params.toString()}`, { headers: await authHeaders() });
         if (!res.ok) continue;
         const data = await res.json();
 

@@ -309,61 +309,52 @@ export function StartScreen() {
       )}
 
       {/* Header Panel with Stats Badge */}
-      <div className="mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-[2rem] border border-gray-200/80 dark:border-white/5 shadow-sm relative overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-600/10 dark:bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200/50 dark:border-red-900/30 flex items-center gap-1.5 shadow-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-600 dark:bg-red-500 animate-pulse"></span>
-              Aktivt system
-            </span>
-            <span className="text-xs font-medium text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2.5 py-1 rounded-md capitalize">
-              {todayLabel}
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-gray-900 dark:text-white flex flex-wrap items-center gap-3 sm:gap-4 mb-2">
-            Mottagning & Provstart
-            <button
-              id="btn-clear-test"
-              onClick={() => {
-                if (!confirmDiscardActiveTest()) return;
-                triggerHaptic('heavy');
-                resetCurrentTest();
-              }}
-              className="text-[10px] font-bold text-gray-400 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400 bg-gray-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2.5 min-h-10 rounded-lg transition-colors uppercase tracking-wider flex items-center gap-1 cursor-pointer border border-transparent hover:border-red-200 dark:hover:border-red-900/30"
-            >
-              Nollställ
-            </button>
+      <div className="mb-6 flex flex-col lg:flex-row lg:items-end justify-between gap-5">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 capitalize">{todayLabel}</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white mt-1">
+            Mottagning & provstart
           </h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400 max-w-xl">
-            {profile.name && <span className="font-semibold text-gray-700 dark:text-slate-300">{greeting}, {profile.name.split(' ')[0]}! </span>}
-            Registrera kandidatuppgifter för att påbörja provet och generera utskriftsklart protokoll.
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 max-w-xl">
+            {profile.name && <span className="font-medium text-slate-700 dark:text-slate-300">{greeting}, {profile.name.split(' ')[0]}. </span>}
+            Registrera kandidaten för att påbörja provet.
           </p>
         </div>
 
-        {/* Real-time system counters */}
-        <div className="flex gap-3 sm:gap-4 shrink-0 z-10 w-full lg:w-auto">
-          <div className="flex-1 lg:flex-none bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-white/5 min-w-[120px] flex flex-col justify-center items-center">
-            <span className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Planerat Idag</span>
-            <span className="text-2xl font-black text-[#002f6c] dark:text-blue-400">
-              {scheduleList.length} Prov
-            </span>
+        <div className="flex items-stretch gap-3 shrink-0">
+          <button
+            id="btn-clear-test"
+            type="button"
+            onClick={() => {
+              if (!confirmDiscardActiveTest()) return;
+              triggerHaptic('heavy');
+              resetCurrentTest();
+            }}
+            className="self-end h-9 px-3 rounded-lg text-sm font-medium text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+          >
+            Nollställ formulär
+          </button>
+        {/* Dagens schema – visas bara när det finns inbokade prov */}
+        {scheduleList.length > 0 && (
+        <div className="flex gap-3 shrink-0">
+          <div className="bg-white dark:bg-slate-900 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 min-w-[120px]">
+            <span className="block text-xs font-medium text-slate-500 dark:text-slate-400">Planerat idag</span>
+            <span className="text-xl font-bold text-slate-900 dark:text-white">{scheduleList.length} prov</span>
           </div>
-          <div className="flex-1 lg:flex-none bg-emerald-50/50 dark:bg-emerald-900/10 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/30 min-w-[120px] flex flex-col justify-center items-center">
-            <span className="block text-[10px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest mb-1">Genomförda</span>
-            <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400">
-              {completedCount}
-              <span className="text-sm font-bold text-emerald-600/70 dark:text-emerald-500/70"> / {scheduleList.length}</span>
+          <div className="bg-white dark:bg-slate-900 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 min-w-[120px]">
+            <span className="block text-xs font-medium text-slate-500 dark:text-slate-400">Genomförda</span>
+            <span className="text-xl font-bold text-emerald-700 dark:text-emerald-400">
+              {completedCount}<span className="text-sm font-medium text-slate-400"> / {scheduleList.length}</span>
             </span>
-            {scheduleList.length > 0 && (
-              <div className="w-full h-1 mt-2 rounded-full bg-emerald-100 dark:bg-emerald-900/40 overflow-hidden">
-                <div
-                  className="h-full bg-emerald-500 rounded-full transition-all duration-300"
-                  style={{ width: `${Math.round((completedCount / scheduleList.length) * 100)}%` }}
-                />
-              </div>
-            )}
+            <div className="w-full h-1 mt-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+              <div
+                className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+                style={{ width: `${Math.round((completedCount / scheduleList.length) * 100)}%` }}
+              />
+            </div>
           </div>
+        </div>
+        )}
         </div>
       </div>
 
@@ -593,11 +584,11 @@ export function StartScreen() {
                         <span className="text-lg shrink-0 group-hover:scale-110 transition-transform duration-150">
                           {lic.icon}
                         </span>
-                        <div className="truncate flex-1">
-                          <div className={`text-xs font-extrabold truncate ${isSelected ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
-                            {lic.id}
+                        <div className="min-w-0 flex-1">
+                          <div className={`text-xs font-extrabold leading-tight break-words ${isSelected ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
+                            {lic.label.split(' (')[0]}
                           </div>
-                          <div className={`text-[10px] truncate ${isSelected ? 'text-blue-100 font-medium' : 'text-gray-500 dark:text-slate-400'}`}>
+                          <div className={`text-[10px] leading-tight mt-0.5 ${isSelected ? 'text-blue-100 font-medium' : 'text-gray-500 dark:text-slate-400'}`}>
                             {lic.label.includes('(') ? lic.label.split('(')[1].replace(')', '') : lic.category}
                           </div>
                         </div>
@@ -865,7 +856,8 @@ export function StartScreen() {
             </div>
           </div>
 
-          {/* Quick Simulation Desk */}
+          {/* Simuleringsverktyg – bara i utvecklingsläge, aldrig i den publicerade appen */}
+          {import.meta.env.DEV && (
           <div className="bg-slate-900 dark:bg-slate-900 border border-slate-800 rounded-[2rem] shadow-lg p-6 sm:p-8 space-y-5 relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <div className="flex items-center gap-3 relative z-10">
@@ -892,6 +884,7 @@ export function StartScreen() {
               <span>Simulera underkänt prov</span>
             </button>
           </div>
+          )}
 
         </div>
 

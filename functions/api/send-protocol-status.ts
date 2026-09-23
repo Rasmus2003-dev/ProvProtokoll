@@ -1,4 +1,6 @@
-interface Env {
+import { AuthEnv, verifyInspector } from '../../server-lib/supabaseAuth';
+
+interface Env extends AuthEnv {
   BREVO_API_KEY: string;
 }
 
@@ -28,6 +30,9 @@ const EVENT_PRIORITY: Record<string, number> = {
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   try {
+    const verified = await verifyInspector(context.request, context.env);
+    if ('error' in verified) return verified.error;
+
     const url = new URL(context.request.url);
     const email = url.searchParams.get('email');
     const messageId = url.searchParams.get('messageId');

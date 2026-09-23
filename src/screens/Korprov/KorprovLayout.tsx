@@ -4,8 +4,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { PenTool, X, Clock, Play, Square } from 'lucide-react';
 import { useAppStore } from '../../store/ProvContext';
 import { triggerHaptic } from '../../lib/utils';
-import { AppLogo } from '../../components/icons/AppLogo';
 import { isTestStepPath } from '../../lib/activeTest';
+import { useWakeLock } from '../../hooks/useWakeLock';
+import { useRouteRecorder } from '../../hooks/useRouteRecorder';
 
 const steps = [
   { id: '1', name: 'Start', path: 'start' },
@@ -49,6 +50,10 @@ export function KorprovLayout() {
     const step = location.pathname.replace(/\/+$/, '');
     updateState(s => (s.activeStep === step ? s : { ...s, activeStep: step }));
   }, [onTestStep, location.pathname, updateState]);
+
+  // Håll skärmen tänd under provet och spela in körvägen när Navigator är igång
+  useWakeLock(onTestStep);
+  useRouteRecorder(Boolean(state.route?.recording), onTestStep, updateState);
 
   // Varna innan fliken/appen stängs eller laddas om mitt i ett prov
   useEffect(() => {
@@ -98,14 +103,11 @@ export function KorprovLayout() {
     <div className="max-w-7xl mx-auto py-4 md:py-8 w-full px-0 sm:px-4 print:py-0 print:m-0 print:max-w-none relative min-h-full">
       {/* Scrollable Navigation */}
       {showNav && (
-        <div className="relative mb-4 md:mb-10 mt-1 md:mt-6 print:hidden select-none">
+        <div className="relative mb-4 md:mb-8 mt-1 md:mt-2 print:hidden select-none">
           
           {/* Mobile-Only Progress Stepper Dashboard Card */}
           <div className="block md:hidden px-4 mb-4">
             <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-white/5 rounded-2xl p-4 shadow-sm">
-              <div className="flex justify-center mb-3 select-none">
-                <AppLogo variant="provprotokoll" size="sm" />
-              </div>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex flex-col">
                   <span className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-none">
@@ -144,11 +146,6 @@ export function KorprovLayout() {
                 ))}
               </div>
             </div>
-          </div>
-
-          {/* Desktop logga ovanför steppern så den syns på varje steg (Start/Egenskaper/Inledning/Resultat) */}
-          <div className="hidden md:flex justify-center mb-4 select-none">
-            <AppLogo variant="provprotokoll" size="sm" />
           </div>
 
           {/* Stepper Tabs Bar (Desktop-centered, Mobile-scrollable) */}
@@ -197,7 +194,9 @@ export function KorprovLayout() {
           <motion.div
             key={location.pathname}
             initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
-            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            // transitionEnd: ta bort filter/transform efter övergången – annars blir
+            // de "containing block" för position: fixed och modaler hamnar fel
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)', transitionEnd: { filter: 'none', transform: 'none' } }}
             exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }}
             transition={{ duration: 0.3 }}
             className="w-full"
@@ -207,8 +206,8 @@ export function KorprovLayout() {
         </AnimatePresence>
       </div>
 
-      {/* Floating Notes Widget (Only shown during test) */}
-      {showNav && (
+      {/* Anteckningar och timer – bara under själva provet, inte på startsidan */}
+      {showNav && onTestStep && (
         <div className="fixed bottom-20 right-4 sm:bottom-24 sm:right-6 md:bottom-12 md:right-12 z-40 print:hidden">
           <AnimatePresence>
             {showNotes && (

@@ -213,6 +213,21 @@ h1, h2, h3, h4, h5, h6, .font-display {
   animation: scanLaser 1.8s ease-in-out infinite alternate;
 }
 
+/* Skaka formuläret vid felaktig inloggning */
+@keyframes loginShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+.animate-login-shake {
+  animation: loginShake 0.4s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-login-shake { animation: none; }
+}
+
 /* Officiellt protokoll styling - only for deficiency lists with disc markers, NOT for custom-bullet lists */
 .resultContainer ul[style*="list-style-type: disc"] {
   list-style-type: disc !important;

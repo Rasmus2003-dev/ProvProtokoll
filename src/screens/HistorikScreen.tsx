@@ -1,8 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppStore } from '../store/ProvContext';
-import { FileCheck, AlertTriangle, Calendar, FileText, Cloud, RefreshCw, Trash2, Search, ClipboardList, TrendingUp, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileCheck, AlertTriangle, Calendar, FileText, Cloud, RefreshCw, Trash2, Search, ClipboardList, TrendingUp, X, ChevronLeft, ChevronRight, Download, Upload, Navigation } from 'lucide-react';
 import { printProtocol } from '../lib/generateProtocolHtml';
+import { useToast } from '../components/Toast';
+import { RouteReviewModal } from '../components/route/RouteReview';
+import { hasRouteData } from '../lib/route';
+import { AppState } from '../types';
 import {
+  fetchAllProtocols,
+  importProtocols,
+  BACKUP_FORMAT,
   fetchProtocolsPage,
   fetchProtocolStats,
   deleteProtocolFromBackend,
@@ -17,6 +24,7 @@ const PAGE_SIZE = 25;
 
 export function HistorikScreen() {
   const { testHistory, profile } = useAppStore();
+  const { showToast } = useToast();
   const [rows, setRows] = useState<SavedProtocolRow[]>([]);
   const [total, setTotal] = useState(0);
   const [isCloud, setIsCloud] = useState(false);
@@ -149,7 +157,63 @@ export function HistorikScreen() {
     }
   };
 
-  const hasActiveFilters = searchInput.trim() !== '' || resultFilter !== 'all' || licenseFilter !== 'all';
+  // --- Säkerhetskopiering ---
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [reviewItem, setReviewItem] = useState<{ state: AppState; name: string; date: string; license: string } | null>(null);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const protocols = await fetchAllProtocols();
+      if (protocols.length === 0) {
+        showToast('Det finns inga protokoll att exportera.', 'warning');
+        return;
+      }
+      const backup = { format: BACKUP_FORMAT, version: 1, exportedAt: new Date().toISOString(), protocols };
+      const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `provprotokoll-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast(`${protocols.length} protokoll exporterade.`, 'success');
+    } catch (err: any) {
+      showToast(`Exporten misslyckades: ${err?.message || 'okänt fel'}`, 'error');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const parsed = JSON.parse(await file.text());
+      const rows = Array.isArray(parsed) ? parsed : parsed?.format === BACKUP_FORMAT ? parsed.protocols : null;
+      if (!Array.isArray(rows)) {
+        showToast('Filen är inte en giltig säkerhetskopia från ProvProtokoll.', 'error');
+        return;
+      }
+      const { added, skipped } = await importProtocols(rows);
+      showToast(
+        added > 0
+          ? `${added} protokoll importerade${skipped ? ` (${skipped} fanns redan)` : ''}.`
+          : 'Alla protokoll i filen fanns redan.',
+        added > 0 ? 'success' : 'warning'
+      );
+      loadPage();
+      loadStats();
+    } catch (err: any) {
+      showToast(`Importen misslyckades: ${err?.message || 'filen kunde inte läsas'}`, 'error');
+    }
+  };
+
+  const hasActiveFilters =searchInput.trim() !== '' || resultFilter !== 'all' || licenseFilter !== 'all';
 
   const clearFilters = () => {
     setSearchInput('');
@@ -181,7 +245,31 @@ export function HistorikScreen() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleExport}
+            disabled={isExporting}
+            className="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="Ladda ner alla protokoll som en säkerhetskopia (JSON-fil)"
+          >
+            <Download size={14} />
+            <span>Exportera</span>
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+            title="Återställ protokoll från en säkerhetskopia"
+          >
+            <Upload size={14} />
+            <span>Importera</span>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={handleImport}
+          />
           <button
             onClick={() => { loadPage(); loadStats(); }}
             disabled={loading}
@@ -369,6 +457,17 @@ export function HistorikScreen() {
                     {item.isPassed ? 'Godkänt' : 'Underkänt'}
                   </div>
 
+                  {hasRouteData(item.state) && (
+                    <button
+                      onClick={() => setReviewItem({ state: item.state, name: item.studentName, date: item.testDate, license: item.licenseType })}
+                      className="px-3 py-2 min-h-[40px] bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                      title="Visa inspelad rutt och händelser"
+                    >
+                      <Navigation size={14} />
+                      <span>Rutt</span>
+                    </button>
+                  )}
+
                   <button
                     onClick={() => printProtocol(item.state, profile?.name)}
                     className="px-3 py-2 min-h-[40px] bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
@@ -416,6 +515,15 @@ export function HistorikScreen() {
           </div>
         )}
       </div>
+
+      <RouteReviewModal
+        open={reviewItem !== null}
+        onClose={() => setReviewItem(null)}
+        route={reviewItem?.state?.route}
+        events={reviewItem?.state?.events}
+        title={`Genomgång – ${reviewItem?.name || 'Kandidat'}`}
+        subtitle={reviewItem ? `${reviewItem.license} · ${reviewItem.date}` : undefined}
+      />
     </div>
   );
 }

@@ -1,9 +1,15 @@
-interface Env {
+import { AuthEnv, verifyInspector } from '../../server-lib/supabaseAuth';
+
+interface Env extends AuthEnv {
   BREVO_API_KEY: string;
 }
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   try {
+    // Bara inloggade inspektörer får skicka mejl från info@rasmusl.se
+    const verified = await verifyInspector(context.request, context.env);
+    if ('error' in verified) return verified.error;
+
     const { to, toName, subject, html } = (await context.request.json()) as {
       to: string;
       toName?: string;

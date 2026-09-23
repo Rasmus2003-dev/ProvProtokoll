@@ -152,7 +152,7 @@ export function HeavySafetyQuestionModal({ isOpen, onClose, licenseType }: Heavy
           <div className="p-4 sm:p-5 rounded-2xl bg-linear-to-br from-amber-50/70 via-amber-50/40 to-orange-50/30 dark:from-amber-950/30 dark:via-slate-900 dark:to-orange-950/20 border-2 border-amber-200/80 dark:border-amber-800/60 shadow-xs relative">
             <div className="text-[10px] font-black uppercase tracking-wider text-amber-800 dark:text-amber-400 mb-1.5 flex items-center gap-1.5">
               <HelpCircle size={14} className="text-amber-600 dark:text-amber-400" />
-              <span>Ställ frågan till aspiranten:</span>
+              <span>Ställ frågan till kandidaten:</span>
             </div>
             <p className="text-sm sm:text-base font-black text-gray-950 dark:text-white leading-relaxed">
               "{currentQuestion.question}"

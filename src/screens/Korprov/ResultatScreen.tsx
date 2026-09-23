@@ -6,7 +6,10 @@ import { useAppStore } from '../../store/ProvContext';
 import { FailureForm } from './components/FailureForm';
 import { failureSituations } from './data/failureData';
 import { printProtocol } from '../../lib/generateProtocolHtml';
-import { FileDown, ArrowRight } from 'lucide-react';
+import { FileDown, ArrowRight, AlertTriangle, Maximize2 } from 'lucide-react';
+import { RouteReview, RouteReviewModal } from '../../components/route/RouteReview';
+import { hasRouteData } from '../../lib/route';
+import { Portal } from '../../components/Portal';
 import { PrivacyGuard } from '../../components/PrivacyGuard';
 
 export function ResultatScreen() {
@@ -18,7 +21,49 @@ export function ResultatScreen() {
   const SAFETY_CHECK_LICENSES = [...HEAVY_LICENSES, 'BE'];
   const isTaxi = licenseType === 'TAXI';
 
+  const [validationIssues, setValidationIssues] = useState<{ level: 'error' | 'warning'; text: string }[] | null>(null);
+  const [showReview, setShowReview] = useState(false);
+
+  // Kontrollera att protokollet blir komplett innan det skapas
+  const collectIssues = () => {
+    const issues: { level: 'error' | 'warning'; text: string }[] = [];
+    const checkFailure = (label: string, f: typeof state.result.drivingFailure) => {
+      if (!f?.primaryCause?.area) {
+        issues.push({ level: 'error', text: `${label}: grundorsak (kompetensområde) är inte vald.` });
+      } else if (!f.primaryCause.deficiencies?.length) {
+        issues.push({ level: 'error', text: `${label}: inga brister är markerade under grundorsaken "${f.primaryCause.area}".` });
+      }
+      (f?.consequences || []).forEach((c, i) => {
+        if (!c.area) issues.push({ level: 'error', text: `${label}: konsekvensområde ${i + 1} saknar valt område.` });
+        else if (!c.deficiencies?.length) issues.push({ level: 'warning', text: `${label}: konsekvensområdet "${c.area}" saknar markerade brister.` });
+      });
+    };
+
+    if (!isAssessmentComplete) {
+      issues.push({ level: 'error', text: 'Provresultatet är inte ifyllt (körning och/eller säkerhetskontroll).' });
+    }
+    if (!isOmprovSakerhet && state.result.drivingResult === 'Underkänt') {
+      checkFailure('Körning', state.result.drivingFailure);
+    }
+    if (heavyMandatory && state.result.safetyCheckResult === 'Underkänt') {
+      checkFailure('Säkerhetskontroll', state.result.safetyCheckFailure);
+    }
+    const anySituations = (state.result.drivingFailure?.situations?.length || 0) + (state.result.safetyCheckFailure?.situations?.length || 0) > 0;
+    if (hasFailed && !state.result.testAborted && !anySituations) {
+      issues.push({ level: 'warning', text: 'Inga situationer är valda under "Brister har visat sig i följande situationer".' });
+    }
+    if (state.result.interventionOccurred && interventionSituations.length === 0) {
+      issues.push({ level: 'warning', text: 'Ingripande är markerat men ingen situation är vald – protokollet visar bara "Ingripande har förekommit."' });
+    }
+    return issues;
+  };
+
   const handleNext = () => {
+    const issues = collectIssues();
+    if (issues.length > 0) {
+      setValidationIssues(issues);
+      return;
+    }
     navigate('/korprov/protokoll');
   };
 
@@ -122,6 +167,27 @@ export function ResultatScreen() {
     ? Array.from(new Set(state.includedTestItems))
     : failureSituations;
   const interventionSituations = state.result.interventionSituations || [];
+
+  // Situationer från markerade brister/anteckningar som ännu inte finns i bristförteckningen
+  const suggestedSituations: string[] = Array.from(new Set<string>(
+    (state.events || [])
+      .filter(e => e.kind !== 'ingripande' && e.situation)
+      .map(e => e.situation as string)
+  )).filter(sit => !(state.result.drivingFailure?.situations || []).includes(sit));
+
+  const addSuggestedSituation = (sit: string) => {
+    updateState(prev => ({
+      ...prev,
+      includedTestItems: (prev.includedTestItems || []).includes(sit) ? prev.includedTestItems : [...(prev.includedTestItems || []), sit],
+      result: {
+        ...prev.result,
+        drivingFailure: {
+          ...prev.result.drivingFailure,
+          situations: [...(prev.result.drivingFailure?.situations || []), sit],
+        },
+      },
+    }));
+  };
 
   const drivingDone = isOmprovSakerhet || (Boolean(state.result.drivingResult) && state.result.drivingResult !== '-');
   const safetyDone = !heavyMandatory || (Boolean(state.result.safetyCheckResult) && state.result.safetyCheckResult !== '-');
@@ -272,8 +338,11 @@ export function ResultatScreen() {
                   <OptionButton
                     active={!state.result.interventionOccurred}
                     onClick={() => {
-                      updateResult('interventionOccurred', false);
-                      updateResult('interventionSituations', []);
+                      updateState(prev => ({
+                        ...prev,
+                        events: (prev.events || []).filter(e => e.kind !== 'ingripande'),
+                        result: { ...prev.result, interventionOccurred: false, interventionSituations: [] },
+                      }));
                     }}
                   >
                     Nej
@@ -408,6 +477,52 @@ export function ResultatScreen() {
                 </div>
               )}
             </>
+          )}
+
+          {/* Körningen: rutt, händelser och förslag från Navigator/anteckningar */}
+          {hasRouteData(state) && (
+            <div className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm overflow-hidden mt-6">
+              <div className="border-b border-gray-100 dark:border-white/5 bg-gradient-to-r from-gray-50 via-white to-white dark:from-slate-900/40 dark:to-slate-950/20 py-3 px-5 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-1.5 h-4 bg-[#002f6c] dark:bg-blue-500 rounded-full shrink-0" />
+                  <h3 className="text-xs font-black text-gray-950 dark:text-gray-200 uppercase tracking-widest">Körningen – rutt & händelser</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowReview(true)}
+                  className="h-9 px-3.5 rounded-lg bg-[#002f6c] hover:bg-[#00204a] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Maximize2 size={13} /> Visa för kandidat
+                </button>
+              </div>
+
+              {/* Förslag: situationer från markerade händelser som inte redan finns i bristförteckningen */}
+              {state.result.drivingResult === 'Underkänt' && suggestedSituations.length > 0 && (
+                <div className="px-5 pt-4">
+                  <div className="rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/60 dark:bg-blue-950/20 p-3.5">
+                    <div className="text-[11px] font-black uppercase tracking-wider text-blue-900 dark:text-blue-300 mb-2">
+                      Förslag från körningen – lägg till som situation
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {suggestedSituations.map(sit => (
+                        <button
+                          key={sit}
+                          type="button"
+                          onClick={() => addSuggestedSituation(sit)}
+                          className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-blue-300 dark:border-blue-800 text-xs font-bold text-blue-900 dark:text-blue-200 hover:bg-blue-100 dark:hover:bg-blue-900/40 cursor-pointer"
+                        >
+                          + {sit}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="p-5">
+                <RouteReview route={state.route} events={state.events} />
+              </div>
+            </div>
           )}
 
           {/* Detailed summary of deficiencies & interventions directly at the bottom of the left column */}
@@ -890,6 +1005,64 @@ export function ResultatScreen() {
           <ArrowRight className="w-5 h-5" />
         </Button>
       </div>
+
+      {/* Kontroll innan protokollet skapas */}
+      {validationIssues && (
+        <Portal>
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150" onClick={() => setValidationIssues(null)}>
+          <div className="w-full sm:max-w-lg bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-800 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 pt-5 pb-3 flex items-start gap-3">
+              <span className={`p-2 rounded-xl shrink-0 ${validationIssues.some(i => i.level === 'error') ? 'bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400' : 'bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'}`}>
+                <AlertTriangle size={20} />
+              </span>
+              <div>
+                <h3 className="font-black text-base text-gray-900 dark:text-white">
+                  {validationIssues.some(i => i.level === 'error') ? 'Protokollet är inte komplett' : 'Kontrollera innan du går vidare'}
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Följande saknas eller bör ses över:</p>
+              </div>
+            </div>
+            <ul className="px-5 pb-4 space-y-2 max-h-[50dvh] overflow-y-auto">
+              {validationIssues.map((issue, idx) => (
+                <li key={idx} className={`text-sm p-3 rounded-xl border flex gap-2.5 ${
+                  issue.level === 'error'
+                    ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/50 text-red-900 dark:text-red-200'
+                    : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50 text-amber-900 dark:text-amber-200'
+                }`}>
+                  <span className="font-black shrink-0">{issue.level === 'error' ? '✗' : '!'}</span>
+                  <span>{issue.text}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="px-5 py-4 border-t border-gray-100 dark:border-slate-800 flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pb-[max(1rem,env(safe-area-inset-bottom))]">
+              <button
+                type="button"
+                onClick={() => { setValidationIssues(null); navigate('/korprov/protokoll'); }}
+                className="h-11 px-4 rounded-xl text-xs font-bold text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                Skapa protokoll ändå
+              </button>
+              <button
+                type="button"
+                onClick={() => { setValidationIssues(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                className="h-12 px-6 rounded-xl bg-[#002f6c] hover:bg-[#00204a] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-sm font-black cursor-pointer"
+              >
+                Komplettera
+              </button>
+            </div>
+          </div>
+        </div>
+        </Portal>
+      )}
+
+      <RouteReviewModal
+        open={showReview}
+        onClose={() => setShowReview(false)}
+        route={state.route}
+        events={state.events}
+        title={`Genomgång – ${state.properties.studentName || 'Kandidat'}`}
+        subtitle={`${licenseType} · ${state.properties.testDate || ''}`}
+      />
     </PrivacyGuard>
   );
 }

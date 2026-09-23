@@ -146,9 +146,15 @@ export function EgenskaperScreen() {
                 <h3 className="font-extrabold text-gray-900 dark:text-white text-base sm:text-lg">
                   {state.properties.studentName || 'Kandidat saknas'}
                 </h3>
-                <span className="text-[10px] font-black tracking-widest uppercase px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-990 text-emerald-800 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/20">
-                  Legitimation kontrollerad
-                </span>
+                {state.checklist.identityChecked ? (
+                  <span className="text-[10px] font-black tracking-widest uppercase px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/40">
+                    Legitimation kontrollerad
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-black tracking-widest uppercase px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/40">
+                    Legitimation ej kontrollerad
+                  </span>
+                )}
               </div>
               <p className="text-xs text-gray-500 dark:text-zinc-400 font-mono mt-0.5">
                 {state.properties.personalNumber || 'Saknar personnummer'} • {state.properties.email || 'Saknar e-post'}
@@ -438,14 +444,26 @@ export function EgenskaperScreen() {
                     <Lock size={12} className="text-gray-400" /> Särskilda myndighetsvillkor
                   </label>
                   <div className="flex flex-col gap-2 p-3 bg-gray-50 dark:bg-zinc-850 border border-gray-150 dark:border-zinc-800 rounded-xl">
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                      <input type="checkbox" className="w-4 h-4 accent-red-600 rounded" />
-                      <span className="text-xs font-semibold text-gray-700 dark:text-zinc-350 group-hover:text-black dark:group-hover:text-white">Medicinska villkor 69 (Alkolås)</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                      <input type="checkbox" className="w-4 h-4 accent-red-600 rounded" />
-                      <span className="text-xs font-semibold text-gray-700 dark:text-zinc-350 group-hover:text-black dark:group-hover:text-white">Handikappanpassning (Klass 78+)</span>
-                    </label>
+                    {['Medicinska villkor 69 (Alkolås)', 'Handikappanpassning (Klass 78+)'].map(condition => (
+                      <label key={condition} className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 accent-red-600 rounded"
+                          checked={(state.properties.specialConditions || []).includes(condition)}
+                          onChange={(e) => updateState(prev => {
+                            const current = prev.properties.specialConditions || [];
+                            return {
+                              ...prev,
+                              properties: {
+                                ...prev.properties,
+                                specialConditions: e.target.checked ? [...current, condition] : current.filter(c => c !== condition),
+                              },
+                            };
+                          })}
+                        />
+                        <span className="text-xs font-semibold text-gray-700 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white">{condition}</span>
+                      </label>
+                    ))}
                   </div>
                 </div>
 
@@ -455,12 +473,19 @@ export function EgenskaperScreen() {
                   </label>
                   <div className="flex flex-col gap-2 p-3 bg-gray-50 dark:bg-zinc-850 border border-gray-150 dark:border-zinc-800 rounded-xl h-[80px] justify-center">
                     <label className="flex items-center gap-2 cursor-pointer group">
-                      <input type="checkbox" className="w-4 h-4 accent-red-600 rounded" />
-                      <span className="text-xs font-semibold text-gray-700 dark:text-zinc-350 group-hover:text-black">Tolk medverkar under provet</span>
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 accent-red-600 rounded"
+                        checked={Boolean(state.properties.interpreterPresent)}
+                        onChange={(e) => updateState(prev => ({ ...prev, properties: { ...prev.properties, interpreterPresent: e.target.checked } }))}
+                      />
+                      <span className="text-xs font-semibold text-gray-700 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white">Tolk medverkar under provet</span>
                     </label>
-                    <input 
-                      type="text" 
-                      placeholder="Språk (frivilligt)" 
+                    <input
+                      type="text"
+                      value={state.properties.interpreterLanguage || ''}
+                      onChange={(e) => updateState(prev => ({ ...prev, properties: { ...prev.properties, interpreterLanguage: e.target.value } }))}
+                      placeholder="Språk (frivilligt)"
                       className="w-full text-xs border-b border-gray-200 dark:border-zinc-700 focus:border-red-600 dark:focus:border-red-500 focus:outline-none bg-transparent pb-0.5 dark:text-white" 
                     />
                   </div>

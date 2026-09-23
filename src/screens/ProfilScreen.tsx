@@ -7,7 +7,8 @@ import {
   Award, Edit3, Save, X, Sparkles, Key
 } from 'lucide-react';
 import { AppLogo } from '../components/icons/AppLogo';
-import { isSupabaseConfigured, signOutSupabase, updateUserPassword } from '../lib/supabase';
+import { isSupabaseConfigured, updateUserPassword } from '../lib/supabase';
+import { signOut } from '../lib/inspectors';
 
 export function ProfilScreen() {
   const { profile, updateProfile, syncQueue, testHistory, syncTests, isSyncing } = useAppStore();
@@ -65,9 +66,7 @@ export function ProfilScreen() {
 
   const handleLogout = async () => {
     if (window.confirm('Är du säker på att du vill logga ut från provsystemet?')) {
-      await signOutSupabase();
-      localStorage.removeItem('provprotokoll-is-logged-in');
-      localStorage.removeItem('provprotokoll-logged-in-inspector-id');
+      await signOut();
       window.location.reload();
     }
   };

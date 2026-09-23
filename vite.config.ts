@@ -64,6 +64,12 @@ export default defineConfig(({mode}) => {
       },
       dedupe: ['react', 'react-dom'],
     },
+    // Förbygg beroenden som bara används i lazy-laddade skärmar. Annars upptäcker
+    // Vite dem först mitt i en session, bygger om cachen och den öppna fliken
+    // får två React-kopior ("Cannot read properties of null (reading 'useContext')").
+    optimizeDeps: {
+      include: ['leaflet', 'react', 'react-dom', 'react-router-dom', 'lucide-react', 'motion/react', 'uuid'],
+    },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.

@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../../store/ProvContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AppLogo } from '../icons/AppLogo';
-import { Moon, Sun, Play, Pause, RotateCcw, Timer, History, ExternalLink, Share2, Check, BookOpen, Maximize, Minimize, User, LogOut, GraduationCap } from 'lucide-react';
+import { Moon, Sun, History, Share2, Check, BookOpen, Maximize, Minimize, User, Users, LogOut, GraduationCap, Car, ClipboardList } from 'lucide-react';
 import { LathundModal } from '../LathundModal';
 import { toggleAppFullscreen, isCurrentlyFullscreen } from '../../lib/fullscreen';
-import { signOutSupabase } from '../../lib/supabase';
+import { signOut } from '../../lib/inspectors';
 
 export function TopAppBar() {
   const { profile, state } = useAppStore();
@@ -32,9 +32,7 @@ export function TopAppBar() {
 
   const handleLogout = async () => {
     if (window.confirm('Är du säker på att du vill logga ut från provsystemet?')) {
-      await signOutSupabase();
-      localStorage.removeItem('provprotokoll-is-logged-in');
-      localStorage.removeItem('provprotokoll-logged-in-inspector-id');
+      await signOut();
       window.location.reload();
     }
   };
@@ -84,11 +82,8 @@ export function TopAppBar() {
     }
   }, [isDark]);
   
-  // Stopwatch state
-  const [showTimer, setShowTimer] = useState(false);
-  const [testTime, setTestTime] = useState(0); 
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const roleLabel = profile.role === 'admin' ? 'Administratör' : 'Inspektör';
+  const initials = (profile.name || 'I').split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('');
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -111,28 +106,8 @@ export function TopAppBar() {
     return () => clearInterval(interval);
   }, []);
   
-  // Timer logic
-  useEffect(() => {
-    if (isTimerRunning) {
-      timerRef.current = setInterval(() => {
-        setTestTime(prev => prev + 1);
-      }, 1000);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    }
-  }, [isTimerRunning]);
-
   const toggleDarkMode = () => {
     setIsDark(prev => !prev);
-  };
-  
-  const formatTimer = (secs: number) => {
-    const m = Math.floor(secs / 60).toString().padStart(2, '0');
-    const s = (secs % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
   };
 
   // I fullskärmsläge döljs toppmenyn helt så att applikationen blir identisk med provplattans surfplatta
@@ -151,248 +126,141 @@ export function TopAppBar() {
     );
   }
 
+  const navItems = [
+    { path: '/korprov', label: 'Körprov', icon: Car },
+    { path: '/teoriprov', label: 'Teoriprov', icon: ClipboardList },
+    { path: '/trafikskola', label: 'Trafikskola', icon: GraduationCap },
+    { path: '/elevregister', label: 'Elevregister', icon: Users },
+    { path: '/lathundar', label: 'Lathundar', icon: BookOpen },
+    { path: '/historik', label: 'Historik', icon: History },
+  ];
+
+  const iconButton = 'w-9 h-9 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer';
+
   return (
-    <header className="sticky top-0 z-50 w-full bg-white dark:bg-slate-950 border-b border-gray-200 dark:border-slate-800 shadow-sm pt-safe shrink-0">
-      <div className="max-w-[1400px] mx-auto px-2 sm:px-6 h-16 md:h-20 flex items-center justify-between gap-1.5 md:gap-6">
-        
-        {/* Left: Brand Logo & Status */}
+    <header className="sticky top-0 z-50 w-full bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 pt-safe shrink-0">
+      <div className="max-w-[1400px] mx-auto px-3 sm:px-5 h-14 md:h-16 flex items-center justify-between gap-3">
+
+        {/* Vänster: logga + status */}
         <div className="flex items-center gap-3 shrink-0">
-          <div
+          <button
+            type="button"
             onClick={() => navigate('/')}
-            className="flex items-center cursor-pointer group hover:opacity-95 transition-opacity rounded-sm overflow-hidden"
+            className="flex items-center cursor-pointer hover:opacity-90 transition-opacity"
+            aria-label="Till startsidan"
           >
             <AppLogo variant="provprotokoll" size="sm" />
-          </div>
-
-          <div className="hidden lg:flex items-center gap-2.5 pl-3 border-l border-gray-200 dark:border-slate-800 text-xs">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black tracking-widest uppercase text-[#002f6c] dark:text-blue-400">
-                Inspektörsterminal
-              </span>
-              <span className="font-mono text-gray-500 dark:text-gray-400 text-[11px] font-semibold">
-                {time}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-100 dark:bg-slate-850 border border-gray-200/80 dark:border-slate-700/60 text-[11px]">
-              <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 shadow-xs shadow-emerald-500/50' : 'bg-red-500'}`} />
-              <span className="font-bold text-gray-700 dark:text-gray-300">{isOnline ? 'Ansluten' : 'Frånkopplad'}</span>
-            </div>
+          </button>
+          <div className="hidden xl:flex items-center gap-2 pl-3 border-l border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
+            <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-red-500'}`} title={isOnline ? 'Ansluten' : 'Frånkopplad'} />
+            <span className="font-mono font-semibold tabular-nums">{time}</span>
           </div>
         </div>
 
-        {/* Center: Main Navigation Tabs (Desktop view) */}
-        <nav className="hidden md:flex items-center gap-1 bg-gray-100/80 dark:bg-slate-900 p-1 rounded-xl border border-gray-200/60 dark:border-slate-800">
-          <button 
-            onClick={() => navigate('/korprov')}
-            className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold uppercase tracking-wider transition-all ${
-              location.pathname.includes('/korprov') 
-                ? 'bg-[#002f6c] text-white shadow-sm' 
-                : 'text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-200/60 dark:hover:bg-slate-800'
-            }`}
-          >
-            Körprov
-          </button>
-          <button 
-            onClick={() => navigate('/teoriprov')}
-            className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold uppercase tracking-wider transition-all ${
-              location.pathname.includes('/teoriprov') 
-                ? 'bg-[#002f6c] text-white shadow-sm' 
-                : 'text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-200/60 dark:hover:bg-slate-800'
-            }`}
-          >
-            Teoriprov
-          </button>
-          <button 
-            onClick={() => navigate('/trafikskola')}
-            className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-              location.pathname.includes('/trafikskola') 
-                ? 'bg-[#002f6c] text-white shadow-sm' 
-                : 'text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-200/60 dark:hover:bg-slate-800'
-            }`}
-          >
-            <GraduationCap className="w-4 h-4 hidden sm:inline text-emerald-500" />
-            Trafikskola
-          </button>
-          <button 
-            onClick={() => navigate('/elevregister')}
-            className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-              location.pathname.includes('/elevregister') 
-                ? 'bg-[#002f6c] text-white shadow-sm' 
-                : 'text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-200/60 dark:hover:bg-slate-800'
-            }`}
-          >
-            <User className="w-4 h-4 hidden sm:inline text-blue-500" />
-            Elevregister
-          </button>
-          <button 
-            onClick={() => navigate('/lathundar')}
-            className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-              location.pathname.includes('/lathundar') 
-                ? 'bg-[#002f6c] text-white shadow-sm' 
-                : 'text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-200/60 dark:hover:bg-slate-800'
-            }`}
-          >
-            <BookOpen className="w-4 h-4 hidden sm:inline text-amber-500" />
-            Lathundar
-          </button>
-          <button 
-            onClick={() => navigate('/historik')}
-            className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-              location.pathname.includes('/historik') 
-                ? 'bg-[#002f6c] text-white shadow-sm' 
-                : 'text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-200/60 dark:hover:bg-slate-800'
-            }`}
-          >
-            <History className="w-4 h-4 hidden sm:inline" />
-            Historik
-          </button>
+        {/* Mitten: huvudnavigering (på iPad-bredd bara ikoner) */}
+        <nav className="hidden md:flex items-center gap-0.5 min-w-0" aria-label="Huvudmeny">
+          {navItems.map(({ path, label, icon: Icon }) => {
+            const active = location.pathname.startsWith(path);
+            return (
+              <button
+                key={path}
+                type="button"
+                onClick={() => navigate(path)}
+                title={label}
+                aria-current={active ? 'page' : undefined}
+                className={`h-9 px-2.5 lg:px-3 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+                  active
+                    ? 'bg-[#002f6c] dark:bg-blue-600 text-white'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <Icon size={16} className="shrink-0" />
+                <span className="hidden lg:inline">{label}</span>
+              </button>
+            );
+          })}
         </nav>
 
-        {/* Right: Actions & User Profile */}
-        <div className="flex items-center gap-2 md:gap-3 shrink-0">
-          {/* Stopwatch / Timer widget */}
-          <div className="hidden xl:flex items-center">
-            {!showTimer ? (
-               <button 
-                 onClick={() => setShowTimer(true)}
-                 className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors border border-gray-200/80 dark:border-slate-800"
-               >
-                 <Timer size={15} className="text-[#002f6c] dark:text-blue-400" /> 
-                 <span>Körtid</span>
-               </button>
-            ) : (
-               <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 px-2.5 py-1 rounded-lg shadow-sm">
-                  <span className={`font-mono font-bold text-xs w-10 text-center ${isTimerRunning ? 'text-red-600' : 'text-gray-700 dark:text-gray-300'}`}>
-                    {formatTimer(testTime)}
-                  </span>
-                  <div className="flex items-center gap-1 border-l border-gray-200 dark:border-slate-800 pl-1.5">
-                    <button onClick={() => setIsTimerRunning(!isTimerRunning)} className="p-1 hover:text-[#002f6c] dark:hover:text-blue-400 rounded">
-                      {isTimerRunning ? <Pause size={13} /> : <Play size={13} />}
-                    </button>
-                    <button onClick={() => { setIsTimerRunning(false); setTestTime(0); }} className="p-1 hover:text-red-500 rounded">
-                      <RotateCcw size={13} />
-                    </button>
-                    <button onClick={() => setShowTimer(false)} className="p-1 text-gray-400 hover:text-gray-600 text-[10px] font-bold">✕</button>
-                  </div>
-               </div>
-            )}
-          </div>
-
-          {/* Share Prov Link */}
-          <button 
+        {/* Höger: verktyg + profil */}
+        <div className="flex items-center gap-0.5 shrink-0">
+          <button
+            type="button"
             onClick={handleCopyLink}
-            className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all uppercase tracking-wider ${
-              copied 
-                ? 'bg-emerald-600 text-white' 
-                : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/40 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800'
-            }`}
-            title="Kopiera länk till elevprovet"
+            className={`${iconButton} hidden sm:flex ${copied ? '!text-emerald-600' : ''}`}
+            title={copied ? 'Länken är kopierad' : 'Kopiera länk till elevprovet'}
           >
-            {copied ? <Check size={14} /> : <Share2 size={14} />}
-            <span>{copied ? 'Kopierad!' : 'Dela provlänk'}</span>
+            {copied ? <Check size={17} /> : <Share2 size={17} />}
+          </button>
+          <button type="button" onClick={() => setIsLathundOpen(true)} className={iconButton} title="Snabblathund">
+            <BookOpen size={17} />
+          </button>
+          <button type="button" onClick={handleToggleFullscreen} className={iconButton} title={isFullscreen ? 'Lämna helskärm' : 'Helskärm (surfplatta)'}>
+            {isFullscreen ? <Minimize size={17} /> : <Maximize size={17} />}
+          </button>
+          <button type="button" onClick={toggleDarkMode} className={iconButton} title={isDark ? 'Ljust läge' : 'Mörkt läge'}>
+            {isDark ? <Sun size={17} /> : <Moon size={17} />}
           </button>
 
-          {/* Lathund Modal Quick Button */}
-          <button
-            onClick={() => setIsLathundOpen(true)}
-            className="flex items-center justify-center gap-1.5 min-w-10 min-h-10 sm:min-w-0 sm:min-h-0 px-2 sm:px-2.5 py-2 sm:py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
-            title="Öppna snabblathund för regelverk & TDOK"
-          >
-            <BookOpen size={14} />
-            <span className="hidden xl:inline">Snabblathund</span>
-          </button>
-
-          {/* Fullskärmsvy (Surfplatteläge Android/Web) */}
-          <button
-            onClick={handleToggleFullscreen}
-            className="flex items-center justify-center min-w-10 min-h-10 sm:min-w-0 sm:min-h-0 px-2.5 py-1.5 rounded-lg bg-gray-100 dark:bg-slate-900 hover:bg-gray-200 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300 transition-colors border border-gray-200/60 dark:border-slate-800 gap-1.5 text-xs font-bold cursor-pointer active:scale-95"
-            title={isFullscreen ? "Lämna helskärm" : "Fullskärmsläge (Surfplatta)"}
-          >
-            {isFullscreen ? <Minimize size={15} className="text-blue-600 dark:text-blue-400" /> : <Maximize size={15} />}
-            <span className="hidden xl:inline">{isFullscreen ? 'Avsluta fullskärm' : 'Fullskärm'}</span>
-          </button>
-
-          {/* Dark mode toggle */}
-          <button
-            onClick={toggleDarkMode}
-            className="flex items-center justify-center min-w-10 min-h-10 sm:min-w-0 sm:min-h-0 p-2 rounded-lg bg-gray-100 dark:bg-slate-900 hover:bg-gray-200 dark:hover:bg-slate-800 text-gray-600 dark:text-gray-300 transition-colors border border-gray-200/60 dark:border-slate-800 cursor-pointer active:scale-95"
-            title="Växla mörkt läge"
-          >
-            {isDark ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
-
-          {/* User Profile & Logout Menu */}
-          <div className="relative" ref={profileMenuRef}>
-            <div
+          {/* Profil */}
+          <div className="relative ml-1.5 pl-2 border-l border-slate-200 dark:border-slate-800" ref={profileMenuRef}>
+            <button
+              type="button"
               onClick={() => setIsProfileMenuOpen(prev => !prev)}
-              className="flex items-center gap-2 pl-1 sm:pl-2 cursor-pointer group py-1"
-              title="Profil & Inställningar"
+              className="flex items-center gap-2.5 cursor-pointer group rounded-lg py-1 pl-1 pr-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              aria-haspopup="menu"
+              aria-expanded={isProfileMenuOpen}
             >
-              <div className="text-right hidden sm:block">
-                <div className="text-xs md:text-sm font-bold text-gray-900 dark:text-gray-100 leading-none group-hover:text-[#002f6c] dark:group-hover:text-blue-400 transition-colors">
-                  {profile.name || 'Rasmus Lundin'}
+              {profile.name && (
+                <div className="text-right hidden xl:block">
+                  <div className="text-sm font-semibold text-slate-900 dark:text-white leading-tight">{profile.name}</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">{roleLabel}</div>
                 </div>
-                <div className="text-[10px] text-gray-400 dark:text-gray-500 font-medium leading-tight mt-0.5">
-                  Inspektör
-                </div>
+              )}
+              <div className="w-8 h-8 bg-[#002f6c] dark:bg-blue-600 text-white font-bold text-sm rounded-full flex items-center justify-center shrink-0">
+                {initials}
               </div>
-              <div className="w-9 h-9 bg-[#002F6C] text-white font-black text-xs md:text-sm rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-white/10 group-hover:bg-[#001d4a] transition-colors">
-                {profile.name ? profile.name[0].toUpperCase() : 'R'}
-              </div>
-            </div>
+            </button>
 
-            {/* Profile Dropdown Popup */}
             {isProfileMenuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-200 dark:border-slate-800 py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="px-4 py-2.5 border-b border-gray-100 dark:border-slate-800">
-                  <div className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate">
-                    {profile.name || 'Rasmus Lundin'}
-                  </div>
-                  <div className="text-[10px] text-gray-400 dark:text-gray-500 font-medium truncate">
-                    {profile.email || 'rasmus.lundin@gmail.com'}
-                  </div>
-                  <div className="text-[9px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mt-1">
-                    INSP-2045 • Alla orter
+              <div role="menu" className="absolute right-0 mt-2 w-60 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800">
+                  <div className="text-sm font-semibold text-slate-900 dark:text-white truncate">{profile.name || 'Inspektör'}</div>
+                  {profile.email && <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{profile.email}</div>}
+                  <div className="text-[11px] font-semibold text-[#002f6c] dark:text-blue-400 mt-1">
+                    {roleLabel}{profile.depot ? ` · ${profile.depot}` : ''}
                   </div>
                 </div>
 
-                <div className="p-1 space-y-0.5">
+                <div className="p-1">
+                  {[
+                    { label: 'Min profil', icon: User, path: '/profil', show: true },
+                    { label: 'Inspektörer', icon: Users, path: '/inspektorer', show: profile.role === 'admin' },
+                  ].filter(i => i.show).map(({ label, icon: Icon, path }) => (
+                    <button
+                      key={path}
+                      role="menuitem"
+                      type="button"
+                      onClick={() => { setIsProfileMenuOpen(false); navigate(path); }}
+                      className="w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Icon size={15} className="text-slate-400" />
+                      {label}
+                    </button>
+                  ))}
+                  <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
                   <button
-                    onClick={() => {
-                      setIsProfileMenuOpen(false);
-                      navigate('/profil');
-                    }}
-                    className="w-full px-3 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-2.5 cursor-pointer"
-                  >
-                    <User size={14} className="text-[#002f6c] dark:text-blue-400" />
-                    <span>Min profil</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setIsProfileMenuOpen(false);
-                      navigate('/historik');
-                    }}
-                    className="w-full px-3 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-2.5 cursor-pointer"
-                  >
-                    <History size={14} className="text-gray-500" />
-                    <span>Provhistorik</span>
-                  </button>
-
-                  <div className="my-1 border-t border-gray-100 dark:border-slate-800" />
-
-                  <button
+                    role="menuitem"
+                    type="button"
                     onClick={handleLogout}
-                    className="w-full px-3 py-2 text-left text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors flex items-center gap-2.5 cursor-pointer"
+                    className="w-full px-3 py-2 text-left text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors flex items-center gap-2.5 cursor-pointer"
                   >
-                    <LogOut size={14} />
-                    <span>Logga ut</span>
+                    <LogOut size={15} />
+                    Logga ut
                   </button>
                 </div>
               </div>
             )}
           </div>
-
         </div>
       </div>
 

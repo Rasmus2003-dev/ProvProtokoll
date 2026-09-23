@@ -1,13 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { useAppStore } from '../../store/ProvContext';
 import { cn } from '../../lib/utils';
 import { TEST_CONTENT, ALL_SAFETY_ITEMS } from '../../data/testContentCatalog';
-import { AlertCircle, ShieldAlert, Search, X, Bus, Maximize, Minimize, BookOpen, Dice5 } from 'lucide-react';
+import { AlertCircle, ShieldAlert, Search, X, Maximize, Minimize, BookOpen, Dice5, PenLine } from 'lucide-react';
 import { FailureForm } from './components/FailureForm';
+import { NavigatorPanel } from '../../components/route/NavigatorPanel';
+import { EventDialog, EventDialogResult } from '../../components/route/EventDialog';
+import { createDrivingEvent, withEvent } from '../../lib/drivingEvents';
+import { DrivingEventKind } from '../../types';
+import { LightSafetySuggestion } from './components/LightSafetySuggestion';
+import { LIGHT_SAFETY_LICENSES } from '../../data/lightSafetyCheck';
 
-import { AppLogo } from '../../components/icons/AppLogo';
 import { toggleAppFullscreen, isCurrentlyFullscreen } from '../../lib/fullscreen';
 import { LathundModal } from '../../components/LathundModal';
 import { HeavySafetyQuestionModal } from './components/HeavySafetyQuestionModal';
@@ -135,15 +140,9 @@ export function KorningScreen() {
     }));
   };
 
+  // Ingripande öppnar en snabbval-ruta för situationen medan den är färsk i minnet
   const setIntervention = () => {
-    updateState((prev) => ({
-      ...prev,
-      result: {
-        ...(prev.result || {}),
-        interventionOccurred: !(prev.result?.interventionOccurred),
-        ...(prev.result?.interventionOccurred ? { interventionSituations: [] } : {})
-      }
-    }));
+    setDialog({ kind: 'ingripande', mode: 'intervention' });
   };
 
   const setAborted = () => {
@@ -194,15 +193,86 @@ export function KorningScreen() {
   const drivingProgress = drivingItemsAll.length > 0 ? Math.round((selectedDrivingCount / drivingItemsAll.length) * 100) : 0;
   const todayLabel = new Date().toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' });
 
+  // --- Händelser: brist / ingripande / notering (med plats om Navigator spelar in) ---
+  type DialogState = { kind: DrivingEventKind; situation?: string; mode: 'mark' | 'intervention' } | null;
+  const [dialog, setDialog] = useState<DialogState>(null);
+
+  // Provade moment först, sedan övriga moment för behörigheten
+  const dialogSituations = Array.from(new Set([...(state.includedTestItems || []), ...rawAvailableItems]));
+  const eventCountBySituation = (state.events || []).reduce<Record<string, number>>((acc, ev) => {
+    if (ev.situation) acc[ev.situation] = (acc[ev.situation] || 0) + 1;
+    return acc;
+  }, {});
+  const interventionCount = (state.events || []).filter(e => e.kind === 'ingripande').length;
+
+  const handleDialogSave = ({ kind, situation, note }: EventDialogResult) => {
+    const event = createDrivingEvent(kind, situation, note);
+    updateState((prev) => {
+      let next = withEvent(prev, event);
+      // Det som hände i ett moment betyder att momentet provats
+      if (situation && rawAvailableItems.includes(situation) && !(next.includedTestItems || []).includes(situation)) {
+        next = { ...next, includedTestItems: [...(next.includedTestItems || []), situation] };
+      }
+      if (kind === 'ingripande') {
+        const current = next.result?.interventionSituations || [];
+        next = {
+          ...next,
+          result: {
+            ...next.result,
+            interventionOccurred: true,
+            interventionSituations: situation && !current.includes(situation) ? [...current, situation] : current,
+          },
+        };
+      }
+      return next;
+    });
+    setDialog(null);
+  };
+
+  const undoIntervention = () => {
+    updateState((prev) => ({
+      ...prev,
+      events: (prev.events || []).filter(e => e.kind !== 'ingripande'),
+      result: { ...prev.result, interventionOccurred: false, interventionSituations: [] },
+    }));
+    setDialog(null);
+  };
+
+  // Håll inne ett moment (touch) för att skriva en anteckning – pennan syns bara vid hovring
+  const longPressTimer = useRef<number | null>(null);
+  const longPressFired = useRef(false);
+  const startLongPress = (item: string) => {
+    longPressFired.current = false;
+    longPressTimer.current = window.setTimeout(() => {
+      longPressFired.current = true;
+      navigator.vibrate?.(15);
+      setDialog({ kind: 'notering', situation: item, mode: 'mark' });
+    }, 550);
+  };
+  const cancelLongPress = () => {
+    if (longPressTimer.current) window.clearTimeout(longPressTimer.current);
+    longPressTimer.current = null;
+  };
+
   const renderItemButton = (item: string, customKey?: string) => {
     const isSelected = (state.includedTestItems || []).includes(item);
+    const noteCount = eventCountBySituation[item] || 0;
     return (
-      <button 
-        key={customKey || item} 
-        onClick={() => toggleItem(item)}
+      <div key={customKey || item} className="relative flex group">
+      <button
+        onClick={() => {
+          // Ett långt tryck öppnade anteckningen – bocka inte i/ur momentet
+          if (longPressFired.current) { longPressFired.current = false; return; }
+          toggleItem(item);
+        }}
+        onPointerDown={() => startLongPress(item)}
+        onPointerUp={cancelLongPress}
+        onPointerLeave={cancelLongPress}
+        onPointerCancel={cancelLongPress}
+        onContextMenu={(e) => e.preventDefault()}
         type="button"
         className={cn(
-          "flex items-center gap-3 py-2.5 px-3.5 text-left cursor-pointer transition-all duration-150 w-full outline-none select-none rounded-lg border border-l-4 active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-blue-500/40",
+          "flex items-center gap-3 py-2.5 pl-3.5 pr-10 text-left cursor-pointer transition-all duration-150 w-full outline-none select-none rounded-lg border border-l-4 active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-blue-500/40",
           isSelected
             ? "border-slate-300 border-l-[#002f6c] dark:border-slate-600 dark:border-l-blue-500 text-slate-950 dark:text-white bg-blue-50/60 dark:bg-blue-950/30 shadow-xs"
             : "border-slate-200/90 border-l-slate-200/90 dark:border-slate-800 dark:border-l-slate-800 text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900/90 hover:border-slate-300 hover:border-l-slate-300 hover:bg-slate-50/50"
@@ -234,6 +304,28 @@ export function KorningScreen() {
           {item}
         </span>
       </button>
+      {/* Anteckning: diskret räknare om det finns anteckningar, annars penna bara vid hovring/fokus */}
+      <button
+        type="button"
+        onClick={() => setDialog({ kind: 'notering', situation: item, mode: 'mark' })}
+        className={cn(
+          "absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer",
+          noteCount > 0
+            ? "opacity-100"
+            : "opacity-0 pointer-events-none [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+        )}
+        title={noteCount > 0 ? `${noteCount} anteckning${noteCount > 1 ? 'ar' : ''} – lägg till fler` : `Anteckning: ${item} (eller håll inne momentet)`}
+        aria-label={`Anteckning för ${item}`}
+      >
+        {noteCount > 0 ? (
+          <span className="min-w-5 h-5 px-1.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10px] font-bold flex items-center justify-center">
+            {noteCount}
+          </span>
+        ) : (
+          <PenLine size={14} />
+        )}
+      </button>
+      </div>
     );
   };
 
@@ -256,10 +348,6 @@ export function KorningScreen() {
           <span className="hidden md:inline">{isFullscreen ? 'Avsluta' : 'Fullskärm'}</span>
         </button>
 
-        {/* Centrerad ProvProtokoll logga för surfplattan */}
-        <div className="flex flex-col items-center justify-center -mt-2 mb-2 select-none">
-          <AppLogo variant="provprotokoll" size="md" />
-        </div>
 
         {/* Ren textnavigering: Start  Egenskaper  Inledning  Körning  Resultat */}
         <div className="w-full overflow-x-auto hide-scrollbar flex items-center justify-start sm:justify-center gap-4 sm:gap-10 text-xs sm:text-base font-normal text-gray-400 dark:text-zinc-500 select-none pt-1 px-2">
@@ -297,8 +385,20 @@ export function KorningScreen() {
               </div>
             </div>
           )}
+
+          {/* Diskret indikator när GPS spelar in – klick hoppar ner till Navigator */}
+          {state.route?.recording && (
+            <button
+              type="button"
+              onClick={() => document.getElementById('navigator')?.scrollIntoView({ behavior: 'smooth' })}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-50 dark:bg-red-950/40 text-[11px] font-bold text-red-700 dark:text-red-400 cursor-pointer"
+              title="Navigator spelar in – visa"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" /> GPS
+            </button>
+          )}
         </div>
-        
+
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -321,7 +421,10 @@ export function KorningScreen() {
             )}
           >
             <AlertCircle size={15} className={state.result?.interventionOccurred ? "text-amber-700 dark:text-amber-300" : "text-gray-400"} />
-            <span>Ingripande {state.result?.interventionOccurred ? "✓" : ""}</span>
+            <span>
+              {state.result?.interventionOccurred ? '+ Ingripande' : 'Ingripande'}
+              {interventionCount > 0 && ` (${interventionCount})`}
+            </span>
           </button>
           
           <button
@@ -339,6 +442,36 @@ export function KorningScreen() {
           </button>
         </div>
       </div>
+
+      {/* Förslag till säkerhetskontroll – lätta fordon */}
+      {LIGHT_SAFETY_LICENSES.includes(licenseType) && state.properties?.testType !== 'Omprov körning' && (
+        <LightSafetySuggestion />
+      )}
+
+      {/* Sök bland momenten */}
+      <div className="relative">
+        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Sök moment, t.ex. cirkulation, backning..."
+          className="w-full h-11 pl-10 pr-10 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500 transition-colors"
+        />
+        {searchTerm && (
+          <button
+            type="button"
+            onClick={() => setSearchTerm('')}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-slate-800 cursor-pointer"
+            aria-label="Rensa sökning"
+          >
+            <X size={15} />
+          </button>
+        )}
+      </div>
+      {searchTerm.trim() && baseDrivingItems.length === 0 && selectedSafetyItems.length === 0 && (
+        <p className="text-sm text-gray-500 dark:text-slate-400 text-center py-4">Inga moment matchar "{searchTerm}".</p>
+      )}
 
       {/* RENT 3-KOLUMNERS RUTNÄT */}
       {state.properties?.testType !== 'Omprov säkerhetskontroll' && (
@@ -491,6 +624,13 @@ export function KorningScreen() {
         </div>
       )}
 
+      {/* Navigator (GPS): diskret längst ner – fälls ut vid behov */}
+      {state.properties?.testType !== 'Omprov säkerhetskontroll' && (
+        <div id="navigator" className="pt-6 scroll-mt-4">
+          <NavigatorPanel onMark={(kind) => setDialog({ kind, mode: kind === 'ingripande' ? 'intervention' : 'mark' })} />
+        </div>
+      )}
+
       {/* Navigation & Controls footer matches the clean Swedish myndighets style */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-10 border-t border-gray-200 dark:border-white/5 mt-12 print:hidden">
         <div className="flex gap-4 w-full sm:w-auto">
@@ -520,6 +660,28 @@ export function KorningScreen() {
           </Button>
         </div>
       </div>
+      <EventDialog
+        open={dialog !== null}
+        title={
+          dialog?.mode === 'intervention'
+            ? (state.result?.interventionOccurred ? 'Nytt ingripande' : 'Ingripande')
+            : dialog?.situation ? `Anteckning – ${dialog.situation}` : 'Markera händelse'
+        }
+        description={dialog?.mode === 'intervention' ? 'I vilken situation skedde ingripandet?' : undefined}
+        situations={dialogSituations}
+        initialKind={dialog?.kind}
+        initialSituation={dialog?.situation}
+        kinds={dialog?.mode === 'intervention' ? ['ingripande'] : ['brist', 'notering']}
+        saveLabel={dialog?.mode === 'intervention' ? 'Registrera ingripande' : 'Spara'}
+        secondaryAction={
+          dialog?.mode === 'intervention' && state.result?.interventionOccurred
+            ? { label: 'Ångra alla ingripanden', onClick: undoIntervention }
+            : undefined
+        }
+        onSave={handleDialogSave}
+        onClose={() => setDialog(null)}
+      />
+
       {/* Lathund Modal */}
       <LathundModal
         isOpen={isLathundOpen}

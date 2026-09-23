@@ -1,4 +1,4 @@
-import React, { Suspense, useState } from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppProvider } from './store/ProvContext';
 import { LoginScreen } from './screens/LoginScreen';
@@ -13,6 +13,7 @@ import { ToastProvider } from './components/Toast';
 
 import { PullToRefresh } from './components/layout/PullToRefresh';
 import { isTestStepPath } from './lib/activeTest';
+import { useAuthGate } from './hooks/useAuthGate';
 
 // Efter en ny deploy finns gamla chunk-filer inte kvar på servern, och en
 // lazy-import misslyckas då. Ladda om sidan en gång för att hämta nya filer
@@ -55,9 +56,7 @@ const InspektorerScreen = lazy(() => import('./screens/InspektorerScreen').then(
 
 function AppContent() {
   const location = useLocation();
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return localStorage.getItem('provprotokoll-is-logged-in') === 'true';
-  });
+  const auth = useAuthGate();
 
   // Student/candidate screen should run standalone without login
   if (location.pathname === '/elevprov') {
@@ -111,9 +110,14 @@ function AppContent() {
       </div>
       <PWAInstallBanner />
 
-      {/* When not logged in, show clean white login modal directly over the system */}
-      {!isLoggedIn && (
-        <LoginScreen onLoginSuccess={() => setIsLoggedIn(true)} />
+      {/* Inloggningen täcker hela appen tills sessionen är verifierad */}
+      {auth.status === 'checking' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+          <div className="w-8 h-8 border-[3px] border-slate-200 dark:border-slate-700 border-t-[#002f6c] dark:border-t-blue-500 rounded-full animate-spin" />
+        </div>
+      )}
+      {auth.status === 'signed-out' && (
+        <LoginScreen onLoginSuccess={auth.onLoginSuccess} />
       )}
     </div>
   );

@@ -134,7 +134,7 @@ export function KompetensOmradenCard() {
             className="shrink-0 w-full sm:w-auto px-4 py-2.5 min-h-10 bg-[#002f6c] hover:bg-[#00204a] text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm hover:scale-[1.02] cursor-pointer"
           >
             <Monitor size={16} />
-            <span>Visa för aspirant (Fullskärm)</span>
+            <span>Visa för kandidat (helskärm)</span>
           </button>
         </div>
 
@@ -177,7 +177,7 @@ export function KompetensOmradenCard() {
               <AppLogo variant="provprotokoll" size="sm" />
               <div className="hidden sm:block pl-2 border-l border-gray-200 dark:border-slate-700">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 block">
-                  Informationsvy för körkortsaspirant
+                  Informationsvy för kandidaten
                 </span>
                 <h2 className="text-base font-black text-gray-900 dark:text-white uppercase tracking-tight">
                   Körprovets fem kompetensområden

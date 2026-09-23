@@ -44,7 +44,7 @@ export async function saveProtocolToBackend(state: AppState, examinerName?: stri
     tachograph: state.properties.tachograph || 'Med färdskrivare',
     driving_result: state.result.drivingResult,
     safety_result: state.result.safetyCheckResult,
-    examiner: examinerName || state.properties.examiner || 'Rasmus Lundin',
+    examiner: examinerName || state.properties.examiner || 'Okänd provförrättare',
     full_state: state
   };
 
@@ -52,7 +52,14 @@ export async function saveProtocolToBackend(state: AppState, examinerName?: stri
   try {
     const existing = JSON.parse(localStorage.getItem('provprotokoll_saved_db') || '[]');
     existing.unshift(payload);
-    localStorage.setItem('provprotokoll_saved_db', JSON.stringify(existing.slice(0, 100)));
+    // Inspelade rutter tar plats – behåll dem bara för de senaste protokollen lokalt
+    // (molnet och exporterade säkerhetskopior har kvar hela rutten).
+    const trimmed = existing.slice(0, 100).map((row: SavedProtocolRow, idx: number) =>
+      idx < LOCAL_ROUTE_KEEP || !row.full_state?.route
+        ? row
+        : { ...row, full_state: { ...row.full_state, route: undefined } }
+    );
+    localStorage.setItem('provprotokoll_saved_db', JSON.stringify(trimmed));
   } catch (err) {
     console.warn('LocalStorage save failed:', err);
   }
@@ -85,6 +92,42 @@ export async function saveProtocolToBackend(state: AppState, examinerName?: stri
   } catch (_) {}
 
   return { success: true, id: protocolId };
+}
+
+const LOCAL_ROUTE_KEEP = 20;
+
+export const BACKUP_FORMAT = 'provprotokoll-backup';
+
+/**
+ * Återställ protokoll från en säkerhetskopia. Befintliga protokoll (samma id)
+ * hoppas över. Läggs alltid in lokalt och – om molnet är konfigurerat – även där.
+ */
+export async function importProtocols(rows: SavedProtocolRow[]): Promise<{ added: number; skipped: number }> {
+  const valid = rows.filter(r => r && typeof r.id === 'string' && r.full_state && typeof r.full_state === 'object');
+  let existing: SavedProtocolRow[] = [];
+  try {
+    existing = JSON.parse(localStorage.getItem('provprotokoll_saved_db') || '[]');
+  } catch (_) {}
+
+  const existingIds = new Set(existing.map(r => r.id));
+  const toAdd = valid.filter(r => !existingIds.has(r.id));
+  const merged = [...existing, ...toAdd].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+
+  try {
+    localStorage.setItem('provprotokoll_saved_db', JSON.stringify(merged));
+  } catch (err) {
+    throw new Error('Lagringen på enheten är full – importen kunde inte sparas lokalt.');
+  }
+
+  if (isSupabaseConfigured() && toAdd.length > 0) {
+    try {
+      await supabase.from('protocols').upsert(toAdd, { onConflict: 'id', ignoreDuplicates: true });
+    } catch (err) {
+      console.warn('Kunde inte importera till molnet:', err);
+    }
+  }
+
+  return { added: toAdd.length, skipped: rows.length - toAdd.length };
 }
 
 /**

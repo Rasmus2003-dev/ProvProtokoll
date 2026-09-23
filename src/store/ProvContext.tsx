@@ -19,11 +19,11 @@ export interface ProvContextType {
 
 const defaultState: AppState = {
   properties: {
-    studentName: 'Simon Svensson',
-    personalNumber: '19970613-9876',
-    email: 'simon.svensson@exempel.se',
-    examiner: 'Rasmus Lundin',
-    testDate: '2026-05-19',
+    studentName: '',
+    personalNumber: '',
+    email: '',
+    examiner: '',
+    testDate: new Date().toISOString().split('T')[0],
     testType: 'Förstaprov',
     licenseType: 'B',
     transmission: 'Manuell',
@@ -62,12 +62,13 @@ const defaultState: AppState = {
 };
 
 const defaultProfile: InspectorProfile = {
-  name: "Rasmus Lundin",
-  inspectorId: "INSP-2045",
-  email: "rasmus.lundin@gmail.com",
-  phone: "070-123 45 67",
-  depot: "Samtliga orter / Hela Sverige",
-  signatureText: "Rasmus Lundin / ProvProtokoll",
+  // Fylls i från inspektörskontot vid inloggning
+  name: "",
+  inspectorId: "",
+  email: "",
+  phone: "",
+  depot: "",
+  signatureText: "",
   autoSign: true,
   vehicleCategories: ["AM", "A1", "A2", "A", "B", "BE", "C1", "C", "C1E", "CE", "D1", "D", "D1E", "DE", "TAXI"],
 };
