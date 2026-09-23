@@ -83,6 +83,7 @@ export function KorprovLayout() {
   // Determine if we should show the secondary nav menu
   const isProtokoll = location.pathname.endsWith('protokoll');
   const isKorning = location.pathname.endsWith('korning');
+  const isResultat = location.pathname.endsWith('resultat');
   const showNav = !isProtokoll && !isKorning;
 
   const toggleTimer = () => {
@@ -208,7 +209,10 @@ export function KorprovLayout() {
 
       {/* Anteckningar och timer – bara under själva provet, inte på startsidan */}
       {showNav && onTestStep && (
-        <div className="fixed bottom-20 right-4 sm:bottom-24 sm:right-6 md:bottom-12 md:right-12 z-40 print:hidden">
+        <div className={`fixed right-4 sm:right-6 md:right-12 z-40 print:hidden ${
+          // Resultat har en fast åtgärdsrad längst ner – lyft knapparna ovanför den
+          isResultat ? 'bottom-36 md:bottom-24' : 'bottom-20 sm:bottom-24 md:bottom-12'
+        }`}>
           <AnimatePresence>
             {showNotes && (
               <motion.div

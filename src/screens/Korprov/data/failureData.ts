@@ -119,6 +119,90 @@ export const failureCategories = {
   }
 };
 
+// Formuleringar i Trafikverkets nya protokoll ("Du måste bli bättre på:").
+// Visas bara när provet görs med ny provlayout, före de tidigare formuleringarna.
+// Bekräftade från ett riktigt protokoll: de tre första under Trafiksäkerhet och beteende.
+// Övriga är skrivna i samma stil och bör stämmas av mot fler nya protokoll.
+export const newLayoutDeficiencies: Record<string, string[]> = {
+  "Trafiksäkerhet och beteende": [
+    "Planera din körning efter det du ser",
+    "Samspela väl med andra trafikanter",
+    "Välja rätt placering",
+    "Anpassa hastigheten efter situationen",
+    "Hålla tillräckliga säkerhetsmarginaler",
+    "Upptäcka och bedöma risker i tid",
+    "Ha god uppsikt runt fordonet",
+    "Visa hänsyn till oskyddade trafikanter",
+    "Anpassa körningen efter väglag och sikt"
+  ],
+  "Manövrering": [
+    "Manövrera fordonet mjukt och under kontroll",
+    "Hantera reglagen rutinmässigt",
+    "Styra med god precision",
+    "Anpassa manövreringen till utrymme och hinder",
+    "Bromsa effektivt och kontrollerat",
+    "Backa och parkera med god uppsikt"
+  ],
+  "Trafikregler": [
+    "Följa väjningsplikt och stopplikt",
+    "Följa hastighetsbegränsningarna",
+    "Följa vägmärken, trafiksignaler och vägmarkeringar",
+    "Följa reglerna vid körfältsbyte och sammanvävning",
+    "Följa reglerna i cirkulationsplatser",
+    "Lämna företräde vid övergångsställen och cykelpassager"
+  ],
+  "Fordonskännedom": [
+    "Kontrollera fordonets skick",
+    "Upptäcka fel och föreslå åtgärder",
+    "Förklara varför kontrollen är viktig för trafiksäkerheten",
+    "Använda fordonets reglage och hjälpsystem rätt",
+    "Ställa in en säker körställning"
+  ],
+  "Miljömedveten körning": [
+    "Planera din körning för en jämn fart",
+    "Utnyttja fordonets rörelseenergi",
+    "Välja växel och varvtal som ger låg förbrukning",
+    "Undvika onödig tomgång och onödiga accelerationer"
+  ],
+  "Passagerarvänlig körning": [
+    "Köra mjukt och behagligt för passagerarna",
+    "Anpassa hastigheten i kurvor efter passagerarna",
+    "Accelerera och bromsa mjukt",
+    "Ta hänsyn till passagerare vid på- och avstigning"
+  ],
+  "Handlings- och omdömesförmåga": [
+    "Göra säkra bedömningar i svåra trafiksituationer",
+    "Agera lugnt och korrekt vid oväntade händelser",
+    "Förutse risker och konsekvenser av ditt agerande",
+    "Hålla tillräckliga säkerhetsmarginaler"
+  ]
+};
+
+// Sorterar valda brister i listans ordning (nya formuleringar först), som i
+// Trafikverkets protokoll – oavsett i vilken ordning de klickades i
+export function sortByCatalog(area: string, selected: string[]): string[] {
+  const order = [
+    ...(newLayoutDeficiencies[area] || []),
+    ...((failureCategories.deficiencies as Record<string, string[]>)[area] || []),
+  ];
+  const rank = (d: string) => {
+    const i = order.indexOf(d);
+    return i === -1 ? order.length : i;
+  };
+  return [...selected].sort((a, b) => rank(a) - rank(b));
+}
+
+// Valbara brister för ett område, uppdelat i grupper för formuläret
+export function deficiencyGroups(area: string, newLayout: boolean): { label?: string; items: string[] }[] {
+  const classic = (failureCategories.deficiencies as Record<string, string[]>)[area] || [];
+  if (!newLayout) return [{ items: classic }];
+  const fresh = newLayoutDeficiencies[area] || [];
+  return [
+    { label: 'Nya formuleringar', items: fresh },
+    { label: 'Tidigare formuleringar', items: classic.filter(d => !fresh.includes(d)) },
+  ].filter(g => g.items.length > 0);
+}
+
 export const failureSituations = [
   "Backning", "Parkering", "Körfält", "Körfältsbyte", "Gatukorsning", 
   "Signalreglerad korsning", "Cirkulationsplats", "Motorväg/motortrafikled", 

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { BookOpen, X } from 'lucide-react';
 import { LICENSE_GUIDES } from '../data/licenseGuidesData';
 import { LicenseGuideView } from './lathund/LicenseGuideView';
-import { TdokViewer } from './lathund/TdokViewer';
+import { TdokViewer, docForLicense } from './lathund/TdokViewer';
+import { useStoredState } from './lathund/Highlight';
 import { Portal } from './Portal';
 
 interface LathundModalProps {
@@ -13,7 +14,7 @@ interface LathundModalProps {
 }
 
 export function LathundModal({ isOpen, onClose, defaultDocId, defaultLicense = 'B' }: LathundModalProps) {
-  const [activeTab, setActiveTab] = useState<'behorighet' | 'dokument'>('behorighet');
+  const [activeTab, setActiveTab] = useStoredState<'behorighet' | 'dokument'>('lathund-tab', 'behorighet');
   const [selectedLicense, setSelectedLicense] = useState<string>(LICENSE_GUIDES[defaultLicense] ? defaultLicense : 'B');
 
   useEffect(() => {
@@ -74,7 +75,7 @@ export function LathundModal({ isOpen, onClose, defaultDocId, defaultLicense = '
           {activeTab === 'behorighet' ? (
             <LicenseGuideView license={selectedLicense} onLicenseChange={setSelectedLicense} />
           ) : (
-            <TdokViewer defaultDocId={defaultDocId} />
+            <TdokViewer defaultDocId={defaultDocId || docForLicense(defaultLicense)} />
           )}
         </div>
       </div>

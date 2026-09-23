@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AppState, InspectorProfile } from '../types';
 import { saveProtocolToBackend } from '../lib/supabase';
 import { readJSON, writeJSON } from '../lib/safeStorage';
+import { getLayoutPreference } from '../lib/protocolLayout';
 
 export interface ProvContextType {
   state: AppState;
@@ -180,6 +181,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       },
       testStartTime: null,
       testNotes: '',
+      protocolLayout: getLayoutPreference(),
     });
   }, [profile?.name]);
 

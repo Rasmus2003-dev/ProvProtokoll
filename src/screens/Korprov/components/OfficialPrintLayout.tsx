@@ -1,6 +1,7 @@
 import { useAppStore } from '../../../store/ProvContext';
 import { AppState } from '../../../types';
 import provprotokollLogoImg from '../../../assets/images/provprotokoll_logo.png';
+import { ABORTED_TEXT, ABORTED_TITLE, abortedDrivingText, collectImprovementAreas, failedSituations, isNewLayout, resultHeadings, resultTranslationLines, translationUrl } from '../../../lib/protocolLayout';
 
 interface OfficialPrintLayoutProps {
   testState?: AppState;
@@ -35,11 +36,20 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
     isFailed = state.result.drivingResult === 'Underkänt' || (isSafetyCheckRequired && state.result.safetyCheckResult === 'Underkänt');
   }
 
+  // Ett avbrutet prov är aldrig godkänt – samma bedömning som i resultatvyn
+  const isAborted = Boolean(state.result.testAborted);
+  if (isAborted) {
+    isFailed = true;
+    isGodkand = false;
+  }
+
   const showSafetyCheckRow = isSafetyCheckRequired && !isOmprovKorning;
   const showDrivingRow = !isOmprovSakerhet;
 
   let drivingResultText = state.result.drivingResult || '-';
-  if (drivingResultText === 'Godkänt') {
+  if (isAborted) {
+    drivingResultText = abortedDrivingText(state.result.drivingResult);
+  } else if (drivingResultText === 'Godkänt') {
     const details: string[] = [];
     if (state.properties.transmission === 'Automat') {
       details.push('Automat');
@@ -64,10 +74,10 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
 
   const drivingFail = state.result.drivingFailure;
   const safetyFail = state.result.safetyCheckFailure;
-  const allSituations = Array.from(new Set([
-    ...(state.result.drivingResult === 'Underkänt' ? (drivingFail?.situations || []) : []),
-    ...(state.result.safetyCheckResult === 'Underkänt' ? (safetyFail?.situations || []) : [])
-  ]));
+  const allSituations = failedSituations(state);
+
+  const newLayout = isNewLayout(state);
+  const improvementAreas = collectImprovementAreas(state);
 
   let testTypeLabel = state.properties.licenseType === 'B96' ? 'Släpvagn' : `Körprov ${state.properties.licenseType || 'B'}`;
   if (state.properties.licenseType === 'B96') {
@@ -216,7 +226,7 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
                   Säkerhetskontroll
                 </td>
                 <td style={{ paddingBottom: '3px' }}>
-                  {!isOmprovSakerhet && state.result.drivingResult === 'Underkänt' ? '-' : (state.result.safetyCheckResult || '-')}
+                  {!newLayout && !isOmprovSakerhet && state.result.drivingResult === 'Underkänt' ? '-' : (state.result.safetyCheckResult || '-')}
                 </td>
               </tr>
             )}
@@ -234,10 +244,68 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
         </div>
         <br />
 
+        {/* Avbrutet prov */}
+        {isAborted && (
+          <div style={{ borderLeft: '4px solid #c40000', background: '#fdf1f1', color: '#111', padding: '10px 14px', margin: '0 0 18px' }}>
+            <b style={{ color: '#a00000' }}>{ABORTED_TITLE}</b><br />
+            {ABORTED_TEXT}
+          </div>
+        )}
+
         {/* Huvudrubrik för beslut */}
-        {isFailed ? (
+        {newLayout ? (
           <div>
-            {!isOmprovSakerhet && state.result.drivingResult === 'Godkänt' && (
+            {resultHeadings(state).map(h => (
+              <h2 key={h.text} style={{ color: h.passed ? 'green' : 'red', fontSize: '20px', margin: '0 0 15px 0', fontWeight: 'bold' }}>
+                {h.text}
+              </h2>
+            ))}
+
+            {/* Orsaker till underkännandet – alla kompetensområden i en ram */}
+            {improvementAreas.length > 0 && (
+              <>
+                <b>Orsaker till underkännandet:</b>
+                <div style={{ border: '3px solid currentColor', padding: '8px 14px 4px', margin: '6px 0 18px' }}>
+                  <b>Du måste bli bättre på:</b>
+                  <ul style={{ margin: '4px 0 10px', paddingLeft: '28px', listStyleType: 'disc' }}>
+                    {improvementAreas.map(entry => (
+                      <li key={entry.area} style={{ marginBottom: '4px', display: 'list-item' }}>
+                        {entry.area}
+                        {entry.deficiencies.map(def => (
+                          <div key={def} style={{ paddingLeft: '48px' }}>- {def}</div>
+                        ))}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            )}
+
+            {allSituations.length > 0 && (
+              <div style={{ marginBottom: '14px' }}>
+                <b>Du har visat brister i dessa situationer:</b>
+                <ul style={{ marginTop: '4px', paddingLeft: '18px', listStyleType: 'disc' }}>
+                  {allSituations.map(sit => <li key={sit} style={{ marginBottom: '2px' }}>{sit}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {state.result.interventionOccurred && (
+              (state.result.interventionSituations?.length ?? 0) > 0 ? (
+                <div style={{ marginBottom: '14px' }}>
+                  <b>Ingripande har skett i följande situationer:</b>
+                  <ul style={{ marginTop: '4px', paddingLeft: '18px', listStyleType: 'disc' }}>
+                    {state.result.interventionSituations!.map(sit => <li key={sit} style={{ marginBottom: '2px' }}>{sit}</li>)}
+                  </ul>
+                </div>
+              ) : (
+                <div style={{ marginBottom: '14px' }}>Ingripande har förekommit.</div>
+              )
+            )}
+          </div>
+        ) : isFailed ? (
+          <div>
+            {!isOmprovSakerhet && !isAborted && state.result.drivingResult === 'Godkänt' && (
               <h2 style={{ color: 'green', fontSize: '20px', margin: '0 0 15px 0', fontWeight: 'bold' }}>
                 Din körning är godkänd.
               </h2>
@@ -371,7 +439,7 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
         <br />
 
         {/* Följande provinnehåll har ingått i ditt körprov */}
-        <span><b>Följande provinnehåll har ingått i ditt körprov:</b></span>
+        <span><b>{newLayout ? 'Detta bedömdes i ditt körprov:' : 'Följande provinnehåll har ingått i ditt körprov:'}</b></span>
         {state.includedTestItems && state.includedTestItems.length > 0 ? (
           <ul style={{ marginTop: '4px', paddingLeft: '18px', listStyleType: 'disc' }}>
             {state.includedTestItems.map((item, idx) => (
@@ -407,6 +475,37 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
                 Du har blivit godkänd på ditt körprov. Du kan nu köra med en giltig legitimation i Sverige till dess att du har fått ditt körkort, dock i högst två månader.
               </p>
             )}
+          </div>
+        )}
+
+        {/* Ny layout: hela resultatet kan översättas, som i Trafikverkets protokoll */}
+        {newLayout && (
+          <div className="translate print:hidden" style={{ marginTop: '36px' }}>
+            <a
+              href={translationUrl(resultTranslationLines(
+                state,
+                [
+                  isTaxi
+                    ? 'Detta beslut grundas på taxitrafiklagen (2012:211) och taxitrafikförordningen (2012:238).'
+                    : 'Detta beslut får enligt 8 kap. 2 § körkortslagen (1998:488) inte överklagas.',
+                  'Här ser du ditt resultat inom provets olika ämnesområden.',
+                ],
+                isFailed
+                  ? [isTaxi
+                      ? 'Du uppfyllde inte kraven för godkänt taxiförarprov enligt taxitrafiklagen (2012:211). Det är viktigt att du tränar mer innan du genomför ditt nästa prov.'
+                      : 'Det är viktigt att du tränar mer innan du genomför ditt nästa körprov.', 'Välkommen åter!']
+                  : ['Vad händer nu?', isTaxi
+                      ? 'Du har blivit godkänd på taxiförarprovet. Du kan nu ansöka om taxiförarlegitimation hos Transportstyrelsen enligt taxitrafiklagen (2012:211). Legitimationen utfärdas efter prövning av övriga krav.'
+                      : isAssessmentOnly
+                        ? 'Du har blivit godkänd på bedömningsprovet. Du uppfyller de formella kompetenskraven för körbedömning.'
+                        : 'Du har blivit godkänd på ditt körprov. Du kan nu köra med en giltig legitimation i Sverige till dess att du har fått ditt körkort, dock i högst två månader.'],
+              ))}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: '#0066cc', textDecoration: 'underline' }}
+            >
+              Translation
+            </a>
           </div>
         )}
       </div>

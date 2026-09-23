@@ -1,19 +1,26 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, X, ChevronDown, ChevronRight, ShieldAlert, Car, Truck, GraduationCap, Layers } from 'lucide-react';
 import { LATHUNDAR_DATA, LathundDocument } from '../../data/lathundarData';
-import { Highlight, matches } from './Highlight';
+import { Highlight, matchesAny, useSlashFocus, useStoredState } from './Highlight';
 
 type Section = LathundDocument['sections'][number];
 
 function sectionMatches(section: Section, query: string): boolean {
-  if (!query.trim()) return true;
-  return (
-    matches(section.title, query) ||
-    matches(section.content, query) ||
-    (section.bullets || []).some(b => matches(b, query)) ||
-    (section.highlights || []).some(h => matches(h, query)) ||
-    (section.table?.rows || []).some(r => r.some(c => matches(c, query)))
-  );
+  return matchesAny([
+    section.title,
+    section.content,
+    ...(section.bullets || []),
+    ...(section.highlights || []),
+    ...(section.table?.rows || []).flat(),
+  ], query);
+}
+
+// Vilken rutinbeskrivning som hör till en behörighet
+export function docForLicense(license?: string): string {
+  if (!license) return 'tdok-2018-0587';
+  if (license === 'A' || license.startsWith('A')) return 'tdok-2018-0588';
+  if (['B96', 'BE', 'C', 'C1', 'CE', 'C1E', 'D', 'D1', 'DE', 'D1E'].includes(license)) return 'tdok-2018-0589';
+  return 'tdok-2018-0587';
 }
 
 const CATEGORIES: { id: 'all' | LathundDocument['category']; label: string; icon: typeof Car }[] = [
@@ -27,20 +34,38 @@ interface TdokViewerProps {
   defaultDocId?: string;
 }
 
-export function TdokViewer({ defaultDocId = 'tdok-2018-0587' }: TdokViewerProps) {
+export function TdokViewer({ defaultDocId }: TdokViewerProps) {
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]['id']>('all');
   const [query, setQuery] = useState('');
-  const [activeDocId, setActiveDocId] = useState(defaultDocId);
+  // Senast öppnade dokument kommer ihåg, om inget särskilt dokument begärs
+  const [storedDocId, setStoredDocId] = useStoredState('lathund-doc', 'tdok-2018-0587');
+  const [activeDocId, setActiveDocIdState] = useState(defaultDocId || storedDocId);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const articleRef = useRef<HTMLElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  useSlashFocus(searchRef);
+
+  useEffect(() => { if (defaultDocId) setActiveDocIdState(defaultDocId); }, [defaultDocId]);
+
+  const setActiveDocId = (id: string) => {
+    setActiveDocIdState(id);
+    setStoredDocId(id);
+    // På mobil ligger dokumentet under listan – hoppa ner till det
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      requestAnimationFrame(() => articleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    }
+  };
 
   const docs = useMemo(() => LATHUNDAR_DATA.filter(doc =>
     (category === 'all' || doc.category === category) &&
-    (!query.trim() || matches(doc.title, query) || matches(doc.tdok, query) || doc.sections.some(s => sectionMatches(s, query)))
+    (!query.trim() || matchesAny([doc.title, doc.tdok, doc.subtitle], query) || doc.sections.some(s => sectionMatches(s, query)))
   ), [category, query]);
 
   const activeDoc = docs.find(d => d.id === activeDocId) || docs[0] || null;
-  const visibleSections = activeDoc ? activeDoc.sections.filter(s => sectionMatches(s, query)) : [];
+  // Träff i dokumentets rubrik visar alla avsnitt
+  const docTitleHit = activeDoc ? matchesAny([activeDoc.title, activeDoc.tdok, activeDoc.subtitle], query) : false;
+  const visibleSections = activeDoc ? activeDoc.sections.filter(s => docTitleHit || sectionMatches(s, query)) : [];
   const searching = query.trim().length > 0;
 
   const setAll = (value: boolean) => {
@@ -62,11 +87,13 @@ export function TdokViewer({ defaultDocId = 'tdok-2018-0587' }: TdokViewerProps)
         <div className="relative">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           <input
-            type="text"
+            ref={searchRef}
+            type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Escape' && query) { e.stopPropagation(); setQuery(''); } }}
             placeholder="Sök t.ex. backning, fusk, 25 min..."
-            className="w-full h-11 pl-10 pr-10 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500"
+            className="w-full h-11 pl-10 pr-10 text-sm [&::-webkit-search-cancel-button]:hidden rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500"
           />
           {query && (
             <button type="button" onClick={() => setQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-gray-700 cursor-pointer" aria-label="Rensa sökning">
@@ -123,7 +150,7 @@ export function TdokViewer({ defaultDocId = 'tdok-2018-0587' }: TdokViewerProps)
 
       {/* Dokumentvisare */}
       {activeDoc && (
-        <article className="flex-1 min-w-0 space-y-4">
+        <article ref={articleRef} className="flex-1 min-w-0 space-y-4 scroll-mt-4">
           <header className="space-y-2 pb-3 border-b border-gray-200 dark:border-slate-800">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-xs">

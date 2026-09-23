@@ -1,5 +1,6 @@
 import { AppState } from '../types';
 import provprotokollLogoImg from '../assets/images/provprotokoll_logo.png';
+import { ABORTED_TEXT, ABORTED_TITLE, abortedDrivingText, collectImprovementAreas, failedSituations, isNewLayout, resultHeadings, resultTranslationLines, translationUrl } from './protocolLayout';
 
 export function generateOfficialProtocolHtml(state: AppState, inspectorName?: string): string {
   const licenseType = state.properties.licenseType || 'B';
@@ -27,11 +28,20 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
     isFailed = state.result.drivingResult === 'Underkänt' || (isSafetyCheckRequired && state.result.safetyCheckResult === 'Underkänt');
   }
 
+  // Ett avbrutet prov är aldrig godkänt – samma bedömning som i resultatvyn
+  const isAborted = Boolean(state.result.testAborted);
+  if (isAborted) {
+    isFailed = true;
+    isGodkand = false;
+  }
+
   const showSafetyCheckRow = isSafetyCheckRequired && !isOmprovKorning;
   const showDrivingRow = !isOmprovSakerhet;
 
   let drivingResultText = state.result.drivingResult || '-';
-  if (drivingResultText === 'Godkänt') {
+  if (isAborted) {
+    drivingResultText = abortedDrivingText(state.result.drivingResult);
+  } else if (drivingResultText === 'Godkänt') {
     const details: string[] = [];
     if (state.properties.transmission === 'Automat') details.push('Automat');
     if (state.properties.tachograph === 'Utan färdskrivare') details.push('Utan färdskrivare');
@@ -51,10 +61,7 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
 
   const drivingFail = state.result.drivingFailure;
   const safetyFail = state.result.safetyCheckFailure;
-  const allSituations = Array.from(new Set([
-    ...(state.result.drivingResult === 'Underkänt' ? (drivingFail?.situations || []) : []),
-    ...(state.result.safetyCheckResult === 'Underkänt' ? (safetyFail?.situations || []) : [])
-  ]));
+  const allSituations = failedSituations(state);
   const interventionSituations = state.result.interventionSituations || [];
 
   let testTypeLabel = state.properties.licenseType === 'B96' ? 'Släpvagn' : `Körprov ${state.properties.licenseType || 'B'}`;
@@ -111,9 +118,49 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
     ...(isSafetyCheckRequired && state.result.safetyCheckResult === 'Underkänt' ? (safetyFail?.consequences || []) : [])
   ];
 
-  const failureRowsHtml = isFailed
+  const newLayout = isNewLayout(state);
+  const listHtml = (items: string[]) => `
+      <ul style="margin-top: 4px; padding-left: 18px; list-style-type: disc;">
+        ${items.map(s => `<li style="margin-bottom: 2px;">${s}</li>`).join('')}
+      </ul>`;
+
+  // Trafikverkets nya utformning: alla kompetensområden i en ram under
+  // "Du måste bli bättre på:" med bristerna som underpunkter
+  const improvementAreas = collectImprovementAreas(state);
+  const newFailureRowsHtml = `
+      ${resultHeadings(state).map(h => `<h2 style="color: ${h.passed ? 'green' : 'red'};">${h.text}</h2>`).join('')}
+      ${improvementAreas.length > 0 ? `
+        <b>Orsaker till underkännandet:</b>
+        <div style="border: 3px solid #000; padding: 8px 14px 4px; margin: 6px 0 18px;">
+          <b>Du måste bli bättre på:</b>
+          <ul style="margin: 4px 0 10px; padding-left: 28px; list-style-type: disc;">
+            ${improvementAreas.map(entry => `
+              <li style="margin-bottom: 4px;">${entry.area}
+                ${entry.deficiencies.map(d => `<div style="padding-left: 48px;">- ${d}</div>`).join('')}
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      ` : ''}
+      ${allSituations.length > 0 ? `
+        <div style="margin-bottom: 14px;">
+          <b>Du har visat brister i dessa situationer:</b>
+          ${listHtml(allSituations)}
+        </div>
+      ` : ''}
+      ${state.result.interventionOccurred ? (interventionSituations.length > 0 ? `
+        <div style="margin-bottom: 14px;">
+          <b>Ingripande har skett i följande situationer:</b>
+          ${listHtml(interventionSituations)}
+        </div>
+      ` : `<div style="margin-bottom: 14px;">Ingripande har förekommit.</div>`) : ''}
+    `;
+
+  const failureRowsHtml = newLayout
+    ? newFailureRowsHtml
+    : isFailed
     ? `
-      ${!isOmprovSakerhet && state.result.drivingResult === 'Godkänt' ? `<h2 style="color: green;">Din körning är godkänd.</h2>` : ''}
+      ${!isOmprovSakerhet && !isAborted && state.result.drivingResult === 'Godkänt' ? `<h2 style="color: green;">Din körning är godkänd.</h2>` : ''}
       ${!isOmprovSakerhet && state.result.drivingResult === 'Underkänt' ? `<h2 style="color: red;">Din körning är underkänd.</h2>` : ''}
       ${isSafetyCheckRequired && !isOmprovKorning && state.result.drivingResult !== 'Underkänt' && state.result.safetyCheckResult === 'Underkänt' ? `<h2 style="color: red;">Din säkerhetskontroll är underkänd.</h2>` : ''}
       ${primaryCauseEntries.length > 0 ? `
@@ -191,6 +238,16 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
       }
     `;
 
+  // Ny layout: hela resultatet, inklusive alla orsaker, kan översättas (som hos Trafikverket)
+  const htmlToLines = (html: string) => html
+    .replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n').replace(/<[^>]+>/g, '')
+    .split('\n').map(l => l.trim()).filter(Boolean);
+  const translateHref = translationUrl(resultTranslationLines(
+    state,
+    [legislationText, 'Här ser du ditt resultat inom provets olika ämnesområden.'],
+    htmlToLines(closingHtml),
+  )).replace(/&/g, '&amp;');
+
   return `<!DOCTYPE html>
 <html lang="sv">
 <head>
@@ -207,6 +264,7 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
         .resultContainer .resultTable td { padding: 3px; }
         @media print {
             .resultContainer .print-btn { display: none; visibility: hidden; }
+            .translate { display: none; visibility: hidden; }
         }
         @media screen and (max-width: 735px) {
             .resultContainer .print-btn { display: none; visibility: hidden; }
@@ -297,7 +355,7 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
                     Säkerhetskontroll
                 </td>
                 <td>
-                    ${!isOmprovSakerhet && state.result.drivingResult === 'Underkänt' ? '-' : (state.result.safetyCheckResult || '-')}
+                    ${!newLayout && !isOmprovSakerhet && state.result.drivingResult === 'Underkänt' ? '-' : (state.result.safetyCheckResult || '-')}
                 </td>
             </tr>` : ''}
         </table>
@@ -308,12 +366,27 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
         </div>
         <br />
 
+        ${isAborted ? `
+        <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 0 0 18px;">
+            <tr>
+                <td style="border-left: 4px solid #c40000; background: #fdf1f1; padding: 10px 14px;">
+                    <b style="color: #a00000;">${ABORTED_TITLE}</b><br />
+                    ${ABORTED_TEXT}
+                </td>
+            </tr>
+        </table>` : ''}
+
         ${failureRowsHtml}
 
-        <span><b>Följande provinnehåll har ingått i ditt körprov:</b></span>
+        <span><b>${newLayout ? 'Detta bedömdes i ditt körprov:' : 'Följande provinnehåll har ingått i ditt körprov:'}</b></span>
         ${includedItemsHtml}
 
         ${closingHtml}
+
+        ${newLayout ? `
+        <div class="translate" style="margin-top: 36px;">
+            <a href="${translateHref}" target="_blank" rel="noopener" style="color: #0066cc; text-decoration: underline;">Translation</a>
+        </div>` : ''}
     </div>
 </body>
 </html>`;

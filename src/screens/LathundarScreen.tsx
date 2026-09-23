@@ -4,10 +4,11 @@ import { useAppStore } from '../store/ProvContext';
 import { LICENSE_GUIDES } from '../data/licenseGuidesData';
 import { LicenseGuideView } from '../components/lathund/LicenseGuideView';
 import { TdokViewer } from '../components/lathund/TdokViewer';
+import { useStoredState } from '../components/lathund/Highlight';
 
 export function LathundarScreen() {
   const { state } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'behorighet' | 'dokument'>('behorighet');
+  const [activeTab, setActiveTab] = useStoredState<'behorighet' | 'dokument'>('lathund-tab', 'behorighet');
   // Börja på behörigheten för det aktuella provet om det finns en lathund för den
   const [selectedLicense, setSelectedLicense] = useState<string>(() => {
     const current = state.properties.licenseType;

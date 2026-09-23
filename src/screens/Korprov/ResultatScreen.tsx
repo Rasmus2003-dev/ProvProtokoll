@@ -1,168 +1,112 @@
 import { useNavigate } from 'react-router-dom';
-import { ReactNode, useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../../store/ProvContext';
 import { FailureForm } from './components/FailureForm';
+import { OfficialPrintLayout } from './components/OfficialPrintLayout';
 import { failureSituations } from './data/failureData';
 import { printProtocol } from '../../lib/generateProtocolHtml';
-import { FileDown, ArrowRight, AlertTriangle, Maximize2 } from 'lucide-react';
+import { isNewLayout } from '../../lib/protocolLayout';
+import { Printer, ArrowRight, AlertTriangle, Maximize2, ChevronDown, Check, X, Minus, Plus, FileText, Info } from 'lucide-react';
+import { triggerHaptic } from '../../lib/utils';
 import { RouteReview, RouteReviewModal } from '../../components/route/RouteReview';
 import { hasRouteData } from '../../lib/route';
 import { Portal } from '../../components/Portal';
 import { PrivacyGuard } from '../../components/PrivacyGuard';
+
+type Tone = 'pass' | 'fail' | 'neutral';
+type Result = 'Godkänt' | 'Underkänt' | '-' | null | undefined;
+
+const EMPTY_FAILURE = {
+  primaryCause: { area: '', deficiencies: [] as string[] },
+  consequences: [],
+  situations: [],
+  interventionOccurred: false,
+  testAborted: false,
+};
+
+// Segmenterat val, t.ex. Godkänd / Underkänd / Ej genomförd
+function Choice<T extends string | boolean>({ value, options, onChange }: {
+  value: T | null | undefined;
+  options: { value: T; label: string; tone: Tone }[];
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}>
+      {options.map(opt => {
+        const active = value === opt.value;
+        const activeStyle =
+          opt.tone === 'pass' ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm shadow-emerald-600/20'
+          : opt.tone === 'fail' ? 'bg-red-600 border-red-600 text-white shadow-sm shadow-red-600/20'
+          : 'bg-slate-800 border-slate-800 text-white dark:bg-slate-200 dark:border-slate-200 dark:text-slate-900';
+        const Icon = opt.tone === 'pass' ? Check : opt.tone === 'fail' ? X : Minus;
+        return (
+          <button
+            key={String(opt.value)}
+            type="button"
+            aria-pressed={active}
+            onClick={() => { triggerHaptic('light'); onChange(opt.value); }}
+            className={`min-h-12 px-1.5 sm:px-3 rounded-xl border text-[13px] sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer select-none active:scale-[0.98] ${
+              active
+                ? activeStyle
+                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Icon size={16} strokeWidth={2.75} className={`hidden sm:block shrink-0 ${active ? '' : 'text-slate-400'}`} />
+            <span className="leading-tight text-center">{opt.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function Section({ title, hint, children, action }: { title: string; hint?: string; children: ReactNode; action?: ReactNode }) {
+  return (
+    <section className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs">
+      <header className="px-5 pt-4 pb-3 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">{title}</h3>
+          {hint && <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">{hint}</p>}
+        </div>
+        {action}
+      </header>
+      <div className="px-5 pb-5">{children}</div>
+    </section>
+  );
+}
+
+function StatusPill({ result, emptyLabel = 'Ej bedömd' }: { result: Result; emptyLabel?: string }) {
+  const map: Record<string, [string, string]> = {
+    'Godkänt': ['Godkänd', 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900'],
+    'Underkänt': ['Underkänd', 'bg-red-50 text-red-700 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900'],
+    '-': ['Ej genomförd', 'bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700'],
+  };
+  const [label, style] = map[result || ''] || [emptyLabel, 'bg-slate-50 text-slate-500 ring-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:ring-slate-700'];
+  return <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ring-1 ring-inset ${style}`}>{label}</span>;
+}
 
 export function ResultatScreen() {
   const navigate = useNavigate();
   const { state, updateState } = useAppStore();
 
   const licenseType = state.properties.licenseType || 'B';
+  const testType = state.properties.testType || 'Förstaprov';
   const HEAVY_LICENSES = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'];
   const SAFETY_CHECK_LICENSES = [...HEAVY_LICENSES, 'BE'];
   const isTaxi = licenseType === 'TAXI';
+  const newLayout = isNewLayout(state);
 
   const [validationIssues, setValidationIssues] = useState<{ level: 'error' | 'warning'; text: string }[] | null>(null);
   const [showReview, setShowReview] = useState(false);
+  const topRef = useRef<HTMLDivElement>(null);
 
-  // Kontrollera att protokollet blir komplett innan det skapas
-  const collectIssues = () => {
-    const issues: { level: 'error' | 'warning'; text: string }[] = [];
-    const checkFailure = (label: string, f: typeof state.result.drivingFailure) => {
-      if (!f?.primaryCause?.area) {
-        issues.push({ level: 'error', text: `${label}: grundorsak (kompetensområde) är inte vald.` });
-      } else if (!f.primaryCause.deficiencies?.length) {
-        issues.push({ level: 'error', text: `${label}: inga brister är markerade under grundorsaken "${f.primaryCause.area}".` });
-      }
-      (f?.consequences || []).forEach((c, i) => {
-        if (!c.area) issues.push({ level: 'error', text: `${label}: konsekvensområde ${i + 1} saknar valt område.` });
-        else if (!c.deficiencies?.length) issues.push({ level: 'warning', text: `${label}: konsekvensområdet "${c.area}" saknar markerade brister.` });
-      });
-    };
-
-    if (!isAssessmentComplete) {
-      issues.push({ level: 'error', text: 'Provresultatet är inte ifyllt (körning och/eller säkerhetskontroll).' });
-    }
-    if (!isOmprovSakerhet && state.result.drivingResult === 'Underkänt') {
-      checkFailure('Körning', state.result.drivingFailure);
-    }
-    if (heavyMandatory && state.result.safetyCheckResult === 'Underkänt') {
-      checkFailure('Säkerhetskontroll', state.result.safetyCheckFailure);
-    }
-    const anySituations = (state.result.drivingFailure?.situations?.length || 0) + (state.result.safetyCheckFailure?.situations?.length || 0) > 0;
-    if (hasFailed && !state.result.testAborted && !anySituations) {
-      issues.push({ level: 'warning', text: 'Inga situationer är valda under "Brister har visat sig i följande situationer".' });
-    }
-    if (state.result.interventionOccurred && interventionSituations.length === 0) {
-      issues.push({ level: 'warning', text: 'Ingripande är markerat men ingen situation är vald – protokollet visar bara "Ingripande har förekommit."' });
-    }
-    return issues;
-  };
-
-  const handleNext = () => {
-    const issues = collectIssues();
-    if (issues.length > 0) {
-      setValidationIssues(issues);
-      return;
-    }
-    navigate('/korprov/protokoll');
-  };
-
-  const updateResult = (field: keyof typeof state.result, value: any) => {
-    updateState((prev) => {
-      const newState = { ...prev };
-      newState.result = { ...newState.result, [field]: value };
-      
-      // If switching away from Underkänt, reset the corresponding failure form
-      if (field === 'drivingResult' && value !== 'Underkänt') {
-        newState.result.drivingFailure = {
-          primaryCause: { area: '', deficiencies: [] },
-          consequences: [],
-          situations: [],
-          interventionOccurred: false,
-          testAborted: false,
-        };
-      }
-
-      if (field === 'safetyCheckResult') {
-        if (value === 'Underkänt') {
-          if (!newState.result.safetyCheckFailure?.primaryCause?.area) {
-            newState.result.safetyCheckFailure = {
-              primaryCause: { area: 'Fordonskännedom', deficiencies: [] },
-              consequences: [],
-              situations: [],
-              interventionOccurred: false,
-              testAborted: false,
-            };
-          }
-        } else {
-          newState.result.safetyCheckFailure = {
-            primaryCause: { area: '', deficiencies: [] },
-            consequences: [],
-            situations: [],
-            interventionOccurred: false,
-            testAborted: false,
-          };
-        }
-      }
-      
-      return newState;
-    });
-  };
-
-  const OptionButton = ({ 
-    active, onClick, children, variant = 'default', badge
-  }: { 
-    active: boolean, onClick: () => void, children: ReactNode, variant?: 'default' | 'danger' | 'success', badge?: string 
-  }) => {
-    let colors = 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm';
-    if (active) {
-      if (variant === 'danger') {
-        colors = 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-300 dark:border-red-800/60 font-bold shadow-sm ring-1 ring-red-300 dark:ring-red-800/60';
-      } else if (variant === 'success') {
-        colors = 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800/60 font-bold shadow-sm ring-1 ring-emerald-300 dark:ring-emerald-800/60';
-      } else {
-        colors = 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-800/60 font-bold shadow-sm ring-1 ring-blue-300 dark:ring-blue-800/60';
-      }
-    }
-    
-    return (
-      <button
-        onClick={onClick}
-        type="button"
-        className={`px-4 py-3.5 border text-sm w-full min-h-[44px] flex items-center justify-between transition-all duration-200 rounded-xl cursor-pointer select-none active:scale-[0.98] ${colors}`}
-      >
-        <div className="flex items-center gap-3">
-          {variant === 'success' && (
-            <div className={`w-5 h-5 rounded-full border flex items-center justify-center font-bold text-xs transition-colors duration-200 ${active ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 dark:border-slate-600 text-transparent'}`}>
-              ✓
-            </div>
-          )}
-          {variant === 'danger' && (
-            <div className={`w-5 h-5 rounded-full border flex items-center justify-center font-bold text-xs transition-colors duration-200 ${active ? 'border-red-600 bg-red-600 text-white' : 'border-slate-300 dark:border-slate-600 text-transparent'}`}>
-              ✗
-            </div>
-          )}
-          {variant === 'default' && (
-            <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors duration-200 ${active ? 'border-blue-600 bg-blue-600' : 'border-slate-300 dark:border-slate-600'}`}>
-              {active && <div className="w-2 h-2 rounded-full bg-white shrink-0" />}
-            </div>
-          )}
-          <span className="tracking-tight font-semibold text-[14px]">{children}</span>
-        </div>
-        {badge && (
-          <span className={`text-[10.5px] font-bold px-2 py-0.5 rounded-md transition-colors ${active ? 'bg-current/10' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
-            {badge}
-          </span>
-        )}
-      </button>
-    );
-  };
-
-  const isOmprovSakerhet = state.properties.testType === 'Omprov säkerhetskontroll';
-  const isOmprovKorning = state.properties.testType === 'Omprov körning';
+  const isOmprovSakerhet = testType === 'Omprov säkerhetskontroll';
+  const isOmprovKorning = testType === 'Omprov körning';
+  const isAssessmentOnly = testType.includes('Bedömningsprov') || testType.includes('Testprov');
   const heavyMandatory = SAFETY_CHECK_LICENSES.includes(licenseType) && !isOmprovKorning;
+  const showDriving = !isOmprovSakerhet;
 
-  // Only tested moments can be selected, same rule as the failure situations
+  // Bara moment som ingått i provet kan väljas, samma regel som för bristerna
   const interventionSituationOptions = state.includedTestItems?.length > 0
     ? Array.from(new Set(state.includedTestItems))
     : failureSituations;
@@ -174,20 +118,6 @@ export function ResultatScreen() {
       .filter(e => e.kind !== 'ingripande' && e.situation)
       .map(e => e.situation as string)
   )).filter(sit => !(state.result.drivingFailure?.situations || []).includes(sit));
-
-  const addSuggestedSituation = (sit: string) => {
-    updateState(prev => ({
-      ...prev,
-      includedTestItems: (prev.includedTestItems || []).includes(sit) ? prev.includedTestItems : [...(prev.includedTestItems || []), sit],
-      result: {
-        ...prev.result,
-        drivingFailure: {
-          ...prev.result.drivingFailure,
-          situations: [...(prev.result.drivingFailure?.situations || []), sit],
-        },
-      },
-    }));
-  };
 
   const drivingDone = isOmprovSakerhet || (Boolean(state.result.drivingResult) && state.result.drivingResult !== '-');
   const safetyDone = !heavyMandatory || (Boolean(state.result.safetyCheckResult) && state.result.safetyCheckResult !== '-');
@@ -203,120 +133,259 @@ export function ResultatScreen() {
     hasFailed = state.result.drivingResult === 'Underkänt' || safetyFailed || Boolean(state.result.testAborted);
   }
 
+  // Kontrollera att protokollet blir komplett innan det skapas
+  const collectIssues = () => {
+    const issues: { level: 'error' | 'warning'; text: string }[] = [];
+    const checkFailure = (label: string, f: typeof state.result.drivingFailure) => {
+      if (!f?.primaryCause?.area) {
+        issues.push({ level: 'error', text: `${label}: välj ${newLayout ? 'kompetensområde' : 'grundorsak (kompetensområde)'}.` });
+      } else if (!f.primaryCause.deficiencies?.length) {
+        issues.push({ level: 'error', text: `${label}: markera minst en brist under "${f.primaryCause.area}".` });
+      }
+      (f?.consequences || []).forEach((c, i) => {
+        if (!c.area) issues.push({ level: 'error', text: `${label}: ${newLayout ? `område ${i + 2}` : `konsekvensområde ${i + 1}`} saknar kompetensområde.` });
+        else if (!c.deficiencies?.length) issues.push({ level: 'warning', text: `${label}: inga brister är markerade under "${c.area}".` });
+      });
+    };
+
+    if (!isAssessmentComplete) {
+      issues.push({ level: 'error', text: heavyMandatory && showDriving ? 'Bedöm både körning och säkerhetskontroll.' : heavyMandatory ? 'Bedöm säkerhetskontrollen.' : 'Bedöm körningen.' });
+    }
+    if (showDriving && state.result.drivingResult === 'Underkänt') {
+      checkFailure('Körning', state.result.drivingFailure);
+    }
+    if (heavyMandatory && state.result.safetyCheckResult === 'Underkänt') {
+      checkFailure('Säkerhetskontroll', state.result.safetyCheckFailure);
+    }
+    const anySituations = (state.result.drivingFailure?.situations?.length || 0) + (state.result.safetyCheckFailure?.situations?.length || 0) > 0;
+    if (hasFailed && !state.result.testAborted && !anySituations) {
+      issues.push({ level: 'warning', text: 'Ingen situation är vald där bristerna visade sig.' });
+    }
+    if (state.result.interventionOccurred && interventionSituations.length === 0) {
+      issues.push({ level: 'warning', text: 'Ingripande är markerat utan situation. Protokollet visar då bara "Ingripande har förekommit."' });
+    }
+    return issues;
+  };
+
+  const handleNext = () => {
+    const issues = collectIssues();
+    if (issues.length > 0) {
+      setValidationIssues(issues);
+      return;
+    }
+    navigate('/korprov/protokoll');
+  };
+
+  const updateResult = (field: keyof typeof state.result, value: any) => {
+    updateState((prev) => {
+      const next = { ...prev, result: { ...prev.result, [field]: value } };
+
+      // Byts körningen från underkänd rensas bristförteckningen
+      if (field === 'drivingResult' && value !== 'Underkänt') {
+        next.result.drivingFailure = { ...EMPTY_FAILURE, primaryCause: { area: '', deficiencies: [] } };
+      }
+
+      if (field === 'safetyCheckResult') {
+        if (value === 'Underkänt') {
+          if (!next.result.safetyCheckFailure?.primaryCause?.area) {
+            next.result.safetyCheckFailure = { ...EMPTY_FAILURE, primaryCause: { area: 'Fordonskännedom', deficiencies: [] } };
+          }
+        } else {
+          next.result.safetyCheckFailure = { ...EMPTY_FAILURE, primaryCause: { area: '', deficiencies: [] } };
+        }
+      }
+      return next;
+    });
+  };
+
+  const setIntervention = (occurred: boolean) => {
+    if (occurred) {
+      updateResult('interventionOccurred', true);
+      return;
+    }
+    updateState(prev => ({
+      ...prev,
+      events: (prev.events || []).filter(e => e.kind !== 'ingripande'),
+      result: { ...prev.result, interventionOccurred: false, interventionSituations: [] },
+    }));
+  };
+
+  const addSuggestedSituations = (sits: string[]) => {
+    triggerHaptic('light');
+    updateState(prev => {
+      const included = prev.includedTestItems || [];
+      const current = prev.result.drivingFailure?.situations || [];
+      return {
+        ...prev,
+        includedTestItems: [...included, ...sits.filter(s => !included.includes(s))],
+        result: {
+          ...prev.result,
+          drivingFailure: {
+            ...prev.result.drivingFailure,
+            situations: [...current, ...sits.filter(s => !current.includes(s))],
+          },
+        },
+      };
+    });
+  };
+
+  // Hoppa direkt till bristförteckningen när körningen sätts till underkänd
+  const failureFormRef = useRef<HTMLDivElement>(null);
+  const prevDrivingResult = useRef(state.result.drivingResult);
+  useEffect(() => {
+    const prev = prevDrivingResult.current;
+    prevDrivingResult.current = state.result.drivingResult;
+    if (state.result.drivingResult === 'Underkänt' && prev !== 'Underkänt') {
+      requestAnimationFrame(() => failureFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    }
+  }, [state.result.drivingResult]);
+
+  // Samma kontroll som vid "Skapa protokoll", men löpande i raden längst ner
+  const liveIssues = collectIssues();
+  const liveErrors = liveIssues.filter(i => i.level === 'error').length;
+  const liveWarnings = liveIssues.length - liveErrors;
+
+  // Totalt resultat i klartext
+  const total: { tone: Tone; label: string; detail: string } = !isAssessmentComplete
+    ? { tone: 'neutral', label: 'Ej klart', detail: 'Bedöm provet för att se resultatet.' }
+    : hasFailed
+      ? { tone: 'fail', label: 'Underkänt', detail: state.result.testAborted ? 'Provet avbröts. Ingen behörighet uppnås.' : 'Ingen behörighet uppnås.' }
+      : {
+          tone: 'pass',
+          label: 'Godkänt',
+          detail: isTaxi
+            ? 'Godkänt taxiförarprov. Kandidaten kan ansöka om taxiförarlegitimation.'
+            : isAssessmentOnly
+              ? 'Godkänt bedömningsprov. Ingen behörighet uppnås.'
+              : `Behörighet uppnås: ${licenseType}`,
+        };
+
+  const toneBox = {
+    pass: 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100',
+    fail: 'border-red-200 bg-red-50 text-red-900 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-100',
+    neutral: 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300',
+  }[total.tone];
+  const toneIcon = { pass: 'bg-emerald-600', fail: 'bg-red-600', neutral: 'bg-slate-400 dark:bg-slate-600' }[total.tone];
+  const TotalIcon = total.tone === 'pass' ? Check : total.tone === 'fail' ? X : Minus;
+
+  const heavyWithNote = HEAVY_LICENSES.includes(licenseType) || licenseType === 'BE';
+
   return (
-    <PrivacyGuard className="max-w-[1300px] mx-auto space-y-8 px-4 sm:px-6 pb-24 block">
-      {/* Title block */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mt-6 mb-8 pb-6 border-b border-gray-100 dark:border-white/5">
-        <div>
-          <span className="text-xs font-black uppercase tracking-widest text-[#1a73e8] dark:text-blue-400 mb-2 block">Bedömning</span>
-          <h2 className="text-2xl sm:text-4xl font-sans font-black tracking-tight text-gray-900 dark:text-white uppercase">Beslutsunderlag</h2>
-          <p className="text-gray-500 dark:text-gray-400 font-medium text-sm sm:text-base mt-2 max-w-2xl">
-            Fastställ provets slutgiltiga resultat utifrån den systematiska helhetsbedömningen av förarprovet.
-          </p>
+    <PrivacyGuard className="max-w-[1300px] mx-auto px-4 sm:px-6 pb-40 block">
+      <div ref={topRef} className="scroll-mt-4" />
+
+      {/* Rubrik */}
+      <div className="flex flex-wrap items-end justify-between gap-3 mt-2 sm:mt-4 mb-5">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Resultat</p>
+          <h2 className="text-2xl sm:text-[28px] font-bold tracking-tight text-slate-900 dark:text-white truncate">
+            {state.properties.studentName || 'Kandidat'}
+          </h2>
+          <div className="flex flex-wrap items-center gap-1.5 mt-2">
+            <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-slate-900 text-white dark:bg-blue-600">{licenseType}</span>
+            <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">{testType}</span>
+            {state.properties.transmission === 'Automat' && (
+              <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900">Automat</span>
+            )}
+            {newLayout && (
+              <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900" title="Protokollet skapas i Trafikverkets nya utformning">
+                Ny provlayout
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Riktlinjer för bedömning (TSFS 2012:41) */}
-      <div className="max-w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-white/5 p-4 sm:p-5 rounded-2xl text-slate-800 dark:text-slate-300 space-y-3 mb-8 print:hidden shadow-sm">
-        <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-2">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Bedömning av körprov (TSFS 2012:41 4 kap.)
-        </h3>
-        <ul className="text-sm space-y-1.5 list-disc pl-5 font-medium">
-          <li>Momenten bedöms utifrån fyra kompetensområden: <strong className="text-slate-950 dark:text-white">fordonskännedom/manövrering</strong>, <strong className="text-slate-950 dark:text-white">miljö/sparsam körning</strong>, <strong className="text-slate-950 dark:text-white">trafikregler</strong>, och <strong className="text-slate-950 dark:text-white">trafiksäkerhet/beteende</strong>.</li>
-          <li>Enstaka brister som vid en helhetsbedömning är av liten betydelse för trafiksäkerheten <strong className="text-slate-950 dark:text-white">ska inte leda till underkännande</strong>.</li>
-          <li>Vid prov i nedsatt sikt/mörker eller riskfyllda förhållanden ges särskild vikt åt ljusbehandling, placering och hastighetsanpassning.</li>
-        </ul>
-      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start">
+        {/* Vänster: bedömningen */}
+        <div className="lg:col-span-8 space-y-4">
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start mt-6">
-        {/* Left main pane */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* Card: Driving Status */}
-          {!state.properties.testType?.includes('Omprov säkerhetskontroll') && (
-          <div className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm overflow-hidden mb-6">
-            <div className="border-b border-gray-100 dark:border-white/5 bg-gradient-to-r from-gray-50 via-white to-white dark:from-slate-900/40 dark:to-slate-950/20 py-3.5 px-5 flex items-center gap-2.5">
-              <span className="w-1.5 h-4 bg-[#c40000] rounded-full shrink-0" />
-              <h3 className="text-xs font-black text-gray-950 dark:text-gray-200 uppercase tracking-widest">Körning</h3>
-            </div>
-            <div className="p-6">
-              {state.properties.testType?.includes('Testprov') ? (
-                <div className="space-y-4">
-                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Bedömningen görs efter en skala 1-6. Minst 5 krävs för att bli godkänd i körningen.
-                  </div>
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                    {[1, 2, 3, 4, 5, 6].map((score) => {
-                      const isPassing = score >= 5;
-                      const isActive = state.result.drivingScore === score;
-                      const activeClass = isActive 
-                        ? (isPassing ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-red-600 text-white border-red-600')
-                        : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800';
+          {/* Körning */}
+          {showDriving && (
+            <Section title="Körning" hint={testType.includes('Testprov') ? 'Bedöm på en skala 1–6. Minst 5 krävs för godkänt.' : undefined}>
+              {testType.includes('Testprov') ? (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-6 gap-2">
+                    {[1, 2, 3, 4, 5, 6].map(score => {
+                      const passing = score >= 5;
+                      const active = (state.result as any).drivingScore === score;
                       return (
                         <button
                           key={score}
+                          type="button"
                           onClick={() => {
-                            updateResult('drivingScore', score);
-                            updateResult('drivingResult', isPassing ? 'Godkänt' : 'Underkänt');
+                            updateResult('drivingScore' as any, score);
+                            updateResult('drivingResult', passing ? 'Godkänt' : 'Underkänt');
                           }}
-                          className={`h-12 flex items-center justify-center font-bold rounded-lg border transition-colors ${activeClass}`}
+                          className={`h-12 rounded-xl border font-bold transition-colors cursor-pointer ${
+                            active
+                              ? passing ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-red-600 border-red-600 text-white'
+                              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          }`}
                         >
                           {score}
                         </button>
                       );
                     })}
                   </div>
-                  <div className="mt-4">
-                    <OptionButton 
-                      active={state.result.drivingResult === '-'} 
-                      onClick={() => {
-                        updateResult('drivingScore', null);
-                        updateResult('drivingResult', '-');
-                      }}
-                    >
-                      Ej genomförd
-                    </OptionButton>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { updateResult('drivingScore' as any, null); updateResult('drivingResult', '-'); }}
+                    className={`text-sm font-medium px-3 h-9 rounded-lg cursor-pointer ${state.result.drivingResult === '-' ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                  >
+                    Ej genomförd
+                  </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <OptionButton 
-                    active={state.result.drivingResult === 'Godkänt'} 
-                    onClick={() => updateResult('drivingResult', 'Godkänt')}
-                    variant="success"
-                    badge="G"
-                  >
-                    Godkänd
-                  </OptionButton>
-                  <OptionButton 
-                    active={state.result.drivingResult === 'Underkänt'} 
-                    onClick={() => updateResult('drivingResult', 'Underkänt')}
-                    variant="danger"
-                    badge="U"
-                  >
-                    Underkänd
-                  </OptionButton>
-                  <div className="col-span-2 md:col-span-1">
-                    <OptionButton 
-                      active={state.result.drivingResult === '-'} 
-                      onClick={() => updateResult('drivingResult', '-')}
-                    >
-                      Ej genomförd
-                    </OptionButton>
+                <Choice
+                  value={state.result.drivingResult as any}
+                  onChange={(v: any) => updateResult('drivingResult', v)}
+                  options={[
+                    { value: 'Godkänt', label: 'Godkänd', tone: 'pass' },
+                    { value: 'Underkänt', label: 'Underkänd', tone: 'fail' },
+                    { value: '-', label: 'Ej genomförd', tone: 'neutral' },
+                  ]}
+                />
+              )}
+            </Section>
+          )}
+
+          {/* Brister i körningen */}
+          {showDriving && state.result.drivingResult === 'Underkänt' && (
+            <div ref={failureFormRef} className="animate-fade-in scroll-mt-4 space-y-3">
+              {suggestedSituations.length > 0 && (
+                <div className="rounded-2xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/70 dark:bg-blue-950/20 p-4">
+                  <div className="flex items-start justify-between gap-3 mb-2.5">
+                    <div>
+                      <div className="text-sm font-semibold text-blue-950 dark:text-blue-100">Markerat under körningen</div>
+                      <div className="text-[13px] text-blue-800/80 dark:text-blue-300/80">Lägg till som situationer där bristerna visade sig.</div>
+                    </div>
+                    {suggestedSituations.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => addSuggestedSituations(suggestedSituations)}
+                        className="h-9 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold cursor-pointer shrink-0"
+                      >
+                        Lägg till alla
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {suggestedSituations.map(sit => (
+                      <button
+                        key={sit}
+                        type="button"
+                        onClick={() => addSuggestedSituations([sit])}
+                        className="min-h-9 px-3 rounded-lg bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 text-sm font-medium text-blue-900 dark:text-blue-200 hover:bg-blue-100 dark:hover:bg-blue-900/40 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Plus size={14} /> {sit}
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-          )}
-
-          {/* If Failed on Driving */}
-          {!state.properties.testType?.includes('Omprov säkerhetskontroll') && state.result.drivingResult === 'Underkänt' && (
-            <div className="animate-fade-in mb-6">
-              <FailureForm 
-                title="Bristförteckning – Körning"
+              <FailureForm
+                title="Brister i körningen"
                 data={state.result.drivingFailure}
                 onChange={(data) => updateResult('drivingFailure', data)}
                 type="driving"
@@ -324,728 +393,281 @@ export function ResultatScreen() {
             </div>
           )}
 
-          {/* Intervention and Aborted states */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* Intervention Card */}
-            <div className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm overflow-hidden">
-              <div className="border-b border-gray-100 dark:border-white/5 bg-gradient-to-r from-gray-50 via-white to-white dark:from-slate-900/40 dark:to-slate-950/20 py-3.5 px-5 flex items-center gap-2.5">
-                <span className="w-1.5 h-4 bg-orange-500 rounded-full shrink-0" />
-                <span className="font-black text-gray-950 dark:text-gray-200 text-xs uppercase tracking-widest">Ingripande har förekommit</span>
-              </div>
-              <div className="p-5">
-                <div className="grid grid-cols-2 gap-3.5">
-                  <OptionButton
-                    active={!state.result.interventionOccurred}
-                    onClick={() => {
-                      updateState(prev => ({
-                        ...prev,
-                        events: (prev.events || []).filter(e => e.kind !== 'ingripande'),
-                        result: { ...prev.result, interventionOccurred: false, interventionSituations: [] },
-                      }));
-                    }}
-                  >
-                    Nej
-                  </OptionButton>
-                  <OptionButton 
-                    active={state.result.interventionOccurred} 
-                    onClick={() => updateResult('interventionOccurred', true)}
-                    variant="danger"
-                  >
-                    Ja
-                  </OptionButton>
-                </div>
-              </div>
+          {/* Säkerhetskontroll – BE och tunga behörigheter */}
+          {heavyMandatory && (
+            <Section title="Säkerhetskontroll">
+              <Choice
+                value={state.result.safetyCheckResult as any}
+                onChange={(v: any) => updateResult('safetyCheckResult', v)}
+                options={[
+                  { value: 'Godkänt', label: 'Godkänd', tone: 'pass' },
+                  { value: 'Underkänt', label: 'Underkänd', tone: 'fail' },
+                  { value: '-', label: 'Ej genomförd', tone: 'neutral' },
+                ]}
+              />
+            </Section>
+          )}
+          {heavyMandatory && state.result.safetyCheckResult === 'Underkänt' && (
+            <div className="animate-fade-in">
+              <FailureForm
+                title="Brister i säkerhetskontrollen"
+                data={state.result.safetyCheckFailure}
+                onChange={(data) => updateResult('safetyCheckFailure', data)}
+                type="safety"
+              />
             </div>
+          )}
 
-            {/* Aborted Card */}
-            <div className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm overflow-hidden">
-              <div className="border-b border-gray-100 dark:border-white/5 bg-gradient-to-r from-gray-50 via-white to-white dark:from-slate-900/40 dark:to-slate-950/20 py-3.5 px-5 flex items-center gap-2.5">
-                <span className="w-1.5 h-4 bg-[#c40000] rounded-full shrink-0" />
-                <span className="font-black text-gray-950 dark:text-gray-200 text-xs uppercase tracking-widest">Avbrutet prov</span>
-              </div>
-              <div className="p-5">
-                <div className="grid grid-cols-2 gap-3.5">
-                  <OptionButton 
-                    active={!state.result.testAborted} 
-                    onClick={() => updateResult('testAborted', false)}
-                  >
-                    Nej
-                  </OptionButton>
-                  <OptionButton 
-                    active={state.result.testAborted} 
-                    onClick={() => updateResult('testAborted', true)}
-                    variant="danger"
-                  >
-                    Ja
-                  </OptionButton>
-                </div>
-              </div>
-            </div>
-
+          {/* Ingripande och avbrutet prov */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Section title="Ingripande" hint="Behövde du ingripa under provet?">
+              <Choice
+                value={Boolean(state.result.interventionOccurred)}
+                onChange={setIntervention}
+                options={[
+                  { value: false, label: 'Nej', tone: 'neutral' },
+                  { value: true, label: 'Ja', tone: 'fail' },
+                ]}
+              />
+            </Section>
+            <Section title="Avbrutet prov" hint="Avbröts provet i förtid?">
+              <Choice
+                value={Boolean(state.result.testAborted)}
+                onChange={(v) => updateResult('testAborted', v)}
+                options={[
+                  { value: false, label: 'Nej', tone: 'neutral' },
+                  { value: true, label: 'Ja', tone: 'fail' },
+                ]}
+              />
+            </Section>
           </div>
 
-          {/* Situations where intervention occurred */}
           {state.result.interventionOccurred && (
-            <div className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm overflow-hidden mt-6 animate-fade-in">
-              <div className="border-b border-gray-100 dark:border-white/5 bg-gradient-to-r from-gray-50 via-white to-white dark:from-slate-900/40 dark:to-slate-950/20 py-3.5 px-5 flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
-                <div className="flex items-center gap-2.5">
-                  <span className="w-1.5 h-4 bg-orange-500 rounded-full shrink-0" />
-                  <span className="font-black text-gray-950 dark:text-gray-200 text-xs uppercase tracking-widest">Ingripande har skett i följande situationer</span>
-                </div>
-                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Valfritt – utan val skrivs "Ingripande har förekommit."</span>
-              </div>
-              <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                {interventionSituationOptions.map((sit) => {
+            <Section title="I vilka situationer ingrep du?" hint='Valfritt. Utan val står det "Ingripande har förekommit." i protokollet.'>
+              <div className="flex flex-wrap gap-2">
+                {interventionSituationOptions.map(sit => {
                   const selected = interventionSituations.includes(sit);
                   return (
                     <button
                       key={sit}
                       type="button"
+                      aria-pressed={selected}
                       onClick={() => updateResult(
                         'interventionSituations',
                         selected ? interventionSituations.filter(s => s !== sit) : [...interventionSituations, sit]
                       )}
-                      className={`w-full text-left px-3.5 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-150 flex items-center gap-2.5 border ${
+                      className={`min-h-9 px-3 rounded-full border text-sm font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
                         selected
-                          ? 'bg-orange-50 dark:bg-orange-950/30 text-orange-900 dark:text-orange-200 border-orange-400 dark:border-orange-700 font-bold ring-1 ring-orange-400/60'
-                          : 'bg-white dark:bg-slate-900 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:border-gray-300 hover:bg-gray-50/50'
+                          ? 'bg-orange-500 border-orange-500 text-white'
+                          : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-orange-300'
                       }`}
                     >
-                      <div className={`w-4 h-4 rounded-[3px] border flex items-center justify-center shrink-0 transition-all duration-150 ${
-                        selected ? 'bg-orange-500 border-orange-500 text-white' : 'border-gray-300 dark:border-gray-700 bg-white dark:bg-slate-800'
-                      }`}>
-                        {selected && (
-                          <svg className="w-2.5 h-2.5 stroke-[3.5px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                          </svg>
-                        )}
-                      </div>
-                      <span className="truncate">{sit}</span>
+                      {selected && <Check size={14} strokeWidth={3} />}
+                      {sit}
                     </button>
                   );
                 })}
               </div>
-            </div>
+            </Section>
           )}
 
-          {/* Safety check result (Heavy licenses only — for non-heavy licenses this is set already during Körning) */}
-          {!state.properties.testType?.includes('Omprov körning') && SAFETY_CHECK_LICENSES.includes(licenseType) && (
-            <>
-              <div className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm overflow-hidden mt-6">
-                <div className="border-b border-gray-100 dark:border-white/5 py-3.5 px-5 flex items-center gap-2.5">
-                  <span className="w-1.5 h-4 bg-slate-400 rounded-full shrink-0" />
-                  <h3 className="text-xs font-black text-gray-950 dark:text-gray-200 uppercase tracking-widest">Säkerhetskontroll</h3>
-                </div>
-                <div className="p-6">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <OptionButton
-                      active={state.result.safetyCheckResult === 'Godkänt'}
-                      onClick={() => updateResult('safetyCheckResult', 'Godkänt')}
-                      variant="success"
-                    >
-                      Godkänd
-                    </OptionButton>
-                    <OptionButton
-                      active={state.result.safetyCheckResult === 'Underkänt'}
-                      onClick={() => updateResult('safetyCheckResult', 'Underkänt')}
-                      variant="danger"
-                    >
-                      Underkänd
-                    </OptionButton>
-                    <div className="col-span-2 sm:col-span-1">
-                      <OptionButton
-                        active={state.result.safetyCheckResult === '-'}
-                        onClick={() => updateResult('safetyCheckResult', '-')}
-                      >
-                        Ej genomförd
-                      </OptionButton>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Failure on safety check */}
-              {state.result.safetyCheckResult === 'Underkänt' && (
-                <div className="animate-fade-in mt-6">
-                  <FailureForm
-                    title="Bristförteckning – Säkerhetskontroll"
-                    data={state.result.safetyCheckFailure}
-                    onChange={(data) => updateResult('safetyCheckFailure', data)}
-                    type="safety"
-                  />
-                </div>
-              )}
-            </>
-          )}
-
-          {/* Körningen: rutt, händelser och förslag från Navigator/anteckningar */}
+          {/* Körväg och händelser från Navigator */}
           {hasRouteData(state) && (
-            <div className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm overflow-hidden mt-6">
-              <div className="border-b border-gray-100 dark:border-white/5 bg-gradient-to-r from-gray-50 via-white to-white dark:from-slate-900/40 dark:to-slate-950/20 py-3 px-5 flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <span className="w-1.5 h-4 bg-[#002f6c] dark:bg-blue-500 rounded-full shrink-0" />
-                  <h3 className="text-xs font-black text-gray-950 dark:text-gray-200 uppercase tracking-widest">Körningen – rutt & händelser</h3>
-                </div>
+            <Section
+              title="Körväg och händelser"
+              action={
                 <button
                   type="button"
                   onClick={() => setShowReview(true)}
-                  className="h-9 px-3.5 rounded-lg bg-[#002f6c] hover:bg-[#00204a] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer"
+                  className="h-9 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0"
                 >
-                  <Maximize2 size={13} /> Visa för kandidat
+                  <Maximize2 size={13} /> Visa för kandidaten
                 </button>
-              </div>
-
-              {/* Förslag: situationer från markerade händelser som inte redan finns i bristförteckningen */}
-              {state.result.drivingResult === 'Underkänt' && suggestedSituations.length > 0 && (
-                <div className="px-5 pt-4">
-                  <div className="rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/60 dark:bg-blue-950/20 p-3.5">
-                    <div className="text-[11px] font-black uppercase tracking-wider text-blue-900 dark:text-blue-300 mb-2">
-                      Förslag från körningen – lägg till som situation
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {suggestedSituations.map(sit => (
-                        <button
-                          key={sit}
-                          type="button"
-                          onClick={() => addSuggestedSituation(sit)}
-                          className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-blue-300 dark:border-blue-800 text-xs font-bold text-blue-900 dark:text-blue-200 hover:bg-blue-100 dark:hover:bg-blue-900/40 cursor-pointer"
-                        >
-                          + {sit}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="p-5">
-                <RouteReview route={state.route} events={state.events} />
-              </div>
-            </div>
+              }
+            >
+              <RouteReview route={state.route} events={state.events} />
+            </Section>
           )}
 
-          {/* Detailed summary of deficiencies & interventions directly at the bottom of the left column */}
-          <div className="bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-white/10 rounded-xl shadow-sm overflow-hidden mt-6">
-            <div className="border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-900/40 py-4 px-5">
-              <h3 className="text-[11px] font-black text-slate-900 dark:text-slate-100 uppercase tracking-widest flex items-center gap-2.5">
-                Beslutssummering
-              </h3>
-            </div>
-            
-            <div className="p-5 space-y-6">
-              
-              {/* Row 1: Brister i kompetensområden */}
-              <div className="space-y-3">
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                  Resultat:
-                </h4>
-                
-                {!isAssessmentComplete ? (
-                  <div className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 p-4 rounded-xl flex items-center gap-3 shadow-sm font-medium">
-                    <span>Väntar på bedömning. Markera provresultat ovan.</span>
-                  </div>
-                ) : !hasFailed ? (
-                  <div className="text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800/40 p-4 rounded-xl flex items-center gap-3 shadow-sm">
-                    <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
-                      <svg className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <span className="font-bold text-sm">Provet är godkänt.</span>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {/* Status badges */}
-                    <div className="space-y-2">
-                      {!isOmprovSakerhet && state.result.drivingResult === 'Godkänt' && (
-                        <div className="text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
-                          <span>✓</span> Din körning är godkänd.
-                        </div>
-                      )}
-                      {!isOmprovSakerhet && state.result.drivingResult === 'Underkänt' && (
-                        <div className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
-                          <span>✗</span> Din körning är underkänd.
-                        </div>
-                      )}
-                      {SAFETY_CHECK_LICENSES.includes(licenseType) && !isOmprovKorning && state.result.drivingResult !== 'Underkänt' && state.result.safetyCheckResult === 'Underkänt' && (
-                        <div className="text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
-                          <span>✗</span> Din säkerhetskontroll är underkänd.
-                        </div>
-                      )}
-                      {isOmprovSakerhet && state.result.safetyCheckResult === 'Godkänt' && (
-                        <div className="text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
-                          <span>✓</span> Din säkerhetskontroll är godkänd.
-                        </div>
-                      )}
-                      {isOmprovKorning && state.result.drivingResult === 'Godkänt' && (
-                        <div className="text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 p-3 rounded-xl flex items-center gap-2 font-bold text-sm">
-                          <span>✓</span> Din körning är godkänd.
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Driving deficiencies */}
-                    {state.result.drivingResult === 'Underkänt' && (
-                      <div className="space-y-3">
-                        <div className="border-[3px] border-[#C0504D] bg-red-50/20 dark:bg-red-950/10 p-4 rounded-lg space-y-2.5 shadow-sm">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[#C0504D] text-white">
-                              Grundorsak – Körning
-                            </span>
-                            <span className="text-xs font-bold text-gray-900 dark:text-white">
-                              {state.result.drivingFailure?.primaryCause?.area || 'Inget område valt'}
-                            </span>
-                          </div>
-                          
-                          <div className="text-xs text-gray-700 dark:text-gray-300 font-medium">
-                            Din körning visar brister i att:
-                          </div>
-
-                          {state.result.drivingFailure?.primaryCause?.deficiencies?.length > 0 ? (
-                            <ul className="text-xs text-gray-800 dark:text-gray-200 space-y-1 pl-5 list-disc font-medium">
-                              {state.result.drivingFailure.primaryCause.deficiencies.map((d: string) => (
-                                <li key={d}>{d}</li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="text-xs text-gray-400 italic font-medium">Inga specifika brister markerade för detta område än.</p>
-                          )}
-                        </div>
-
-                        {/* Consequence areas for driving */}
-                        {state.result.drivingFailure?.consequences?.some((c: { area: string }) => c.area) && (
-                          <div className="space-y-2">
-                            <span className="text-[10px] uppercase font-black tracking-widest text-[#F79646] block">
-                              Detta får konsekvenser på:
-                            </span>
-                            {state.result.drivingFailure.consequences.filter((c: { area: string }) => c.area).map((c: { area: string, id: string, deficiencies?: string[] }, ki: number) => (
-                              <div key={c.id || ki} className="border-[3px] border-[#F79646] bg-orange-50/20 dark:bg-orange-950/10 p-3.5 rounded-lg space-y-1.5 shadow-sm">
-                                <div className="text-xs font-bold text-gray-900 dark:text-white">{c.area}</div>
-                                <div className="text-[11px] text-gray-600 dark:text-gray-400 font-medium">Din körning visar brister i att:</div>
-                                {c.deficiencies && c.deficiencies.length > 0 && (
-                                  <ul className="text-xs text-gray-800 dark:text-gray-200 font-medium pl-5 list-disc space-y-0.5">
-                                    {c.deficiencies.map(d => <li key={d}>{d}</li>)}
-                                  </ul>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Situations */}
-                        {state.result.drivingFailure?.situations && state.result.drivingFailure.situations.length > 0 && (
-                          <div className="pt-2 text-xs text-gray-700 dark:text-gray-300">
-                            <span className="font-bold block mb-1">Brister har visat sig i följande situationer:</span>
-                            <ul className="pl-5 list-disc space-y-0.5 text-xs text-gray-800 dark:text-gray-200">
-                              {state.result.drivingFailure.situations.map((sit: string) => (
-                                <li key={sit}>{sit}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Safety check deficiencies */}
-                    {state.result.safetyCheckResult === 'Underkänt' && (
-                      <div className="space-y-3">
-                        <div className="border-[3px] border-[#C0504D] bg-red-50/20 dark:bg-red-950/10 p-4 rounded-lg space-y-2.5 shadow-sm">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[#C0504D] text-white">
-                              Grundorsak – Säkerhetskontroll
-                            </span>
-                            <span className="text-xs font-bold text-gray-900 dark:text-white">
-                              {state.result.safetyCheckFailure?.primaryCause?.area || 'Fordonskännedom'}
-                            </span>
-                          </div>
-                          <div className="text-xs text-gray-700 dark:text-gray-300 font-medium">
-                            Din säkerhetskontroll visar brister i att:
-                          </div>
-                          {state.result.safetyCheckFailure?.primaryCause?.deficiencies?.length > 0 ? (
-                            <ul className="text-xs text-gray-800 dark:text-gray-200 space-y-1 pl-5 list-disc font-medium">
-                              {state.result.safetyCheckFailure.primaryCause.deficiencies.map((d: string) => (
-                                <li key={d}>{d}</li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="text-xs text-gray-400 italic font-medium">Inga specifika brister markerade för detta område än.</p>
-                          )}
-                        </div>
-
-                        {/* Consequence areas for safety check */}
-                        {state.result.safetyCheckFailure?.consequences?.some((c: { area: string }) => c.area) && (
-                          <div className="space-y-2">
-                            <span className="text-[10px] uppercase font-black tracking-widest text-[#F79646] block">
-                              Detta får konsekvenser på:
-                            </span>
-                            {state.result.safetyCheckFailure.consequences.filter((c: { area: string }) => c.area).map((c: { area: string, id: string, deficiencies?: string[] }, ki: number) => (
-                              <div key={c.id || ki} className="border-[3px] border-[#F79646] bg-orange-50/20 dark:bg-orange-950/10 p-3.5 rounded-lg space-y-1.5 shadow-sm">
-                                <div className="text-xs font-bold text-gray-900 dark:text-white">{c.area}</div>
-                                <div className="text-[11px] text-gray-600 dark:text-gray-400 font-medium">Din säkerhetskontroll visar brister i att:</div>
-                                {c.deficiencies && c.deficiencies.length > 0 && (
-                                  <ul className="text-xs text-gray-800 dark:text-gray-200 font-medium pl-5 list-disc space-y-0.5">
-                                    {c.deficiencies.map(d => <li key={d}>{d}</li>)}
-                                  </ul>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Situations for safety check */}
-                        {state.result.safetyCheckFailure?.situations && state.result.safetyCheckFailure.situations.length > 0 && (
-                          <div className="pt-2 text-xs text-gray-700 dark:text-gray-300">
-                            <span className="font-bold block mb-1">Brister har visat sig i följande situationer:</span>
-                            <ul className="pl-5 list-disc space-y-0.5 text-xs text-gray-800 dark:text-gray-200">
-                              {state.result.safetyCheckFailure.situations.map((sit: string) => (
-                                <li key={sit}>{sit}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+          {/* Förhandsvisning av protokollet */}
+          <details className="group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
+            <summary className="cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden px-5 py-4 flex items-center gap-3">
+              <FileText size={18} className="text-slate-400 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="text-[15px] font-bold text-slate-900 dark:text-white">Förhandsgranska protokollet</div>
+                <div className="text-[13px] text-slate-500 dark:text-slate-400">Så här ser kandidatens protokoll ut just nu.</div>
               </div>
-
-              {/* Row 2: Ingripande */}
-              <div className="pt-5 border-t border-slate-100 dark:border-white/5 space-y-2">
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                  Ingripande har förekommit:
-                </h4>
-                
-                {state.result.interventionOccurred ? (
-                  <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/40 p-3 rounded-xl shadow-sm text-xs text-red-700 dark:text-red-400">
-                    <div className="font-bold flex items-center gap-2">
-                      <span>Ja</span> — {interventionSituations.length > 0 ? 'Ingripande har skett i följande situationer:' : 'Ingripande har förekommit.'}
-                    </div>
-                    {interventionSituations.length > 0 && (
-                      <ul className="pl-5 mt-1.5 list-disc space-y-0.5 font-medium text-red-800 dark:text-red-300">
-                        {interventionSituations.map(sit => <li key={sit}>{sit}</li>)}
-                      </ul>
-                    )}
-                  </div>
-                ) : (
-                  <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-3 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 shadow-sm flex items-center gap-2">
-                    <span className="text-slate-400">✓</span> Nej — Inget ingripande har förekommit.
-                  </div>
-                )}
-              </div>
-
-              {/* Row 3: Avbrutet */}
-              {state.result.testAborted && (
-                <div className="pt-4 border-t border-slate-100 dark:border-white/5 space-y-2 animate-fade-in">
-                  <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/40 text-red-800 dark:text-red-300 p-3 rounded-xl text-xs font-bold shadow-sm flex items-center gap-2">
-                    <span>Ja</span> — Provet har avbrutits i förtid.
-                  </div>
-                </div>
-              )}
-
+              <ChevronDown size={18} className="text-slate-400 transition-transform group-open:rotate-180 shrink-0" />
+            </summary>
+            <div className="border-t border-slate-100 dark:border-slate-800 p-4 sm:p-6 overflow-x-auto">
+              <OfficialPrintLayout />
             </div>
-          </div>
+          </details>
+
+          {/* Bedömningsgrunder */}
+          <details className="group rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 print:hidden">
+            <summary className="cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden px-5 py-3.5 flex items-center gap-3 text-sm font-semibold">
+              <Info size={16} className="text-slate-400 shrink-0" />
+              Bedömningsgrunder (TSFS 2012:41, 4 kap.)
+              <ChevronDown size={16} className="ml-auto text-slate-400 transition-transform group-open:rotate-180" />
+            </summary>
+            <ul className="text-sm space-y-1.5 list-disc pl-10 pr-5 pb-4 leading-relaxed">
+              <li>Provet bedöms inom fyra kompetensområden: fordonskännedom och manövrering, miljömedveten körning, trafikregler samt trafiksäkerhet och beteende.</li>
+              <li>Enstaka brister som har liten betydelse för trafiksäkerheten ska inte leda till underkännande.</li>
+              <li>Vid mörker, nedsatt sikt eller halt väglag läggs särskild vikt vid belysning, placering och hastighet.</li>
+            </ul>
+          </details>
         </div>
 
-        {/* Right summary pane - Moderniserat DigitaltProtokoll Beslutsunderlag */}
-        <div className="lg:col-span-4 lg:sticky lg:top-8 space-y-4 mt-2 lg:mt-0">
-          
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xl shadow-slate-200/50 dark:shadow-black/40 transition-all duration-300 backdrop-blur-sm">
-            {/* Header: ProvProtokoll Brand Bar */}
-            <div className="bg-gradient-to-r from-[#002f6c] via-[#003882] to-[#002352] px-5 py-4 text-white flex items-center justify-between border-b border-blue-900/40">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center font-black text-sm text-blue-200 border border-white/15 shadow-inner">
-                  <span className="text-white">✓</span>
+        {/* Höger: sammanfattning */}
+        <aside className="lg:col-span-4 lg:sticky lg:top-4 space-y-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
+            <div className="px-5 pt-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Sammanfattning</div>
+              <div className="mt-1 font-semibold text-slate-900 dark:text-white truncate">{state.properties.studentName || 'Namn saknas'}</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400 font-mono">{state.properties.personalNumber || 'Personnummer saknas'}</div>
+            </div>
+
+            <dl className="px-5 py-3 divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+              {showDriving && (
+                <div className="flex items-center justify-between gap-3 py-2.5">
+                  <dt className="text-slate-600 dark:text-slate-300">Körning</dt>
+                  <dd><StatusPill result={state.result.drivingResult as Result} /></dd>
                 </div>
-                <div>
-                  <span className="text-[10px] uppercase font-black tracking-widest text-blue-200/80 block leading-none">DIGITALT PROTOKOLL</span>
-                  <h2 className="text-sm font-black tracking-tight uppercase leading-tight mt-1 text-white flex items-center gap-1.5">
-                    Beslutsunderlag
-                  </h2>
+              )}
+              {heavyMandatory && (
+                <div className="flex items-center justify-between gap-3 py-2.5">
+                  <dt className="text-slate-600 dark:text-slate-300">Säkerhetskontroll</dt>
+                  <dd><StatusPill result={state.result.safetyCheckResult as Result} /></dd>
                 </div>
+              )}
+              <div className="flex items-center justify-between gap-3 py-2.5">
+                <dt className="text-slate-600 dark:text-slate-300">Ingripande</dt>
+                <dd className={`font-medium ${state.result.interventionOccurred ? 'text-orange-600 dark:text-orange-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                  {state.result.interventionOccurred ? `Ja${interventionSituations.length ? ` (${interventionSituations.length})` : ''}` : 'Nej'}
+                </dd>
               </div>
-              <span className="text-[10px] font-black uppercase tracking-wider bg-white/15 backdrop-blur-md px-2.5 py-1 rounded-full text-white border border-white/20 shadow-xs">
-                {state.properties.testType?.includes('Bedömningsprov') ? 'Bedömning' : 'Körprov'}
+              <div className="flex items-center justify-between gap-3 py-2.5">
+                <dt className="text-slate-600 dark:text-slate-300">Avbrutet</dt>
+                <dd className={`font-medium ${state.result.testAborted ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                  {state.result.testAborted ? 'Ja' : 'Nej'}
+                </dd>
+              </div>
+            </dl>
+
+            {/* Delprov som tillgodoräknas vid omprov */}
+            {heavyWithNote && state.result.safetyCheckResult === 'Godkänt' && state.result.drivingResult === 'Underkänt' && (
+              <p className="mx-5 mb-3 text-[13px] leading-snug rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200 px-3.5 py-2.5">
+                Säkerhetskontrollen är godkänd och behöver inte göras om vid omprov.
+              </p>
+            )}
+            {heavyWithNote && state.result.safetyCheckResult === 'Underkänt' && state.result.drivingResult === 'Godkänt' && (
+              <p className="mx-5 mb-3 text-[13px] leading-snug rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200 px-3.5 py-2.5">
+                Körningen är godkänd. Vid omprov görs bara säkerhetskontrollen.
+              </p>
+            )}
+
+            <div className={`m-3 mt-1 rounded-xl border p-4 flex items-center gap-3.5 ${toneBox}`}>
+              <span className={`w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0 ${toneIcon}`}>
+                <TotalIcon size={22} strokeWidth={3} />
               </span>
-            </div>
-            
-            <div className="p-5 sm:p-6 space-y-5 bg-white dark:bg-slate-900">
-              {/* Candidate Quick Profile Tile */}
-              <div className="rounded-xl p-4 bg-gradient-to-br from-slate-50 to-slate-100/70 dark:from-slate-950/80 dark:to-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 shadow-xs relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-xl pointer-events-none" />
-                <div className="flex items-start justify-between gap-3 relative z-10">
-                  <div className="min-w-0 flex-1">
-                    <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block">KANDIDAT</span>
-                    <div className="font-extrabold text-slate-900 dark:text-white text-base leading-snug mt-0.5 truncate">
-                      {state.properties.studentName || 'Namn saknas'}
-                    </div>
-                    <div className="text-xs font-mono font-medium text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
-                      <span>{state.properties.personalNumber || 'Personnummer saknas'}</span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1.5 shrink-0">
-                    <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-slate-900 text-white dark:bg-blue-600 dark:text-white tracking-wider shadow-xs">
-                      {state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov')
-                        ? `Bedömningsprov (${licenseType})`
-                        : licenseType || 'B'}
-                    </span>
-                    {state.properties.transmission === 'Automat' && (
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-2xs">
-                        Automat (78)
-                      </span>
-                    )}
-                    {state.properties.tachograph === 'Utan färdskrivare' && (
-                      <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-900 dark:bg-red-950/70 dark:text-red-300 border border-red-300 dark:border-red-800">
-                        Utan färdskrivare
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {state.properties.registrationNumber && (
-                  <div className="mt-3 pt-2.5 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-mono">
-                    <span className="text-[9px] uppercase font-sans font-bold text-slate-400">Fordon Reg.nr:</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">{state.properties.registrationNumber}</span>
-                  </div>
-                )}
+              <div className="min-w-0">
+                <div className="text-xs font-medium opacity-70">Totalt resultat</div>
+                <div className="text-xl font-bold leading-tight">{total.label}</div>
+                <div className="text-[13px] mt-0.5 opacity-80 leading-snug">{total.detail}</div>
               </div>
-
-              {/* Provmoment Assessment Rows */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between px-0.5">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                    Delbedömningar
-                  </span>
-                  <span className="text-[10px] font-semibold text-slate-400">Kvalificering</span>
-                </div>
-
-                {/* Driving outcome */}
-                <div className="border border-slate-200/90 dark:border-slate-800 rounded-xl p-3.5 flex items-center justify-between bg-white dark:bg-slate-950 hover:border-slate-300 dark:hover:border-slate-700 transition-colors shadow-2xs">
-                  <div>
-                    <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Körning</div>
-                    <div className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">Trafiksäker körning</div>
-                  </div>
-                  <span className={`text-xs font-black uppercase px-3 py-1 rounded-lg border transition-all ${
-                    state.result.drivingResult === 'Godkänt' 
-                      ? 'bg-emerald-50 border-emerald-300 text-emerald-800 dark:bg-emerald-950/50 dark:border-emerald-700 dark:text-emerald-300 shadow-xs' 
-                      : state.result.drivingResult === 'Underkänt' 
-                        ? 'bg-red-50 border-red-300 text-red-800 dark:bg-red-950/50 dark:border-red-700 dark:text-red-300 shadow-xs' 
-                        : 'bg-slate-100 border-slate-250 text-slate-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400'
-                  }`}>
-                    {state.result.drivingResult || 'Väntar'}
-                  </span>
-                </div>
-
-                {/* Safety check outcome */}
-                {SAFETY_CHECK_LICENSES.includes(licenseType) && (
-                  <div className="border border-slate-200/90 dark:border-slate-800 rounded-xl p-3.5 flex items-center justify-between bg-white dark:bg-slate-950 hover:border-slate-300 dark:hover:border-slate-700 transition-colors shadow-2xs">
-                    <div>
-                      <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Fordonskontroll</div>
-                      <div className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">Säkerhetskontroll</div>
-                    </div>
-                    <span className={`text-xs font-black uppercase px-3 py-1 rounded-lg border transition-all ${
-                      state.result.safetyCheckResult === 'Godkänt' 
-                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800 dark:bg-emerald-950/50 dark:border-emerald-700 dark:text-emerald-300 shadow-xs' 
-                        : state.result.safetyCheckResult === 'Underkänt' 
-                          ? 'bg-red-50 border-red-300 text-red-800 dark:bg-red-950/50 dark:border-red-700 dark:text-red-300 shadow-xs' 
-                          : 'bg-slate-100 border-slate-250 text-slate-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400'
-                    }`}>
-                      {state.result.safetyCheckResult || 'Ej ifyllt'}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Tunga Behörigheter & BE - Informative notice */}
-              {(HEAVY_LICENSES.includes(licenseType) || licenseType === 'BE') && state.result.safetyCheckResult === 'Godkänt' && state.result.drivingResult === 'Underkänt' && (
-                <div className="bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 rounded-xl p-3.5 text-xs text-emerald-900 dark:text-emerald-300 shadow-xs">
-                  <div className="font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5 mb-1 text-emerald-800 dark:text-emerald-400">
-                    <span className="w-3.5 h-3.5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[9px]">✓</span> Säkerhetskontroll godkänd
-                  </div>
-                  <div className="text-[11.5px] leading-relaxed">
-                    Säkerhetskontrollen tillgodoräknas som <strong>GODKÄND</strong> för framtida provtillfällen enligt gällande föreskrifter.
-                  </div>
-                </div>
-              )}
-
-              {/* Tunga Behörigheter & BE - Säkerhetskontroll underkänd, körning godkänd */}
-              {(HEAVY_LICENSES.includes(licenseType) || licenseType === 'BE') && state.result.safetyCheckResult === 'Underkänt' && state.result.drivingResult === 'Godkänt' && (
-                <div className="bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/80 rounded-xl p-3.5 text-xs text-blue-950 dark:text-blue-200 shadow-xs">
-                  <div className="font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5 mb-1 text-blue-800 dark:text-blue-400">
-                    <span className="w-3.5 h-3.5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[9px]">✓</span> Din körning är godkänd
-                  </div>
-                  <div className="text-[11.5px] leading-relaxed">
-                    Körningen tillgodoräknas som <strong>GODKÄND</strong> för framtida provtillfällen. Endast säkerhetskontroll behöver genomföras vid omprov enligt gällande föreskrifter.
-                  </div>
-                </div>
-              )}
-
-              {/* Deviations / Interventions */}
-              {(state.result.interventionOccurred || state.result.testAborted) && (
-                <div className="bg-red-50/90 dark:bg-red-950/40 border-l-4 border-l-[#c40000] border border-red-200 dark:border-red-800 rounded-xl p-3.5 text-xs text-red-900 dark:text-red-300 shadow-xs">
-                  <div className="font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1.5 mb-1 text-red-800 dark:text-red-400">
-                    <span>⚠️</span> Notering från provet
-                  </div>
-                  <ul className="text-[11.5px] space-y-1 pl-1 font-semibold">
-                    {state.result.interventionOccurred && <li>• Ingripande har rapporterats under körning</li>}
-                    {state.result.testAborted && <li>• Provet har avbrutits i förtid</li>}
-                  </ul>
-                </div>
-              )}
-
-              {/* TOTALRESULTAT - Hero Decision Card */}
-              <div className="pt-2">
-                {(() => {
-                  const isOmprovSakerhet = state.properties.testType === 'Omprov säkerhetskontroll';
-                  const isOmprovKorning = state.properties.testType === 'Omprov körning';
-                  const heavyMandatory = SAFETY_CHECK_LICENSES.includes(licenseType) && !isOmprovKorning;
-
-                  const drivingDone = isOmprovSakerhet || (Boolean(state.result.drivingResult) && state.result.drivingResult !== '-');
-                  const safetyDone = !heavyMandatory || (Boolean(state.result.safetyCheckResult) && state.result.safetyCheckResult !== '-');
-
-                  let anyFail = false;
-                  if (isOmprovSakerhet) {
-                    anyFail = state.result.safetyCheckResult === 'Underkänt' || Boolean(state.result.testAborted);
-                  } else if (isOmprovKorning) {
-                    anyFail = state.result.drivingResult === 'Underkänt' || Boolean(state.result.testAborted);
-                  } else {
-                    const safetyFailed = heavyMandatory && state.result.safetyCheckResult === 'Underkänt';
-                    anyFail = state.result.drivingResult === 'Underkänt' || safetyFailed || Boolean(state.result.testAborted);
-                  }
-
-                  const complete = drivingDone && safetyDone;
-
-                  let label = 'Väntar på bedömning';
-                  let statusDesc = 'Fyll i resultat ovan för att fastställa beslut';
-                  let tone = 'slate';
-
-                  const isAssessmentOnly = state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov');
-
-                  if (complete) {
-                    if (anyFail) { 
-                      label = 'UNDERKÄNT'; 
-                      statusDesc = isTaxi
-                        ? 'Kandidaten uppfyller ej kraven enligt taxitrafiklagen (2012:211)'
-                        : 'Kandidaten uppfyller ej kraven för godkänd bedömning';
-                      tone = 'red'; 
-                    } else { 
-                      label = 'GODKÄNT'; 
-                      statusDesc = (isAssessmentOnly || isTaxi)
-                        ? 'Godkänd körning – Ingen behörighet uppnådd' 
-                        : 'Kandidaten uppfyller samtliga krav för behörigheten';
-                      tone = 'emerald'; 
-                    }
-                  }
-
-                  return (
-                    <div className={`rounded-2xl border-2 p-5 transition-all duration-300 shadow-md ${
-                      tone === 'emerald'
-                        ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 via-emerald-50/70 to-white dark:from-emerald-950/60 dark:to-slate-900 text-emerald-950 dark:text-white ring-2 ring-emerald-500/20'
-                        : tone === 'red'
-                          ? 'border-red-500 bg-gradient-to-br from-red-50 via-red-50/70 to-white dark:from-red-950/60 dark:to-slate-900 text-red-950 dark:text-white ring-2 ring-red-500/20'
-                          : 'border-slate-300 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300'
-                    }`}>
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 block">
-                            PROVETS TOTALRESULTAT
-                          </span>
-                          <span className={`text-2xl font-black uppercase tracking-tight block mt-1 ${
-                            tone === 'emerald' ? 'text-emerald-700 dark:text-emerald-300' :
-                            tone === 'red' ? 'text-red-700 dark:text-red-400' :
-                            'text-slate-700 dark:text-slate-300'
-                          }`}>
-                            {label}
-                          </span>
-                        </div>
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-xl font-black text-white shadow-md transition-transform duration-200 ${
-                          tone === 'emerald' ? 'bg-emerald-600 shadow-emerald-600/30' :
-                          tone === 'red' ? 'bg-[#c40000] shadow-red-600/30' :
-                          'bg-slate-400 dark:bg-slate-600'
-                        }`}>
-                          {tone === 'emerald' ? '✓' : tone === 'red' ? '✗' : '—'}
-                        </div>
-                      </div>
-                      <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-3 pt-3 border-t border-slate-200/80 dark:border-slate-700/60 leading-relaxed">
-                        {statusDesc}
-                      </div>
-                      {(isAssessmentOnly || isTaxi) && complete && !anyFail && (
-                        <div className="mt-3 text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2 shadow-2xs">
-                          <span>Ingen behörighet uppnådd</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-
             </div>
           </div>
+        </aside>
+      </div>
+
+      {/* Raden längst ner – alltid synlig */}
+      <Portal>
+        <div className="fixed inset-x-0 bottom-[calc(60px+env(safe-area-inset-bottom))] md:bottom-0 z-40 print:hidden border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md">
+          <div className="max-w-[1300px] mx-auto px-3 sm:px-6 py-2.5 flex items-center gap-2 sm:gap-3 md:pb-[max(0.625rem,env(safe-area-inset-bottom))]">
+            <button
+              type="button"
+              onClick={() => liveIssues.length > 0 && setValidationIssues(liveIssues)}
+              title={liveIssues.length > 0 ? 'Visa vad som saknas' : undefined}
+              className={`text-left flex items-center gap-2.5 min-w-0 flex-1 px-3 h-12 rounded-xl border ${liveIssues.length > 0 ? 'cursor-pointer' : 'cursor-default'} ${toneBox}`}
+            >
+              <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0 ${toneIcon}`}>
+                <TotalIcon size={16} strokeWidth={3} />
+              </span>
+              <div className="min-w-0 leading-tight">
+                <div className="text-sm font-bold truncate">{total.label}</div>
+                <div className="text-xs truncate opacity-75">
+                  {liveErrors > 0
+                    ? `${liveErrors} ${liveErrors === 1 ? 'sak saknas' : 'saker saknas'}`
+                    : liveWarnings > 0
+                      ? `${liveWarnings} att se över`
+                      : 'Klart för protokoll'}
+                </div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => printProtocol(state)}
+              className="h-12 w-12 sm:w-auto sm:px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center gap-2 text-sm font-semibold cursor-pointer shrink-0"
+              title="Skriv ut eller spara som PDF"
+            >
+              <Printer size={18} />
+              <span className="hidden sm:inline">Skriv ut</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleNext}
+              className="h-12 px-4 sm:px-7 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer shrink-0 transition-all"
+            >
+              Skapa protokoll
+              <ArrowRight size={18} />
+            </button>
+          </div>
         </div>
-      </div>
-
-      {/* Footer / Trigger creation & Direct PDF Download */}
-      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-8 border-t border-slate-200 dark:border-slate-800 sm:mt-8">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => printProtocol(state)}
-          size="lg"
-          className="rounded-xl px-6 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 h-14 font-bold text-[14px] flex items-center justify-center gap-2 shadow-sm transition-all"
-        >
-          <FileDown className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-          <span>Skriv ut / PDF (Protokoll)</span>
-        </Button>
-
-        <Button
-          onClick={handleNext}
-          size="lg"
-          className="rounded-xl px-12 shadow-lg shadow-blue-500/20 border border-blue-600 bg-blue-600 hover:bg-blue-700 text-white h-14 font-bold text-[15px] tracking-wide cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
-        >
-          <span>Generera protokoll</span>
-          <ArrowRight className="w-5 h-5" />
-        </Button>
-      </div>
+      </Portal>
 
       {/* Kontroll innan protokollet skapas */}
       {validationIssues && (
         <Portal>
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150" onClick={() => setValidationIssues(null)}>
-          <div className="w-full sm:max-w-lg bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-800 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full sm:max-w-lg bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="px-5 pt-5 pb-3 flex items-start gap-3">
               <span className={`p-2 rounded-xl shrink-0 ${validationIssues.some(i => i.level === 'error') ? 'bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400' : 'bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'}`}>
                 <AlertTriangle size={20} />
               </span>
               <div>
-                <h3 className="font-black text-base text-gray-900 dark:text-white">
-                  {validationIssues.some(i => i.level === 'error') ? 'Protokollet är inte komplett' : 'Kontrollera innan du går vidare'}
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                  {validationIssues.some(i => i.level === 'error') ? 'Protokollet är inte klart' : 'Kontrollera innan du går vidare'}
                 </h3>
-                <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Följande saknas eller bör ses över:</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Det här saknas eller bör ses över:</p>
               </div>
             </div>
             <ul className="px-5 pb-4 space-y-2 max-h-[50dvh] overflow-y-auto">
               {validationIssues.map((issue, idx) => (
-                <li key={idx} className={`text-sm p-3 rounded-xl border flex gap-2.5 ${
+                <li key={idx} className={`text-sm p-3 rounded-xl flex gap-2.5 ${
                   issue.level === 'error'
-                    ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/50 text-red-900 dark:text-red-200'
-                    : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50 text-amber-900 dark:text-amber-200'
+                    ? 'bg-red-50 dark:bg-red-950/20 text-red-900 dark:text-red-200'
+                    : 'bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200'
                 }`}>
-                  <span className="font-black shrink-0">{issue.level === 'error' ? '✗' : '!'}</span>
+                  {issue.level === 'error' ? <X size={16} className="shrink-0 mt-0.5" /> : <AlertTriangle size={16} className="shrink-0 mt-0.5" />}
                   <span>{issue.text}</span>
                 </li>
               ))}
             </ul>
-            <div className="px-5 py-4 border-t border-gray-100 dark:border-slate-800 flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <div className="px-5 py-4 border-t border-slate-100 dark:border-slate-800 flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pb-[max(1rem,env(safe-area-inset-bottom))]">
               <button
                 type="button"
                 onClick={() => { setValidationIssues(null); navigate('/korprov/protokoll'); }}
-                className="h-11 px-4 rounded-xl text-xs font-bold text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:bg-slate-800 cursor-pointer"
+                className="h-11 px-4 rounded-xl text-sm font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 Skapa protokoll ändå
               </button>
               <button
                 type="button"
-                onClick={() => { setValidationIssues(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                className="h-12 px-6 rounded-xl bg-[#002f6c] hover:bg-[#00204a] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-sm font-black cursor-pointer"
+                onClick={() => { setValidationIssues(null); topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+                className="h-12 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold cursor-pointer"
               >
                 Komplettera
               </button>

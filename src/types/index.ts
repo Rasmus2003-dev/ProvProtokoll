@@ -69,6 +69,8 @@ export interface AppState {
   route?: RouteRecording;
   // Slumpade förslag för säkerhetskontroll, lätta fordon (id:n i lightSafetyCheck)
   lightSafetyTasks?: string[];
+  // Protokollayout som provet skapades med (saknas = klassisk)
+  protocolLayout?: 'klassisk' | 'ny';
 }
 
 export type DrivingEventKind = 'brist' | 'ingripande' | 'notering';

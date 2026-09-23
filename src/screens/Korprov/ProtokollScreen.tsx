@@ -3,7 +3,7 @@ import { useAppStore } from '../../store/ProvContext';
 import { Button } from '../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { OfficialPrintLayout } from './components/OfficialPrintLayout';
-import { AlertTriangle, Send, FileCheck, Mail, Copy, Check, Loader2, MailCheck, MailX } from 'lucide-react';
+import { AlertTriangle, Send, FileCheck, Mail, Copy, Check, Loader2, MailCheck, MailX, ArrowLeft, Printer, FileDown, Code2, Link2 } from 'lucide-react';
 import { downloadProtocolHtml, downloadEmailProtocolHtml, generateEmailProtocolHtml, printProtocol } from '../../lib/generateProtocolHtml';
 import { authHeaders } from '../../lib/inspectors';
 import { useToast } from '../../components/Toast';
@@ -214,6 +214,12 @@ export function ProtokollScreen() {
     isFailed = state.result.drivingResult === 'Underkänt' || (isSafetyCheckRequired && state.result.safetyCheckResult === 'Underkänt');
   }
 
+  // Ett avbrutet prov är aldrig godkänt
+  if (state.result.testAborted) {
+    isPassed = false;
+    isFailed = true;
+  }
+
   const drivingFail = state.result.drivingFailure;
   const safetyFail = state.result.safetyCheckFailure;
 
@@ -226,123 +232,80 @@ export function ProtokollScreen() {
       </div>
 
       {/* Dynamic top tool-bar to match standalone Web App wrapper (hidden during printing) */}
-      <div className="max-w-[730px] mx-auto mb-4 flex flex-col gap-3 print:hidden px-2 sm:px-3">
-        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
-          <Button 
-            variant="secondary" 
-            onClick={() => navigate('/korprov/resultat')} 
-            className="rounded-xl border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 px-4 py-2.5 sm:py-3 text-xs sm:text-sm shadow-none w-full sm:w-auto text-center font-bold"
+      <div className="max-w-[730px] mx-auto mb-4 flex flex-col gap-2.5 print:hidden px-2 sm:px-0">
+        {/* Rad 1: tillbaka och slutför */}
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => navigate('/korprov/resultat')}
+            className="h-9 pl-2 pr-3 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer"
           >
-            Tillbaka till Beslut
-          </Button>
-          
-          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-end gap-2 w-full sm:w-auto">
-            <Button 
-              variant="outline" 
-              onClick={handlePrint} 
-              className="bg-white rounded-xl px-2.5 sm:px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-100 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5"
-            >
-              <svg className="w-4 h-4 text-gray-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-              </svg>
-              <span>Skriv ut</span>
-            </Button>
-
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                const appUrl = window.location.origin;
-                const mailtoLink = `mailto:${state.properties.email || ''}?subject=Resultat%20på%20ditt%20körprov%20${licenseType}&body=Hej!%0D%0A%0D%0AHär%20är%20länken%20till%20provprotokollssystemet:%0D%0A${encodeURIComponent(appUrl)}%0D%0A%0D%0AVänliga%20hälsningar`;
-                window.location.href = mailtoLink;
-              }}
-              className="bg-white rounded-xl px-2.5 sm:px-4 py-2 border border-blue-200 text-blue-700 hover:bg-blue-50 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5"
-            >
-              <svg className="w-4 h-4 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              <span>Mejla länk</span>
-            </Button>
-
-            <Button 
-              variant="outline" 
-              onClick={() => setShowEmailModal(true)} 
-              className="bg-white rounded-xl px-2.5 sm:px-4 py-2 border border-violet-200 text-violet-700 hover:bg-violet-50 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5"
-              title="Generera och förhandsgranska HTML-mejl med protokollet"
-            >
-              <Mail className="w-4 h-4 text-violet-600 shrink-0" />
-              <span>HTML-mejl</span>
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={handleDownloadPDF}
-              disabled={isGeneratingPdf}
-              title="Öppnar utskriftsdialogen - välj 'Spara som PDF' för att ladda ner"
-              className="bg-white rounded-xl px-2.5 sm:px-4 py-2 border border-teal-200 text-teal-700 hover:bg-teal-50 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-70 disabled:cursor-wait transition-opacity"
-            >
-              {isGeneratingPdf ? (
-                <Loader2 className="w-4 h-4 text-teal-600 shrink-0 animate-spin" />
-              ) : (
-                <svg className="w-4 h-4 text-teal-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              )}
-              <span>{isGeneratingPdf ? 'Öppnar...' : 'Spara som PDF'}</span>
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={handleDownloadHTML}
-              disabled={isGeneratingHtml}
-              className="bg-white rounded-xl px-2.5 sm:px-4 py-2 border border-indigo-200 text-indigo-700 hover:bg-indigo-50 shadow-none text-xs font-semibold flex items-center justify-center gap-1.5 col-span-1 sm:col-span-auto disabled:opacity-70 disabled:cursor-wait transition-opacity"
-              title="Ladda ned officiellt protokoll som HTML-fil"
-            >
-              {isGeneratingHtml ? (
-                <Loader2 className="w-4 h-4 text-indigo-600 shrink-0 animate-spin" />
-              ) : (
-                <svg className="w-4 h-4 text-indigo-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                </svg>
-              )}
-              <span>{isGeneratingHtml ? 'Genererar...' : 'HTML'}</span>
-            </Button>
-            
-            <Button
-              onClick={() => {
-                setConfirmResultChecked(false);
-                setConfirmReportChecked(false);
-                setConfirmEmailChecked(false);
-                setShowConfirmModal(true);
-              }}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white border-transparent rounded-xl px-3 sm:px-5 py-2 shadow-sm font-bold text-xs transition-all flex items-center justify-center col-span-1 sm:col-span-auto"
-            >
-              Spara och slutför
-            </Button>
-          </div>
+            <ArrowLeft size={16} /> Tillbaka
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setConfirmResultChecked(false);
+              setConfirmReportChecked(false);
+              setConfirmEmailChecked(false);
+              setShowConfirmModal(true);
+            }}
+            className="h-9 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
+          >
+            <Check size={16} strokeWidth={2.75} /> Spara och slutför
+          </button>
         </div>
 
-        {/* View Selection Tabs */}
-        <div className="flex border border-gray-255 bg-white p-1 rounded-xl shadow-sm">
-          <button
-            onClick={() => setActiveTab('beslut')}
-            className={`flex-1 py-3 px-2 text-center font-bold text-[13px] sm:text-[14px] flex items-center justify-center gap-1.5 transition-all rounded-lg ${
-              activeTab === 'beslut'
-                ? 'bg-red-50 text-[#DD1D25]'
-                : 'text-gray-500 hover:text-black hover:bg-gray-50'
-            }`}
-          >
-            <span>Digitalt Provprotokoll</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('email')}
-            className={`flex-1 py-3 px-2 text-center font-bold text-[13px] sm:text-[14px] flex items-center justify-center gap-1.5 transition-all rounded-lg ${
-              activeTab === 'email'
-                ? 'bg-red-50 text-[#DD1D25]'
-                : 'text-gray-500 hover:text-black hover:bg-gray-50'
-            }`}
-          >
-            <span>Mottagarens E-post</span>
-          </button>
+        {/* Rad 2: vy och export */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="inline-flex p-0.5 rounded-lg bg-slate-200/70 dark:bg-slate-800 self-start" role="tablist">
+            {([['beslut', 'Protokoll'], ['email', 'E-post till kandidaten']] as const).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === id}
+                onClick={() => setActiveTab(id)}
+                className={`h-8 px-3 rounded-md text-[13px] font-medium transition-colors cursor-pointer ${
+                  activeTab === id
+                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-5 sm:flex items-stretch rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 divide-x divide-slate-200 dark:divide-slate-700 overflow-hidden w-full sm:w-auto">
+            {[
+              { label: 'Skriv ut', icon: <Printer size={15} />, onClick: handlePrint, title: 'Skriv ut protokollet' },
+              { label: isGeneratingPdf ? 'Öppnar…' : 'PDF', icon: isGeneratingPdf ? <Loader2 size={15} className="animate-spin" /> : <FileDown size={15} />, onClick: handleDownloadPDF, disabled: isGeneratingPdf, title: 'Öppnar utskriften – välj "Spara som PDF"' },
+              { label: 'E-post', icon: <Mail size={15} />, onClick: () => setShowEmailModal(true), title: 'Förhandsgranska och ladda ned mejlet med protokollet' },
+              { label: isGeneratingHtml ? 'Skapar…' : 'HTML', icon: isGeneratingHtml ? <Loader2 size={15} className="animate-spin" /> : <Code2 size={15} />, onClick: handleDownloadHTML, disabled: isGeneratingHtml, title: 'Ladda ned protokollet som HTML-fil' },
+              {
+                label: 'Mejla länk',
+                icon: <Link2 size={15} />,
+                title: 'Öppna mejlprogrammet med en länk till appen',
+                onClick: () => {
+                  const appUrl = window.location.origin;
+                  window.location.href = `mailto:${state.properties.email || ''}?subject=Resultat%20på%20ditt%20körprov%20${licenseType}&body=Hej!%0D%0A%0D%0AHär%20är%20länken%20till%20provprotokollssystemet:%0D%0A${encodeURIComponent(appUrl)}%0D%0A%0D%0AVänliga%20hälsningar`;
+                },
+              },
+            ].map(btn => (
+              <button
+                key={btn.title}
+                type="button"
+                onClick={btn.onClick}
+                disabled={btn.disabled}
+                title={btn.title}
+                className="h-12 sm:h-9 px-1 sm:px-3 text-[11px] sm:text-[13px] font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 whitespace-nowrap cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+              >
+                <span className="text-slate-500 dark:text-slate-400">{btn.icon}</span>
+                {btn.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

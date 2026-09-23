@@ -2,9 +2,20 @@ import React, { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { FailureAssessment } from '../../../types';
-import { failureCategories, failureSituations, TAXI_ONLY_AREAS } from '../data/failureData';
+import { failureCategories, failureSituations, TAXI_ONLY_AREAS, deficiencyGroups } from '../data/failureData';
 import { v4 as uuidv4 } from 'uuid';
 import { useAppStore } from '../../../store/ProvContext';
+import { isNewLayout } from '../../../lib/protocolLayout';
+
+function GroupLabel({ label }: { label: string }) {
+  const isNew = label === 'Nya formuleringar';
+  return (
+    <div className={`pt-2 text-xs font-semibold flex items-center gap-1.5 ${isNew ? 'text-violet-700 dark:text-violet-300' : 'text-gray-400 dark:text-slate-500'}`}>
+      {isNew && <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />}
+      {label}
+    </div>
+  );
+}
 
 type FailureFormProps = {
   data: FailureAssessment;
@@ -22,6 +33,11 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
   };
 
   const isTaxi = state.properties.licenseType === 'TAXI';
+  // Ny provlayout (testperiod): nya formuleringar visas först
+  const newLayout = isNewLayout(state);
+  const listHeading = newLayout
+    ? 'Du måste bli bättre på:'
+    : `Din ${type === 'driving' ? 'körning' : 'kontroll'} visar brister i att:`;
   const availableAreas = useMemo(
     () => isTaxi ? failureCategories.areas : failureCategories.areas.filter(a => !TAXI_ONLY_AREAS.includes(a)),
     [isTaxi]
@@ -120,36 +136,33 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
   };
 
   return (
-    <Card className="mt-6 border border-gray-200 dark:border-white/10 overflow-hidden rounded-xl shadow-sm bg-white dark:bg-slate-950">
-      <CardHeader className="bg-slate-50/90 dark:bg-slate-900/60 border-b border-gray-200 dark:border-white/5 py-4 px-5">
-        <CardTitle className="text-[#C0504D] flex items-center justify-between font-sans font-black text-base sm:text-lg uppercase tracking-tight">
-          <div className="flex items-center gap-2.5">
-            <span className="w-2 h-5 bg-[#C0504D] rounded-full shrink-0" />
-            <span>{title}</span>
-          </div>
-          <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 border border-red-200 dark:border-red-900/40">
-            Avvikelsehantering
-          </span>
+    <Card className="border border-slate-200/80 dark:border-slate-800 overflow-hidden rounded-2xl shadow-xs bg-white dark:bg-slate-900">
+      <CardHeader className="border-b border-slate-100 dark:border-slate-800 py-4 px-5">
+        <CardTitle className="flex items-center gap-2.5 font-sans font-bold text-[15px] text-slate-900 dark:text-white">
+          <span className="w-2 h-2 bg-red-600 rounded-full shrink-0" />
+          <span>{title}</span>
         </CardTitle>
       </CardHeader>
-      
-      <CardContent className="space-y-8 p-5 sm:p-7">
+
+      <CardContent className="space-y-7 p-5 sm:p-6">
         
         {/* Grundorsak - inramad med officiell 3px röd ram */}
         <section className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 border-b border-gray-100 dark:border-white/5 pb-2">
-            <h4 className="font-bold text-base sm:text-lg text-gray-900 dark:text-white leading-tight uppercase tracking-tight flex items-center gap-2">
-              Grundorsak till underkännandet är:
+            <h4 className="font-semibold text-[15px] text-slate-900 dark:text-white leading-tight flex items-center gap-2">
+              {newLayout ? 'Orsaker till underkännandet:' : 'Grundorsak till underkännandet är:'}
             </h4>
             <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-              {type === 'driving' ? 'Din körning visar brister i att:' : 'Din säkerhetskontroll visar brister i att:'}
+              {newLayout
+                ? 'Du måste bli bättre på:'
+                : type === 'driving' ? 'Din körning visar brister i att:' : 'Din säkerhetskontroll visar brister i att:'}
             </span>
           </div>
 
           <div className="border-[3px] border-[#C0504D] bg-red-50/20 dark:bg-red-950/10 rounded-lg p-4 sm:p-5 space-y-4">
             <div className="max-w-md space-y-1.5">
-              <label className="text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider block">
-                Välj kompetensområde (Grundorsak)
+              <label className="text-[13px] font-semibold text-slate-700 dark:text-slate-300 block">
+                {newLayout ? 'Område 1 – kompetensområde' : 'Välj kompetensområde (Grundorsak)'}
               </label>
               <div className="relative">
                 <select 
@@ -171,16 +184,19 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
             {data.primaryCause?.area && (
               <div className="space-y-2 pt-2 border-t border-red-100 dark:border-red-900/30">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                    Din {type === 'driving' ? 'körning' : 'kontroll'} visar brister i att:
+                  <label className="text-[13px] font-semibold text-slate-700 dark:text-slate-300">
+                    {listHeading}
                   </label>
                   <span className="text-[11px] font-semibold text-[#C0504D]">
                     {data.primaryCause.deficiencies?.length || 0} valda
                   </span>
                 </div>
 
+                {deficiencyGroups(data.primaryCause.area, newLayout).map(group => (
+                <div key={group.label || 'alla'} className="space-y-1.5">
+                {group.label && <GroupLabel label={group.label} />}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-2">
-                  {(failureCategories.deficiencies as any)[data.primaryCause.area].map((d: string) => {
+                  {group.items.map((d: string) => {
                     const isSelected = data.primaryCause.deficiencies?.includes(d);
                     return (
                       <button
@@ -209,6 +225,8 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
                     );
                   })}
                 </div>
+                </div>
+                ))}
               </div>
             )}
           </div>
@@ -218,23 +236,25 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
         <section className="space-y-4 pt-4 border-t border-gray-100 dark:border-white/5">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
-              <h4 className="font-bold text-base sm:text-lg text-gray-900 dark:text-white uppercase tracking-tight">
-                Detta får konsekvenser på:
+              <h4 className="font-semibold text-[15px] text-slate-900 dark:text-white">
+                {newLayout ? 'Fler områden' : 'Detta får konsekvenser på:'}
               </h4>
               <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                Tilläggsområden som påverkats av grundorsaken (orange ram i protokollet).
+                {newLayout
+                  ? 'Hamnar i samma ruta som område 1 i protokollet, under "Du måste bli bättre på".'
+                  : 'Tilläggsområden som påverkats av grundorsaken (orange ram i protokollet).'}
               </p>
             </div>
             <Button 
               variant="outline" 
               size="sm" 
               onClick={addConsequence} 
-              className="text-[#F79646] border-[#F79646]/40 hover:bg-orange-50 dark:hover:bg-orange-950/20 rounded-lg shadow-none font-bold text-xs uppercase tracking-wide px-3.5 h-9 flex items-center gap-1.5 shrink-0"
+              className="text-[#F79646] border-[#F79646]/40 hover:bg-orange-50 dark:hover:bg-orange-950/20 rounded-lg shadow-none font-semibold text-sm px-3.5 h-9 flex items-center gap-1.5 shrink-0"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              Lägg till konsekvensområde
+              {newLayout ? 'Lägg till område' : 'Lägg till konsekvensområde'}
             </Button>
           </div>
           
@@ -247,15 +267,15 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
                 <button 
                   onClick={() => removeConsequence(cons.id)}
                   className="absolute top-3.5 right-3.5 text-gray-400 hover:text-red-600 transition-colors font-bold text-xl leading-none w-7 h-7 flex items-center justify-center rounded-full hover:bg-white dark:hover:bg-slate-800 shrink-0"
-                  title="Ta bort konsekvens"
+                  title={newLayout ? 'Ta bort område' : 'Ta bort konsekvens'}
                   type="button"
                 >
                   ×
                 </button>
                 <div className="space-y-4 pr-7">
                   <div className="space-y-1.5 max-w-md">
-                    <label className="text-xs font-black text-orange-900 dark:text-orange-300 uppercase tracking-wider block">
-                      Konsekvensområde {index + 1}
+                    <label className="text-[13px] font-semibold text-orange-900 dark:text-orange-300 block">
+                      {newLayout ? `Område ${index + 2}` : `Konsekvensområde ${index + 1}`}
                     </label>
                     <div className="relative">
                       <select 
@@ -276,11 +296,14 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
 
                   {cons.area && (
                     <div className="space-y-2 pt-2 border-t border-orange-100 dark:border-orange-900/30">
-                      <div className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        Din körning visar brister i att:
+                      <div className="text-[13px] font-semibold text-slate-700 dark:text-slate-300">
+                        {newLayout ? 'Du måste bli bättre på:' : 'Din körning visar brister i att:'}
                       </div>
+                      {deficiencyGroups(cons.area, newLayout).map(group => (
+                      <div key={group.label || 'alla'} className="space-y-1.5">
+                      {group.label && <GroupLabel label={group.label} />}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-2">
-                        {(failureCategories.deficiencies as any)[cons.area].map((d: string) => {
+                        {group.items.map((d: string) => {
                           const isSelected = cons.deficiencies?.includes(d);
                           return (
                             <button
@@ -309,6 +332,8 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
                           );
                         })}
                       </div>
+                      </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -321,7 +346,7 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
         {!hideSituations && (
         <section className="space-y-3 pt-4 border-t border-gray-100 dark:border-white/5">
           <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
-            <h4 className="font-bold text-base sm:text-lg text-gray-900 dark:text-white uppercase tracking-tight">
+            <h4 className="font-semibold text-[15px] text-slate-900 dark:text-white">
               Brister har visat sig i följande situationer:
             </h4>
             <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">

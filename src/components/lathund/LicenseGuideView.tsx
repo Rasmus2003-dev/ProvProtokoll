@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
-import { Clock, Search, X, ShieldCheck, RotateCcw, Car, AlertTriangle, Info, Check } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import { Clock, Search, X, ShieldCheck, RotateCcw, Car, AlertTriangle, Info, Check, Eye, EyeOff } from 'lucide-react';
 import { LICENSE_GUIDES, LicenseGuideItem } from '../../data/licenseGuidesData';
-import { Highlight, matches } from './Highlight';
+import { Highlight, matches, useSlashFocus, useStoredState } from './Highlight';
 
 const CATEGORY_LABELS: Record<LicenseGuideItem['category'], string> = {
   bil: 'Bil',
@@ -24,8 +24,13 @@ type SectionKey = 'safety' | 'maneuver' | 'traffic';
 export function LicenseGuideView({ license, onLicenseChange, extraNote }: LicenseGuideViewProps) {
   const guide = LICENSE_GUIDES[license] || LICENSE_GUIDES['B'];
   const [query, setQuery] = useState('');
-  // Bockar för att hålla koll under provet – nollställs när behörighet byts
-  const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const searchRef = useRef<HTMLInputElement>(null);
+  useSlashFocus(searchRef);
+  // Bockar för att hålla koll under provet – sparas per behörighet under sessionen,
+  // så att de finns kvar om lathunden stängs och öppnas igen
+  const [checked, setChecked] = useStoredState<Record<string, boolean>>('lathund-checks', {}, 'session');
+  const [hideDone, setHideDone] = useStoredState('lathund-hide-done', false);
+  const prefix = `${guide.license}-`;
 
   const groups = useMemo(() => {
     const byCat = new Map<string, string[]>();
@@ -36,12 +41,24 @@ export function LicenseGuideView({ license, onLicenseChange, extraNote }: Licens
     return Array.from(byCat.entries());
   }, []);
 
-  const selectLicense = (lic: string) => {
-    onLicenseChange(lic);
-    setChecked({});
-  };
+  // Behörigheter med påbörjad checklista markeras med en prick
+  const startedLicenses = useMemo(
+    () => new Set(Object.keys(checked).map(k => k.slice(0, k.lastIndexOf('-', k.lastIndexOf('-') - 1)))),
+    [checked]
+  );
 
-  const toggle = (key: string) => setChecked(prev => ({ ...prev, [key]: !prev[key] }));
+  const selectLicense = (lic: string) => onLicenseChange(lic);
+
+  const toggle = (key: string) => setChecked(prev => {
+    const next = { ...prev };
+    if (next[key]) delete next[key]; else next[key] = true;
+    return next;
+  });
+
+  // Nollställer bara bockarna för den valda behörigheten
+  const resetCurrent = () => setChecked(prev =>
+    Object.fromEntries(Object.entries(prev).filter(([k]) => !k.startsWith(prefix)))
+  );
 
   const sections: { key: SectionKey; title: string; subtitle: string; accent: string; dot: string; items: string[] }[] = [
     {
@@ -71,7 +88,8 @@ export function LicenseGuideView({ license, onLicenseChange, extraNote }: Licens
   ];
 
   const totalItems = sections.reduce((n, s) => n + s.items.length, 0);
-  const totalChecked = Object.values(checked).filter(Boolean).length;
+  const totalChecked = Object.keys(checked).filter(k => k.startsWith(prefix) && checked[k]).length;
+  const progress = totalItems ? Math.round((totalChecked / totalItems) * 100) : 0;
   const highlights = guide.mandatoryHighlights.filter(h => matches(h, query));
   const notes = (guide.notes || []).filter(n => matches(n, query));
 
@@ -88,13 +106,18 @@ export function LicenseGuideView({ license, onLicenseChange, extraNote }: Licens
                   key={lic}
                   type="button"
                   onClick={() => selectLicense(lic)}
-                  className={`min-w-11 h-10 px-3 rounded-xl text-sm font-black transition-all cursor-pointer ${
+                  aria-pressed={lic === guide.license}
+                  title={startedLicenses.has(lic) ? `${lic} – påbörjad checklista` : LICENSE_GUIDES[lic]?.name}
+                  className={`relative min-w-11 h-10 px-3 rounded-xl text-sm font-black transition-all cursor-pointer ${
                     lic === guide.license
                       ? 'bg-[#002f6c] dark:bg-blue-600 text-white shadow-sm ring-2 ring-blue-500/20'
                       : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'
                   }`}
                 >
                   {lic}
+                  {startedLicenses.has(lic) && (
+                    <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden />
+                  )}
                 </button>
               ))}
             </div>
@@ -133,26 +156,44 @@ export function LicenseGuideView({ license, onLicenseChange, extraNote }: Licens
         <div className="relative flex-1">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           <input
-            type="text"
+            ref={searchRef}
+            type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Escape' && query) { e.stopPropagation(); setQuery(''); } }}
             placeholder={`Sök i lathunden för ${guide.license}...`}
-            className="w-full h-11 pl-10 pr-10 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500"
+            className="w-full h-11 pl-10 pr-10 text-sm [&::-webkit-search-cancel-button]:hidden rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500"
           />
-          {query && (
+          {query ? (
             <button type="button" onClick={() => setQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-gray-700 cursor-pointer" aria-label="Rensa sökning">
               <X size={15} />
             </button>
+          ) : (
+            <kbd className="hidden sm:block absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700 text-[10px] font-mono text-gray-400 pointer-events-none">/</kbd>
           )}
         </div>
-        <div className="flex items-center gap-2 h-11 px-3.5 rounded-xl bg-gray-100 dark:bg-slate-800 text-xs font-bold text-gray-700 dark:text-slate-300 shrink-0">
-          <Check size={14} className="text-emerald-600" />
-          {totalChecked} / {totalItems} avbockade
-          {totalChecked > 0 && (
-            <button type="button" onClick={() => setChecked({})} className="ml-1 p-1 rounded-md text-gray-400 hover:text-gray-700 cursor-pointer" title="Nollställ bockar">
-              <RotateCcw size={13} />
-            </button>
-          )}
+        <div className="flex gap-2 shrink-0 print:hidden">
+          <div className="relative flex items-center gap-2 h-11 px-3.5 rounded-xl bg-gray-100 dark:bg-slate-800 text-xs font-bold text-gray-700 dark:text-slate-300 overflow-hidden flex-1 sm:flex-none">
+            <span className="absolute inset-y-0 left-0 bg-emerald-500/15 transition-all" style={{ width: `${progress}%` }} aria-hidden />
+            <Check size={14} className="text-emerald-600 relative" />
+            <span className="relative">{totalChecked} / {totalItems} avbockade</span>
+            {totalChecked > 0 && (
+              <button type="button" onClick={resetCurrent} className="relative ml-1 p-1 rounded-md text-gray-400 hover:text-gray-700 cursor-pointer" title={`Nollställ bockar för ${guide.license}`}>
+                <RotateCcw size={13} />
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setHideDone(v => !v)}
+            aria-pressed={hideDone}
+            className={`h-11 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors ${
+              hideDone ? 'bg-[#002f6c] dark:bg-blue-600 text-white' : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700'
+            }`}
+            title="Visa bara det som återstår"
+          >
+            {hideDone ? <EyeOff size={14} /> : <Eye size={14} />} Bara kvar
+          </button>
         </div>
       </div>
 
@@ -178,8 +219,9 @@ export function LicenseGuideView({ license, onLicenseChange, extraNote }: Licens
         {sections.map((section, sIdx) => {
           const visible = section.items
             .map((item, idx) => ({ item, key: `${guide.license}-${section.key}-${idx}` }))
-            .filter(({ item }) => matches(item, query));
+            .filter(({ item, key }) => matches(item, query) && !(hideDone && checked[key]));
           const done = section.items.filter((_, idx) => checked[`${guide.license}-${section.key}-${idx}`]).length;
+          const allDone = done === section.items.length && done > 0;
           if (query && visible.length === 0) return null;
           return (
             <div key={section.key} className={`rounded-2xl border border-gray-200 dark:border-slate-800 border-t-4 ${section.accent} bg-white dark:bg-slate-900 p-4 sm:p-5 space-y-3 shadow-xs`}>
@@ -189,7 +231,7 @@ export function LicenseGuideView({ license, onLicenseChange, extraNote }: Licens
                   <h3 className="text-base font-black text-gray-900 dark:text-white leading-tight">{section.title}</h3>
                 </div>
                 <span className={`text-[11px] font-black px-2 py-1 rounded-lg shrink-0 ${
-                  done === section.items.length && done > 0
+                  allDone
                     ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
                     : 'bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-400'
                 }`}>
@@ -197,6 +239,11 @@ export function LicenseGuideView({ license, onLicenseChange, extraNote }: Licens
                 </span>
               </div>
               <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">{section.subtitle}</p>
+              {visible.length === 0 && allDone && (
+                <p className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 text-sm font-bold text-emerald-800 dark:text-emerald-300">
+                  <Check size={15} strokeWidth={3} /> Allt avbockat
+                </p>
+              )}
               <ul className="space-y-1.5">
                 {visible.map(({ item, key }) => {
                   const isChecked = Boolean(checked[key]);

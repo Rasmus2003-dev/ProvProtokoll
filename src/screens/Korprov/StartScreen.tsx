@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { triggerHaptic } from '../../lib/utils';
 import { isTestStepPath, TEST_STEP_NAMES } from '../../lib/activeTest';
+import { getLayoutPreference, setLayoutPreference, type ProtocolLayout } from '../../lib/protocolLayout';
 
 interface LicenseInfo {
   id: string;
@@ -124,6 +125,13 @@ export function StartScreen() {
       }));
     }
   }, [studentName, personalNumber, updateState, profile.name]);
+
+  // Ny provlayout (testperiod): gäller pågående formulär och kommande prov
+  const protocolLayout: ProtocolLayout = state.protocolLayout ?? getLayoutPreference();
+  const changeLayout = (layout: ProtocolLayout) => {
+    setLayoutPreference(layout);
+    updateState(prev => ({ ...prev, protocolLayout: layout }));
+  };
 
   const handleUpdateProp = (field: keyof typeof state.properties, value: string) => {
     updateState((prev) => {
@@ -725,8 +733,39 @@ export function StartScreen() {
               </label>
             </div>
 
+            {/* Testperiod: Trafikverkets nya protokollayout */}
+            <button
+              type="button"
+              role="switch"
+              aria-checked={protocolLayout === 'ny'}
+              id="toggle-new-layout"
+              onClick={() => {
+                triggerHaptic('light');
+                changeLayout(protocolLayout === 'ny' ? 'klassisk' : 'ny');
+              }}
+              className={`w-full flex items-start gap-4 p-5 rounded-2xl border-2 text-left transition-colors cursor-pointer ${
+                protocolLayout === 'ny'
+                  ? 'border-violet-300 dark:border-violet-800/60 bg-violet-50/70 dark:bg-violet-950/20'
+                  : 'border-dashed border-gray-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+              }`}
+            >
+              <span className={`mt-0.5 w-11 h-6 rounded-full p-0.5 shrink-0 transition-colors ${protocolLayout === 'ny' ? 'bg-violet-600' : 'bg-gray-300 dark:bg-slate-600'}`}>
+                <span className={`block w-5 h-5 rounded-full bg-white shadow transition-transform ${protocolLayout === 'ny' ? 'translate-x-5' : ''}`} />
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="font-bold text-gray-900 dark:text-white flex flex-wrap items-center gap-2">
+                  <Sparkles size={16} className="text-violet-500" />
+                  Testa ny provlayout
+                  <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-violet-100 text-violet-800 dark:bg-violet-900/50 dark:text-violet-200">Testperiod</span>
+                </span>
+                <span className="block text-sm text-gray-500 dark:text-slate-400 leading-relaxed mt-1">
+                  Resultatet visas som i Trafikverkets nya protokoll: <em>Orsaker till underkännandet – Du måste bli bättre på</em>, samt <em>Detta bedömdes i ditt körprov</em>. Valet sparas tills du stänger av det.
+                </span>
+              </span>
+            </button>
+
           </div>
-          
+
           {/* Action Area footer inside card */}
           <div className="bg-gray-50/80 dark:bg-slate-800/30 p-6 sm:p-8 border-t border-gray-100 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
