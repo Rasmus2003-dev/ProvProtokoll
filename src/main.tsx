@@ -7,9 +7,24 @@ import './index.css';
 // @ts-ignore
 import { registerSW } from 'virtual:pwa-register';
 
+import { isTestStepPath } from './lib/activeTest';
+
+// En ny version laddar om sidan. Gör det aldrig mitt i ett prov – vänta
+// tills inspektören har lämnat provflödet.
 const updateSW = registerSW({
   onNeedRefresh() {
-    updateSW(true);
+    const applyWhenSafe = () => {
+      if (!isTestStepPath(window.location.pathname)) {
+        updateSW(true);
+        return true;
+      }
+      return false;
+    };
+    if (!applyWhenSafe()) {
+      const timer = window.setInterval(() => {
+        if (applyWhenSafe()) window.clearInterval(timer);
+      }, 15000);
+    }
   },
   onOfflineReady() {},
 });

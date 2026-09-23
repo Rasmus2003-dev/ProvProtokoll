@@ -20,6 +20,7 @@ import {
   Bookmark
 } from 'lucide-react';
 import { triggerHaptic } from '../../lib/utils';
+import { isTestStepPath, TEST_STEP_NAMES } from '../../lib/activeTest';
 
 interface LicenseInfo {
   id: string;
@@ -140,6 +141,14 @@ export function StartScreen() {
     });
   };
 
+  // Skydda ett pågående prov från att av misstag skrivas över
+  const confirmDiscardActiveTest = () => {
+    if (!state.activeStep || !isTestStepPath(state.activeStep)) return true;
+    return window.confirm(
+      `Det finns ett pågående prov för ${studentName || 'en kandidat'} som inte är avslutat.\n\nVill du kasta det och börja om?`
+    );
+  };
+
   const setPresetCandidate = (candidate: {
     studentName: string;
     personalNumber: string;
@@ -149,6 +158,7 @@ export function StartScreen() {
     transmission?: string;
     examiner?: string;
   }) => {
+    if (!confirmDiscardActiveTest()) return;
     resetCurrentTest({
       studentName: candidate.studentName,
       personalNumber: candidate.personalNumber,
@@ -162,6 +172,7 @@ export function StartScreen() {
   };
 
   const handleStartTest = () => {
+    if (!confirmDiscardActiveTest()) return;
     // Säkerställ att inget från ett tidigare prov (moment, checklista, resultat,
     // bristförteckningar m.m.) följer med in i ett nytt prov för nästa kandidat.
     resetCurrentTest({
@@ -248,6 +259,16 @@ export function StartScreen() {
       item.personalNumber.includes(studentName);
   });
 
+  const completedCount = scheduleList.filter(item => item.status === 'Genomförd').length;
+  const todayLabel = new Date().toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' });
+  const hour = new Date().getHours();
+  const greeting = hour < 10 ? 'God morgon' : hour < 18 ? 'Hej' : 'God kväll';
+  const readinessChecks = [
+    { label: 'Namn', done: Boolean(studentName?.trim()) },
+    { label: 'Personnummer', done: Boolean(personalNumber?.trim()) },
+    { label: 'Identitet', done: state.checklist.identityChecked },
+  ];
+
   const filteredSchedule = scheduleList.filter(item => 
     item.studentName.toLowerCase().includes(activeSearch.toLowerCase()) ||
     item.personalNumber.includes(activeSearch) ||
@@ -257,6 +278,36 @@ export function StartScreen() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full pt-2 pb-24 font-sans text-gray-900 dark:text-gray-100 antialiased">
       
+      {/* Återuppta pågående prov (efter att appen stängts, laddats om eller kraschat) */}
+      {state.activeStep && isTestStepPath(state.activeStep) && (
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border-2 border-amber-300 dark:border-amber-800/70 bg-amber-50 dark:bg-amber-950/30 shadow-sm animate-in fade-in duration-200">
+          <div className="flex items-start gap-3">
+            <span className="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 shrink-0">
+              <History size={20} />
+            </span>
+            <div>
+              <div className="font-black text-sm text-amber-950 dark:text-amber-100">
+                Pågående prov: {studentName || 'Namnlös kandidat'} ({licenseType})
+              </div>
+              <div className="text-xs text-amber-800 dark:text-amber-300/80 mt-0.5">
+                Provet avslutades inte. Allt du fyllt i är sparat – senast på steget <strong>{TEST_STEP_NAMES[state.activeStep]}</strong>.
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic('success');
+              navigate(state.activeStep!);
+            }}
+            className="w-full sm:w-auto px-6 h-12 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-black text-xs uppercase tracking-widest shadow-md shadow-amber-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
+          >
+            <span>Fortsätt provet</span>
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
+
       {/* Header Panel with Stats Badge */}
       <div className="mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-[2rem] border border-gray-200/80 dark:border-white/5 shadow-sm relative overflow-hidden">
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-600/10 dark:bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -266,8 +317,8 @@ export function StartScreen() {
               <span className="w-1.5 h-1.5 rounded-full bg-red-600 dark:bg-red-500 animate-pulse"></span>
               Aktivt system
             </span>
-            <span className="text-xs font-medium text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2.5 py-1 rounded-md">
-              Terminal 4
+            <span className="text-xs font-medium text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2.5 py-1 rounded-md capitalize">
+              {todayLabel}
             </span>
           </div>
           <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-gray-900 dark:text-white flex flex-wrap items-center gap-3 sm:gap-4 mb-2">
@@ -275,6 +326,7 @@ export function StartScreen() {
             <button
               id="btn-clear-test"
               onClick={() => {
+                if (!confirmDiscardActiveTest()) return;
                 triggerHaptic('heavy');
                 resetCurrentTest();
               }}
@@ -284,6 +336,7 @@ export function StartScreen() {
             </button>
           </h1>
           <p className="text-sm text-gray-500 dark:text-slate-400 max-w-xl">
+            {profile.name && <span className="font-semibold text-gray-700 dark:text-slate-300">{greeting}, {profile.name.split(' ')[0]}! </span>}
             Registrera kandidatuppgifter för att påbörja provet och generera utskriftsklart protokoll.
           </p>
         </div>
@@ -297,10 +350,19 @@ export function StartScreen() {
             </span>
           </div>
           <div className="flex-1 lg:flex-none bg-emerald-50/50 dark:bg-emerald-900/10 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/30 min-w-[120px] flex flex-col justify-center items-center">
-            <span className="block text-[10px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest mb-1">Status</span>
-            <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400 flex items-center justify-center gap-1">
-              Online
+            <span className="block text-[10px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest mb-1">Genomförda</span>
+            <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400">
+              {completedCount}
+              <span className="text-sm font-bold text-emerald-600/70 dark:text-emerald-500/70"> / {scheduleList.length}</span>
             </span>
+            {scheduleList.length > 0 && (
+              <div className="w-full h-1 mt-2 rounded-full bg-emerald-100 dark:bg-emerald-900/40 overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.round((completedCount / scheduleList.length) * 100)}%` }}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -631,7 +693,11 @@ export function StartScreen() {
 
             {/* ID Checkbox */}
             <div className="pt-6">
-              <label className="flex items-start gap-4 p-5 rounded-2xl border-2 border-transparent bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer group focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 dark:focus-within:ring-offset-slate-900">
+              <label className={`flex items-start gap-4 p-5 rounded-2xl border-2 transition-colors cursor-pointer group focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 dark:focus-within:ring-offset-slate-900 ${
+                state.checklist.identityChecked
+                  ? 'border-emerald-300 dark:border-emerald-800/60 bg-emerald-50/60 dark:bg-emerald-950/20'
+                  : 'border-transparent bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}>
                 <div className="pt-0.5 relative">
                   <input 
                     type="checkbox" 
@@ -646,8 +712,14 @@ export function StartScreen() {
                     }}
                     className="peer w-6 h-6 shrink-0 opacity-0 absolute"
                   />
-                  <div className="w-6 h-6 rounded border-2 border-gray-300 dark:border-slate-600 peer-checked:bg-emerald-500 peer-checked:border-emerald-500 flex items-center justify-center transition-colors">
-                     <CheckCircle2 size={16} className="text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
+                  <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all duration-150 ${
+                    state.checklist.identityChecked
+                      ? 'bg-emerald-500 border-emerald-500 scale-105 shadow-sm shadow-emerald-600/30'
+                      : 'border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900'
+                  }`}>
+                    {state.checklist.identityChecked && (
+                      <CheckCircle2 size={16} className="text-white animate-in zoom-in-75 duration-100" />
+                    )}
                   </div>
                 </div>
                 <div className="flex-1">
@@ -666,8 +738,20 @@ export function StartScreen() {
           
           {/* Action Area footer inside card */}
           <div className="bg-gray-50/80 dark:bg-slate-800/30 p-6 sm:p-8 border-t border-gray-100 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="text-xs text-gray-500 dark:text-slate-400 font-medium">
-              Aktiv profil: <strong className="font-mono bg-white dark:bg-slate-900 px-2 py-1 rounded-md border border-gray-200 dark:border-white/5 text-gray-900 dark:text-white shadow-sm ml-1">{licenseType}</strong>
+            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
+              {readinessChecks.map(check => (
+                <span
+                  key={check.label}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-colors ${
+                    check.done
+                      ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-400'
+                      : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-white/10 text-gray-400 dark:text-slate-500'
+                  }`}
+                >
+                  {check.done ? <CheckCircle2 size={13} /> : <span className="w-3 h-3 rounded-full border-2 border-current" />}
+                  {check.label}
+                </span>
+              ))}
             </div>
             
             <button
@@ -742,7 +826,7 @@ export function StartScreen() {
                       }}
                       className={`w-full p-4 rounded-2xl border text-left transition-all flex items-center justify-between cursor-pointer group ${
                         isSelected
-                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-500/30 shadow-sm'
+                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-500/30 shadow-sm border-l-4 border-l-[#002f6c] dark:border-l-blue-400'
                           : 'bg-white dark:bg-slate-900 border-gray-100 dark:border-white/5 hover:border-gray-200 dark:hover:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800/50'
                       }`}
                     >

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AppState, InspectorProfile } from '../types';
 import { saveProtocolToBackend } from '../lib/supabase';
+import { readJSON, writeJSON } from '../lib/safeStorage';
 
 export interface ProvContextType {
   state: AppState;
@@ -75,10 +76,9 @@ const ProvContext = createContext<ProvContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(() => {
-    const saved = localStorage.getItem('provprotokoll-active-state');
-    if (saved) {
+    const parsed = readJSON<any>('provprotokoll-active-state', null);
+    if (parsed && typeof parsed === 'object') {
       try {
-        const parsed = JSON.parse(saved);
         return {
           ...defaultState,
           ...parsed,
@@ -99,36 +99,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   });
 
   const [profile, setProfile] = useState<InspectorProfile>(() => {
-    const saved = localStorage.getItem('provprotokoll-profile');
-    if (saved) {
-      try {
-         return { ...defaultProfile, ...JSON.parse(saved) };
-      } catch (e) {
-         return defaultProfile;
-      }
-    }
-    return defaultProfile;
+    const parsed = readJSON<Partial<InspectorProfile> | null>('provprotokoll-profile', null);
+    return parsed && typeof parsed === 'object' ? { ...defaultProfile, ...parsed } : defaultProfile;
   });
 
   const [syncQueue, setSyncQueue] = useState<AppState[]>(() => {
-    const saved = localStorage.getItem('provprotokoll-sync-queue');
-    return saved ? JSON.parse(saved) : [];
+    const parsed = readJSON<AppState[]>('provprotokoll-sync-queue', []);
+    return Array.isArray(parsed) ? parsed : [];
   });
 
   const [testHistory, setTestHistory] = useState<AppState[]>(() => {
-    const saved = localStorage.getItem('provprotokoll-test-history');
-    return saved ? JSON.parse(saved) : [];
+    const parsed = readJSON<AppState[]>('provprotokoll-test-history', []);
+    return Array.isArray(parsed) ? parsed : [];
   });
 
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Auto-sync state to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('provprotokoll-active-state', JSON.stringify(state));
+    writeJSON('provprotokoll-active-state', state);
   }, [state]);
 
   useEffect(() => {
-    localStorage.setItem('provprotokoll-profile', JSON.stringify(profile));
+    writeJSON('provprotokoll-profile', profile);
   }, [profile]);
 
   const updateState = React.useCallback((update: Partial<AppState> | AppState | ((prev: AppState) => AppState)) => {
@@ -206,12 +199,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Add current active test state to queue and history
     setTestHistory((prev) => {
       const updated = [...prev, state];
-      localStorage.setItem('provprotokoll-test-history', JSON.stringify(updated));
+      writeJSON('provprotokoll-test-history', updated);
       return updated;
     });
     setSyncQueue((prev) => {
       const updated = [...prev, state];
-      localStorage.setItem('provprotokoll-sync-queue', JSON.stringify(updated));
+      writeJSON('provprotokoll-sync-queue', updated);
       return updated;
     });
 
@@ -252,7 +245,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     setSyncQueue(stillFailing);
-    localStorage.setItem('provprotokoll-sync-queue', JSON.stringify(stillFailing));
+    writeJSON('provprotokoll-sync-queue', stillFailing);
     setIsSyncing(false);
   }, [profile?.name]);
 
@@ -273,12 +266,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addTestToHistory = (test: AppState) => {
     setTestHistory((prev) => {
       const updated = [...prev, test];
-      localStorage.setItem('provprotokoll-test-history', JSON.stringify(updated));
+      writeJSON('provprotokoll-test-history', updated);
       return updated;
     });
     setSyncQueue((prev) => {
       const updated = [...prev, test];
-      localStorage.setItem('provprotokoll-sync-queue', JSON.stringify(updated));
+      writeJSON('provprotokoll-sync-queue', updated);
       return updated;
     });
   };

@@ -335,9 +335,22 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
             )}
 
             {state.result.interventionOccurred && (
-              <div style={{ marginTop: '10px', marginBottom: '10px' }}>
-                Ingripande har förekommit.
-              </div>
+              (state.result.interventionSituations?.length ?? 0) > 0 ? (
+                <div style={{ marginTop: '10px' }}>
+                  <span><b>Ingripande har skett i följande situationer:</b></span>
+                  <ul style={{ marginTop: '4px', paddingLeft: '18px', listStyleType: 'disc' }}>
+                    {state.result.interventionSituations!.map((sit, idx) => (
+                      <li key={idx} style={{ marginBottom: '2px', fontSize: '13px' }}>
+                        {sit}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <div style={{ marginTop: '10px', marginBottom: '10px' }}>
+                  Ingripande har förekommit.
+                </div>
+              )
             )}
           </div>
         ) : (

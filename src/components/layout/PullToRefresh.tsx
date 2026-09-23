@@ -3,9 +3,10 @@ import { RefreshCw } from 'lucide-react';
 
 interface PullToRefreshProps {
   children: ReactNode;
+  disabled?: boolean;
 }
 
-export function PullToRefresh({ children }: PullToRefreshProps) {
+export function PullToRefresh({ children, disabled = false }: PullToRefreshProps) {
   const [pullY, setPullY] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -16,7 +17,7 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
 
   const handleTouchStart = (e: React.TouchEvent) => {
     // Only pull if container is at the very top
-    if (containerRef.current && containerRef.current.scrollTop === 0) {
+    if (!disabled && containerRef.current && containerRef.current.scrollTop === 0) {
       startY.current = e.touches[0].clientY;
       isDragging.current = true;
     } else {

@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import { Button } from '../../components/ui/Button';
 import { useAppStore } from '../../store/ProvContext';
 import { FailureForm } from './components/FailureForm';
+import { failureSituations } from './data/failureData';
 import { printProtocol } from '../../lib/generateProtocolHtml';
 import { FileDown, ArrowRight } from 'lucide-react';
 import { PrivacyGuard } from '../../components/PrivacyGuard';
@@ -115,6 +116,12 @@ export function ResultatScreen() {
   const isOmprovSakerhet = state.properties.testType === 'Omprov säkerhetskontroll';
   const isOmprovKorning = state.properties.testType === 'Omprov körning';
   const heavyMandatory = SAFETY_CHECK_LICENSES.includes(licenseType) && !isOmprovKorning;
+
+  // Only tested moments can be selected, same rule as the failure situations
+  const interventionSituationOptions = state.includedTestItems?.length > 0
+    ? Array.from(new Set(state.includedTestItems))
+    : failureSituations;
+  const interventionSituations = state.result.interventionSituations || [];
 
   const drivingDone = isOmprovSakerhet || (Boolean(state.result.drivingResult) && state.result.drivingResult !== '-');
   const safetyDone = !heavyMandatory || (Boolean(state.result.safetyCheckResult) && state.result.safetyCheckResult !== '-');
@@ -262,9 +269,12 @@ export function ResultatScreen() {
               </div>
               <div className="p-5">
                 <div className="grid grid-cols-2 gap-3.5">
-                  <OptionButton 
-                    active={!state.result.interventionOccurred} 
-                    onClick={() => updateResult('interventionOccurred', false)}
+                  <OptionButton
+                    active={!state.result.interventionOccurred}
+                    onClick={() => {
+                      updateResult('interventionOccurred', false);
+                      updateResult('interventionSituations', []);
+                    }}
                   >
                     Nej
                   </OptionButton>
@@ -305,6 +315,50 @@ export function ResultatScreen() {
             </div>
 
           </div>
+
+          {/* Situations where intervention occurred */}
+          {state.result.interventionOccurred && (
+            <div className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl shadow-sm overflow-hidden mt-6 animate-fade-in">
+              <div className="border-b border-gray-100 dark:border-white/5 bg-gradient-to-r from-gray-50 via-white to-white dark:from-slate-900/40 dark:to-slate-950/20 py-3.5 px-5 flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-1.5 h-4 bg-orange-500 rounded-full shrink-0" />
+                  <span className="font-black text-gray-950 dark:text-gray-200 text-xs uppercase tracking-widest">Ingripande har skett i följande situationer</span>
+                </div>
+                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Valfritt – utan val skrivs "Ingripande har förekommit."</span>
+              </div>
+              <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {interventionSituationOptions.map((sit) => {
+                  const selected = interventionSituations.includes(sit);
+                  return (
+                    <button
+                      key={sit}
+                      type="button"
+                      onClick={() => updateResult(
+                        'interventionSituations',
+                        selected ? interventionSituations.filter(s => s !== sit) : [...interventionSituations, sit]
+                      )}
+                      className={`w-full text-left px-3.5 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-150 flex items-center gap-2.5 border ${
+                        selected
+                          ? 'bg-orange-50 dark:bg-orange-950/30 text-orange-900 dark:text-orange-200 border-orange-400 dark:border-orange-700 font-bold ring-1 ring-orange-400/60'
+                          : 'bg-white dark:bg-slate-900 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:border-gray-300 hover:bg-gray-50/50'
+                      }`}
+                    >
+                      <div className={`w-4 h-4 rounded-[3px] border flex items-center justify-center shrink-0 transition-all duration-150 ${
+                        selected ? 'bg-orange-500 border-orange-500 text-white' : 'border-gray-300 dark:border-gray-700 bg-white dark:bg-slate-800'
+                      }`}>
+                        {selected && (
+                          <svg className="w-2.5 h-2.5 stroke-[3.5px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="truncate">{sit}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Safety check result (Heavy licenses only — for non-heavy licenses this is set already during Körning) */}
           {!state.properties.testType?.includes('Omprov körning') && SAFETY_CHECK_LICENSES.includes(licenseType) && (
@@ -548,8 +602,15 @@ export function ResultatScreen() {
                 </h4>
                 
                 {state.result.interventionOccurred ? (
-                  <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/40 p-3 rounded-xl shadow-sm text-xs font-bold text-red-700 dark:text-red-400 flex items-center gap-2">
-                    <span>Ja</span> — Ingripande har förekommit.
+                  <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/40 p-3 rounded-xl shadow-sm text-xs text-red-700 dark:text-red-400">
+                    <div className="font-bold flex items-center gap-2">
+                      <span>Ja</span> — {interventionSituations.length > 0 ? 'Ingripande har skett i följande situationer:' : 'Ingripande har förekommit.'}
+                    </div>
+                    {interventionSituations.length > 0 && (
+                      <ul className="pl-5 mt-1.5 list-disc space-y-0.5 font-medium text-red-800 dark:text-red-300">
+                        {interventionSituations.map(sit => <li key={sit}>{sit}</li>)}
+                      </ul>
+                    )}
                   </div>
                 ) : (
                   <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-3 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 shadow-sm flex items-center gap-2">

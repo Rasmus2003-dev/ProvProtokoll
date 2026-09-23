@@ -25,10 +25,18 @@ export class ErrorBoundary extends React.Component<Props, State> {
     console.error('Uncaught error:', error, errorInfo);
   }
 
-  private handleReset = () => {
+  // Rendera om skärmen utan att ladda om sidan – provdatan ligger kvar i minnet
+  private handleRetry = () => {
     // @ts-ignore
     this.setState({ hasError: false, error: undefined });
+  };
+
+  private handleReload = () => {
     window.location.reload();
+  };
+
+  private handleGoHome = () => {
+    window.location.href = '/korprov/start';
   };
 
   public render() {
@@ -42,19 +50,32 @@ export class ErrorBoundary extends React.Component<Props, State> {
               </div>
               <CardTitle className="text-danger text-2xl">Något gick fel</CardTitle>
             </CardHeader>
-            <CardContent className="text-center space-y-6">
+            <CardContent className="text-center space-y-5">
               <p className="text-text-muted">
-                Ett oväntat fel uppstod i applikationen. Din data är automatiskt sparad lokalt.
+                Ett oväntat fel uppstod. Allt du fyllt i är sparat lokalt och kan återupptas från startsidan.
               </p>
-              {this.state.error && (
-                <div className="bg-danger/5 p-3 rounded-lg text-left text-xs text-danger/80 w-full overflow-auto max-h-60 font-mono whitespace-pre-wrap">
-                  <div className="font-bold text-sm mb-1">{this.state.error.message}</div>
-                  <div>{this.state.error.stack}</div>
+              <div className="grid gap-2.5">
+                <Button onClick={this.handleRetry} className="w-full" size="lg">
+                  Försök igen
+                </Button>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <Button onClick={this.handleGoHome} variant="outline" className="w-full">
+                    Till startsidan
+                  </Button>
+                  <Button onClick={this.handleReload} variant="outline" className="w-full">
+                    Ladda om
+                  </Button>
                 </div>
+              </div>
+              {this.state.error && (
+                <details className="text-left">
+                  <summary className="text-xs text-text-muted cursor-pointer select-none">Teknisk information</summary>
+                  <div className="mt-2 bg-danger/5 p-3 rounded-lg text-xs text-danger/80 w-full overflow-auto max-h-60 font-mono whitespace-pre-wrap">
+                    <div className="font-bold text-sm mb-1">{this.state.error.message}</div>
+                    <div>{this.state.error.stack}</div>
+                  </div>
+                </details>
               )}
-              <Button onClick={this.handleReset} className="w-full" size="lg">
-                Ladda om sidan
-              </Button>
             </CardContent>
           </Card>
         </div>

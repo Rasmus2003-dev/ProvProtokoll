@@ -140,7 +140,8 @@ export function KorningScreen() {
       ...prev,
       result: {
         ...(prev.result || {}),
-        interventionOccurred: !(prev.result?.interventionOccurred)
+        interventionOccurred: !(prev.result?.interventionOccurred),
+        ...(prev.result?.interventionOccurred ? { interventionSituations: [] } : {})
       }
     }));
   };
@@ -187,6 +188,12 @@ export function KorningScreen() {
 
   const safetyCheckResultRelevant = HEAVY_LICENSES.includes(licenseType) || licenseType === 'BE';
 
+  // Count only driving moments here; safety items have their own section below
+  const drivingItemsAll = isHeavy ? rawAvailableItems.filter(item => !ALL_SAFETY_ITEMS.includes(item)) : rawAvailableItems;
+  const selectedDrivingCount = drivingItemsAll.filter(item => (state.includedTestItems || []).includes(item)).length;
+  const drivingProgress = drivingItemsAll.length > 0 ? Math.round((selectedDrivingCount / drivingItemsAll.length) * 100) : 0;
+  const todayLabel = new Date().toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' });
+
   const renderItemButton = (item: string, customKey?: string) => {
     const isSelected = (state.includedTestItems || []).includes(item);
     return (
@@ -195,10 +202,10 @@ export function KorningScreen() {
         onClick={() => toggleItem(item)}
         type="button"
         className={cn(
-          "flex items-center gap-3 py-2.5 px-3.5 text-left cursor-pointer transition-all duration-150 w-full outline-none select-none rounded-lg border",
-          isSelected 
-            ? "border-slate-800 dark:border-slate-300 text-slate-950 dark:text-white bg-slate-50/80 dark:bg-slate-800/60 shadow-xs ring-1 ring-slate-800/10 dark:ring-white/10" 
-            : "border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900/90 hover:border-slate-300 hover:bg-slate-50/50"
+          "flex items-center gap-3 py-2.5 px-3.5 text-left cursor-pointer transition-all duration-150 w-full outline-none select-none rounded-lg border border-l-4 active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-blue-500/40",
+          isSelected
+            ? "border-slate-300 border-l-[#002f6c] dark:border-slate-600 dark:border-l-blue-500 text-slate-950 dark:text-white bg-blue-50/60 dark:bg-blue-950/30 shadow-xs"
+            : "border-slate-200/90 border-l-slate-200/90 dark:border-slate-800 dark:border-l-slate-800 text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900/90 hover:border-slate-300 hover:border-l-slate-300 hover:bg-slate-50/50"
         )}
         style={{ minHeight: '44px' }}
       >
@@ -235,8 +242,8 @@ export function KorningScreen() {
       
       {/* Surfplatte-Header för Körning */}
       <div className="flex flex-col items-center justify-center pt-1 pb-3 relative">
-        <div className="absolute left-2 top-2 text-xs font-bold text-gray-400 dark:text-zinc-500 font-mono hidden sm:block">
-          {new Date().getDate()}
+        <div className="absolute left-2 top-2 text-[11px] font-semibold text-gray-400 dark:text-zinc-500 hidden sm:block capitalize">
+          {todayLabel}
         </div>
 
         {/* Fullscreen Quick Toggle in top right */}
@@ -259,7 +266,7 @@ export function KorningScreen() {
           <button onClick={() => navigate('/korprov/start')} className="hover:text-gray-700 dark:hover:text-zinc-300 transition-colors whitespace-nowrap">Start</button>
           <button onClick={() => navigate('/korprov/egenskaper')} className="hover:text-gray-700 dark:hover:text-zinc-300 transition-colors whitespace-nowrap">Egenskaper</button>
           <button onClick={() => navigate('/korprov/inledning')} className="hover:text-gray-700 dark:hover:text-zinc-300 transition-colors whitespace-nowrap">Inledning</button>
-          <span className="text-gray-950 dark:text-white font-medium border-b-2 border-gray-900 dark:border-white pb-0.5 whitespace-nowrap">Körning</span>
+          <span className="text-gray-950 dark:text-white font-semibold border-b-2 border-[#002f6c] dark:border-blue-400 pb-0.5 whitespace-nowrap">Körning</span>
           <button onClick={() => navigate('/korprov/resultat')} className="hover:text-gray-700 dark:hover:text-zinc-300 transition-colors whitespace-nowrap">Resultat</button>
         </div>
       </div>
@@ -274,14 +281,22 @@ export function KorningScreen() {
             </span>
           </div>
 
-          {/* Momenträknare för inspektören */}
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-100 dark:bg-zinc-800/60 text-xs font-semibold text-gray-700 dark:text-zinc-300">
-            <span className="font-bold text-[#c40000] dark:text-red-400">
-              {(state.includedTestItems || []).length}
-            </span>
-            <span className="text-gray-400">/</span>
-            <span>{baseDrivingItems.length} provade moment</span>
-          </div>
+          {/* Momenträknare med förloppsindikator för inspektören */}
+          {state.properties?.testType !== 'Omprov säkerhetskontroll' && (
+            <div className="hidden sm:flex items-center gap-2.5 px-2.5 py-1.5 rounded-md bg-gray-100 dark:bg-zinc-800/60 text-xs font-semibold text-gray-700 dark:text-zinc-300">
+              <span>
+                <span className="font-bold text-[#002f6c] dark:text-blue-400">{selectedDrivingCount}</span>
+                <span className="text-gray-400"> / </span>
+                {drivingItemsAll.length} provade moment
+              </span>
+              <div className="w-20 h-1.5 rounded-full bg-gray-200 dark:bg-zinc-700 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-[#002f6c] dark:bg-blue-500 transition-all duration-300"
+                  style={{ width: `${drivingProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
         
         <div className="flex items-center gap-2">

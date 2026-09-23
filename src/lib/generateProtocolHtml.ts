@@ -55,6 +55,7 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
     ...(state.result.drivingResult === 'Underkänt' ? (drivingFail?.situations || []) : []),
     ...(state.result.safetyCheckResult === 'Underkänt' ? (safetyFail?.situations || []) : [])
   ]));
+  const interventionSituations = state.result.interventionSituations || [];
 
   let testTypeLabel = state.properties.licenseType === 'B96' ? 'Släpvagn' : `Körprov ${state.properties.licenseType || 'B'}`;
   if (state.properties.licenseType === 'B96') {
@@ -149,7 +150,14 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
           </ul>
         </div>
       ` : ''}
-      ${state.result.interventionOccurred ? `<div style="margin-top: 10px; margin-bottom: 10px;">Ingripande har förekommit.</div>` : ''}
+      ${state.result.interventionOccurred ? (interventionSituations.length > 0 ? `
+        <div style="margin-top: 10px;">
+          <span><b>Ingripande har skett i följande situationer:</b></span>
+          <ul style="margin-top: 4px; padding-left: 18px; list-style-type: disc;">
+            ${interventionSituations.map(s => `<li style="margin-bottom: 2px; font-size: 13px;">${s}</li>`).join('')}
+          </ul>
+        </div>
+      ` : `<div style="margin-top: 10px; margin-bottom: 10px;">Ingripande har förekommit.</div>`) : ''}
     `
     : `
       ${!isOmprovSakerhet && state.result.drivingResult === 'Godkänt' ? `<h2 style="color: green;">Din körning är godkänd.</h2>` : ''}

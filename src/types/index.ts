@@ -51,12 +51,15 @@ export interface AppState {
     drivingResult: 'Godkänt' | 'Underkänt' | null;
     safetyCheckResult: 'Godkänt' | 'Underkänt' | null;
     interventionOccurred: boolean;
+    interventionSituations?: string[];
     testAborted: boolean;
     drivingFailure: FailureAssessment;
     safetyCheckFailure: FailureAssessment;
   };
   testStartTime: number | null;
   testNotes: string;
+  // Senaste steget i provflödet, så att ett avbrutet/kraschat prov kan återupptas
+  activeStep?: string | null;
 }
 
 export interface ElevRecord {

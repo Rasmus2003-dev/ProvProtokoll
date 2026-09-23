@@ -5,6 +5,7 @@ import { PenTool, X, Clock, Play, Square } from 'lucide-react';
 import { useAppStore } from '../../store/ProvContext';
 import { triggerHaptic } from '../../lib/utils';
 import { AppLogo } from '../../components/icons/AppLogo';
+import { isTestStepPath } from '../../lib/activeTest';
 
 const steps = [
   { id: '1', name: 'Start', path: 'start' },
@@ -39,6 +40,26 @@ export function KorprovLayout() {
     }
     return () => clearInterval(interval);
   }, [state.testStartTime]);
+
+  // Kom ihåg var i provet inspektören är, så att provet kan återupptas
+  // från startsidan om appen stängs eller kraschar.
+  const onTestStep = isTestStepPath(location.pathname);
+  useEffect(() => {
+    if (!onTestStep) return;
+    const step = location.pathname.replace(/\/+$/, '');
+    updateState(s => (s.activeStep === step ? s : { ...s, activeStep: step }));
+  }, [onTestStep, location.pathname, updateState]);
+
+  // Varna innan fliken/appen stängs eller laddas om mitt i ett prov
+  useEffect(() => {
+    if (!onTestStep) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [onTestStep]);
 
   // Mobile step calculation
   const activeStepIdx = useMemo(() => {

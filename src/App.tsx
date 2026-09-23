@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppProvider } from './store/ProvContext';
 import { LoginScreen } from './screens/LoginScreen';
@@ -12,6 +12,27 @@ import { RouteLoading } from './components/RouteLoading';
 import { ToastProvider } from './components/Toast';
 
 import { PullToRefresh } from './components/layout/PullToRefresh';
+import { isTestStepPath } from './lib/activeTest';
+
+// Efter en ny deploy finns gamla chunk-filer inte kvar på servern, och en
+// lazy-import misslyckas då. Ladda om sidan en gång för att hämta nya filer
+// (provdatan ligger kvar i localStorage) istället för att visa en kraschskärm.
+function lazy<T extends React.ComponentType<any>>(factory: () => Promise<{ default: T }>) {
+  return React.lazy(async () => {
+    try {
+      const mod = await factory();
+      sessionStorage.removeItem('provprotokoll-chunk-reload');
+      return mod;
+    } catch (err) {
+      if (!sessionStorage.getItem('provprotokoll-chunk-reload')) {
+        sessionStorage.setItem('provprotokoll-chunk-reload', '1');
+        window.location.reload();
+        return new Promise<{ default: T }>(() => {});
+      }
+      throw err;
+    }
+  });
+}
 
 // Varje skärm laddas som en egen chunk först när den faktiskt besöks,
 // istället för att alla ~17 skärmar + PDF/HTML-bibliotek bundlas i en
@@ -54,7 +75,10 @@ function AppContent() {
     <div className="flex flex-col h-screen overflow-hidden bg-[#f8f9fa] dark:bg-[#0b1120] text-gray-900 dark:text-gray-100 relative">
       <OfflineIndicator />
       <TopAppBar />
-      <PullToRefresh>
+      {/* Ingen dra-för-att-uppdatera mitt i ett prov – en oavsiktlig dragning ska inte ladda om appen */}
+      <PullToRefresh disabled={isTestStepPath(location.pathname)}>
+        {/* Nyckel på sökvägen: ett fel på en skärm låser inte appen, byte av skärm återställer */}
+        <ErrorBoundary key={location.pathname}>
         <Suspense fallback={<RouteLoading />}>
           <Routes>
             <Route path="/" element={<Navigate to="/korprov/start" replace />} />
@@ -80,6 +104,7 @@ function AppContent() {
             <Route path="*" element={<Navigate to="/korprov/start" replace />} />
           </Routes>
         </Suspense>
+        </ErrorBoundary>
       </PullToRefresh>
       <div className="md:hidden shrink-0">
         <BottomNavBar />
