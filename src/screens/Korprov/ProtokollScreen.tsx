@@ -3,7 +3,8 @@ import { useAppStore } from '../../store/ProvContext';
 import { Button } from '../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { OfficialPrintLayout } from './components/OfficialPrintLayout';
-import { AlertTriangle, Send, FileCheck, Mail, Copy, Check, Loader2, MailCheck, MailX, ArrowLeft, Printer, FileDown, Code2, Link2, Share2, QrCode } from 'lucide-react';
+import { TrafiklararProtokollView } from './components/TrafiklararProtokollView';
+import { AlertTriangle, Send, FileCheck, Mail, Copy, Check, Loader2, MailCheck, MailX, ArrowLeft, Printer, FileDown, Code2, Link2, Share2, QrCode, GraduationCap } from 'lucide-react';
 import { downloadProtocolHtml, downloadEmailProtocolHtml, generateEmailProtocolHtml, printProtocol } from '../../lib/generateProtocolHtml';
 import { authHeaders } from '../../lib/inspectors';
 import { useToast } from '../../components/Toast';
@@ -14,7 +15,7 @@ export function ProtokollScreen() {
   const { state, saveTest, resetCurrentTest, profile } = useAppStore();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'email' | 'beslut'>('beslut');
+  const [activeTab, setActiveTab] = useState<'email' | 'beslut' | 'larare'>('beslut');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -36,13 +37,21 @@ export function ProtokollScreen() {
   // garanterat identisk layout istället för en separat manuellt uppbyggd
   // PDF som kan hamna i otakt med protokollets faktiska utseende.
   const handlePrint = () => {
-    printProtocol(state, profile?.name);
+    if (activeTab === 'larare') {
+      window.print();
+    } else {
+      printProtocol(state, profile?.name);
+    }
   };
 
   const handleDownloadPDF = () => {
     setIsGeneratingPdf(true);
     setTimeout(() => {
-      printProtocol(state, profile?.name);
+      if (activeTab === 'larare') {
+        window.print();
+      } else {
+        printProtocol(state, profile?.name);
+      }
       setIsGeneratingPdf(false);
     }, 50);
   };
@@ -232,7 +241,13 @@ export function ProtokollScreen() {
       
       {/* Officiell utskriftsmall för PDF / Skriv ut (syns bara vid utskrift) */}
       <div className="hidden print:block w-full bg-white print:m-0 print:p-0">
-        <OfficialPrintLayout />
+        {activeTab === 'larare' ? (
+          <div className="p-8 max-w-[760px] mx-auto">
+            <TrafiklararProtokollView state={state} inspectorName={profile?.name} />
+          </div>
+        ) : (
+          <OfficialPrintLayout />
+        )}
       </div>
 
       {/* Dynamic top tool-bar to match standalone Web App wrapper (hidden during printing) */}
@@ -276,16 +291,16 @@ export function ProtokollScreen() {
         {/* Rad 2: vy och export */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="inline-flex p-0.5 rounded-lg bg-slate-200/70 dark:bg-slate-800 self-start" role="tablist">
-            {([['beslut', 'Protokoll'], ['email', 'E-post till kandidaten']] as const).map(([id, label]) => (
+            {([['beslut', 'Officiellt protokoll'], ['larare', '🎓 Trafiklärarprotokoll'], ['email', 'E-post till kandidaten']] as const).map(([id, label]) => (
               <button
                 key={id}
                 type="button"
                 role="tab"
                 aria-selected={activeTab === id}
                 onClick={() => setActiveTab(id)}
-                className={`h-8 px-3 rounded-md text-[13px] font-medium transition-colors cursor-pointer ${
+                className={`h-8 px-3 rounded-md text-[13px] font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
                   activeTab === id
-                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-semibold'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -434,10 +449,14 @@ export function ProtokollScreen() {
           </div>
         )}
 
-        {/* TRV Style Document Wrapper */}
-        <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
-          <OfficialPrintLayout />
-        </div>
+        {/* Document Content: Lärarens interna protokoll eller TRV Officiellt beslut */}
+        {activeTab === 'larare' ? (
+          <TrafiklararProtokollView state={state} inspectorName={profile?.name} />
+        ) : (
+          <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+            <OfficialPrintLayout />
+          </div>
+        )}
       </div>
 
       {/* HTML Email Modal */}
