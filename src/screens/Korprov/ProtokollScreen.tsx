@@ -3,10 +3,11 @@ import { useAppStore } from '../../store/ProvContext';
 import { Button } from '../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { OfficialPrintLayout } from './components/OfficialPrintLayout';
-import { AlertTriangle, Send, FileCheck, Mail, Copy, Check, Loader2, MailCheck, MailX, ArrowLeft, Printer, FileDown, Code2, Link2 } from 'lucide-react';
+import { AlertTriangle, Send, FileCheck, Mail, Copy, Check, Loader2, MailCheck, MailX, ArrowLeft, Printer, FileDown, Code2, Link2, Share2, QrCode } from 'lucide-react';
 import { downloadProtocolHtml, downloadEmailProtocolHtml, generateEmailProtocolHtml, printProtocol } from '../../lib/generateProtocolHtml';
 import { authHeaders } from '../../lib/inspectors';
 import { useToast } from '../../components/Toast';
+import { CandidateShareModal } from './components/CandidateShareModal';
 
 export function ProtokollScreen() {
   const { state, saveTest, resetCurrentTest, profile } = useAppStore();
@@ -15,6 +16,7 @@ export function ProtokollScreen() {
   const [activeTab, setActiveTab] = useState<'email' | 'beslut'>('beslut');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [copiedEmailHtml, setCopiedEmailHtml] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isGeneratingHtml, setIsGeneratingHtml] = useState(false);
@@ -233,7 +235,7 @@ export function ProtokollScreen() {
 
       {/* Dynamic top tool-bar to match standalone Web App wrapper (hidden during printing) */}
       <div className="max-w-[730px] mx-auto mb-4 flex flex-col gap-2.5 print:hidden px-2 sm:px-0">
-        {/* Rad 1: tillbaka och slutför */}
+        {/* Rad 1: tillbaka, dela länk och slutför */}
         <div className="flex items-center justify-between gap-3">
           <button
             type="button"
@@ -242,18 +244,31 @@ export function ProtokollScreen() {
           >
             <ArrowLeft size={16} /> Tillbaka
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              setConfirmResultChecked(false);
-              setConfirmReportChecked(false);
-              setConfirmEmailChecked(false);
-              setShowConfirmModal(true);
-            }}
-            className="h-9 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
-          >
-            <Check size={16} strokeWidth={2.75} /> Spara och slutför
-          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowShareModal(true)}
+              className="h-9 px-3.5 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 text-[#002f6c] dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
+              title="Dela unik länk eller QR-kod till kandidaten"
+            >
+              <Share2 size={14} className="text-blue-600 dark:text-blue-400" />
+              <span>Dela länk & QR</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmResultChecked(false);
+                setConfirmReportChecked(false);
+                setConfirmEmailChecked(false);
+                setShowConfirmModal(true);
+              }}
+              className="h-9 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
+            >
+              <Check size={16} strokeWidth={2.75} /> Spara och slutför
+            </button>
+          </div>
         </div>
 
         {/* Rad 2: vy och export */}
@@ -279,19 +294,11 @@ export function ProtokollScreen() {
 
           <div className="grid grid-cols-5 sm:flex items-stretch rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 divide-x divide-slate-200 dark:divide-slate-700 overflow-hidden w-full sm:w-auto">
             {[
+              { label: 'Dela länk', icon: <Share2 size={15} className="text-blue-600 dark:text-blue-400" />, onClick: () => setShowShareModal(true), title: 'Dela unik länk och QR-kod till kandidaten' },
               { label: 'Skriv ut', icon: <Printer size={15} />, onClick: handlePrint, title: 'Skriv ut protokollet' },
               { label: isGeneratingPdf ? 'Öppnar…' : 'PDF', icon: isGeneratingPdf ? <Loader2 size={15} className="animate-spin" /> : <FileDown size={15} />, onClick: handleDownloadPDF, disabled: isGeneratingPdf, title: 'Öppnar utskriften – välj "Spara som PDF"' },
               { label: 'E-post', icon: <Mail size={15} />, onClick: () => setShowEmailModal(true), title: 'Förhandsgranska och ladda ned mejlet med protokollet' },
               { label: isGeneratingHtml ? 'Skapar…' : 'HTML', icon: isGeneratingHtml ? <Loader2 size={15} className="animate-spin" /> : <Code2 size={15} />, onClick: handleDownloadHTML, disabled: isGeneratingHtml, title: 'Ladda ned protokollet som HTML-fil' },
-              {
-                label: 'Mejla länk',
-                icon: <Link2 size={15} />,
-                title: 'Öppna mejlprogrammet med en länk till appen',
-                onClick: () => {
-                  const appUrl = window.location.origin;
-                  window.location.href = `mailto:${state.properties.email || ''}?subject=Resultat%20på%20ditt%20körprov%20${licenseType}&body=Hej!%0D%0A%0D%0AHär%20är%20länken%20till%20provprotokollssystemet:%0D%0A${encodeURIComponent(appUrl)}%0D%0A%0D%0AVänliga%20hälsningar`;
-                },
-              },
             ].map(btn => (
               <button
                 key={btn.title}
@@ -631,6 +638,14 @@ export function ProtokollScreen() {
           </div>
         </div>
       )}
+
+      {/* Dela unik länk modal */}
+      <CandidateShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        state={state}
+        examinerName={profile?.name}
+      />
     </div>
   );
 }

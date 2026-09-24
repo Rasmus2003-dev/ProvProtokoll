@@ -53,6 +53,7 @@ const KorningScreen = lazy(() => import('./screens/Korprov/KorningScreen').then(
 const ResultatScreen = lazy(() => import('./screens/Korprov/ResultatScreen').then(m => ({ default: m.ResultatScreen })));
 const ProtokollScreen = lazy(() => import('./screens/Korprov/ProtokollScreen').then(m => ({ default: m.ProtokollScreen })));
 const InspektorerScreen = lazy(() => import('./screens/InspektorerScreen').then(m => ({ default: m.InspektorerScreen })));
+const KandidatProtokollScreen = lazy(() => import('./screens/KandidatProtokollScreen').then(m => ({ default: m.KandidatProtokollScreen })));
 
 function AppContent() {
   const location = useLocation();
@@ -65,6 +66,22 @@ function AppContent() {
         <OfflineIndicator />
         <Suspense fallback={<RouteLoading />}>
           <ElevProvScreen />
+        </Suspense>
+      </ErrorBoundary>
+    );
+  }
+
+  // Publik kandidatvy för körprovsprotokoll (delad unik länk) – kräver ingen inspektörsinloggning
+  if (location.pathname.startsWith('/p') || location.pathname.startsWith('/kandidat')) {
+    return (
+      <ErrorBoundary key={location.pathname}>
+        <Suspense fallback={<RouteLoading />}>
+          <Routes>
+            <Route path="/p/:id" element={<KandidatProtokollScreen />} />
+            <Route path="/p" element={<KandidatProtokollScreen />} />
+            <Route path="/kandidat/:id" element={<KandidatProtokollScreen />} />
+            <Route path="*" element={<KandidatProtokollScreen />} />
+          </Routes>
         </Suspense>
       </ErrorBoundary>
     );
