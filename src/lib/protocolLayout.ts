@@ -58,6 +58,22 @@ export function resultHeadings(state: AppState): ResultHeading[] {
   return headings;
 }
 
+// Formaterar rubriken så att "underkänd." / "godkänd." aldrig hamnar ensam på en ny rad
+// (typografisk änka / föräldralöst ord). "Din säkerhetskontroll" hålls ihop och "är underkänd." hålls ihop.
+export function formatResultHeadingHtml(text: string): string {
+  if (text.includes('säkerhetskontroll')) {
+    const isPassed = text.includes('godkänd');
+    const punct = text.endsWith('!') ? '!' : '.';
+    return `<span style="white-space: nowrap;">Din säkerhetskontroll</span> <span style="white-space: nowrap;">är&nbsp;${isPassed ? 'godkänd' : 'underkänd'}${punct}</span>`;
+  }
+  if (text.includes('körning')) {
+    const isPassed = text.includes('godkänd');
+    const punct = text.endsWith('!') ? '!' : '.';
+    return `<span style="white-space: nowrap;">Din körning</span> <span style="white-space: nowrap;">är&nbsp;${isPassed ? 'godkänd' : 'underkänd'}${punct}</span>`;
+  }
+  return text.replace(/\s(underkänd|godkänd)(\.?|!?)$/i, '&nbsp;$1$2');
+}
+
 // Vilka delprov som faktiskt ingår i provet. Gamla uppgifter (t.ex. en säkerhetskontroll
 // kvar efter byte från D till A) räknas inte.
 export function relevantParts(state: AppState) {

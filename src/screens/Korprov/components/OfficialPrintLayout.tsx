@@ -7,6 +7,30 @@ interface OfficialPrintLayoutProps {
   testState?: AppState;
 }
 
+function renderHeadingJsx(text: string) {
+  if (text.includes('säkerhetskontroll')) {
+    const isPassed = text.includes('godkänd');
+    const punct = text.endsWith('!') ? '!' : '.';
+    return (
+      <>
+        <span style={{ whiteSpace: 'nowrap' }}>Din säkerhetskontroll</span>{' '}
+        <span style={{ whiteSpace: 'nowrap' }}>är&nbsp;{isPassed ? 'godkänd' : 'underkänd'}{punct}</span>
+      </>
+    );
+  }
+  if (text.includes('körning')) {
+    const isPassed = text.includes('godkänd');
+    const punct = text.endsWith('!') ? '!' : '.';
+    return (
+      <>
+        <span style={{ whiteSpace: 'nowrap' }}>Din körning</span>{' '}
+        <span style={{ whiteSpace: 'nowrap' }}>är&nbsp;{isPassed ? 'godkänd' : 'underkänd'}{punct}</span>
+      </>
+    );
+  }
+  return text;
+}
+
 export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}) {
   const { state: currentState, profile } = useAppStore();
   const state = testState || currentState;
@@ -256,8 +280,8 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
         {newLayout ? (
           <div>
             {resultHeadings(state).map(h => (
-              <h2 key={h.text} style={{ color: h.passed ? 'green' : 'red', fontSize: '20px', margin: '0 0 15px 0', fontWeight: 'bold' }}>
-                {h.text}
+              <h2 key={h.text} style={{ color: h.passed ? 'green' : 'red', fontSize: '18px', margin: '0 0 14px 0', fontWeight: 'bold', lineHeight: 1.35 }}>
+                {renderHeadingJsx(h.text)}
               </h2>
             ))}
 
@@ -306,18 +330,18 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
         ) : isFailed ? (
           <div>
             {!isOmprovSakerhet && !isAborted && state.result.drivingResult === 'Godkänt' && (
-              <h2 style={{ color: 'green', fontSize: '20px', margin: '0 0 15px 0', fontWeight: 'bold' }}>
-                Din körning är godkänd.
+              <h2 style={{ color: 'green', fontSize: '18px', margin: '0 0 14px 0', fontWeight: 'bold', lineHeight: 1.35 }}>
+                {renderHeadingJsx('Din körning är godkänd.')}
               </h2>
             )}
             {!isOmprovSakerhet && state.result.drivingResult === 'Underkänt' && (
-              <h2 style={{ color: 'red', fontSize: '20px', margin: '0 0 15px 0', fontWeight: 'bold' }}>
-                Din körning är underkänd.
+              <h2 style={{ color: 'red', fontSize: '18px', margin: '0 0 14px 0', fontWeight: 'bold', lineHeight: 1.35 }}>
+                {renderHeadingJsx('Din körning är underkänd.')}
               </h2>
             )}
             {isSafetyCheckRequired && !isOmprovKorning && state.result.drivingResult !== 'Underkänt' && state.result.safetyCheckResult === 'Underkänt' && (
-              <h2 style={{ color: 'red', fontSize: '20px', margin: '0 0 15px 0', fontWeight: 'bold' }}>
-                Din säkerhetskontroll är underkänd.
+              <h2 style={{ color: 'red', fontSize: '18px', margin: '0 0 14px 0', fontWeight: 'bold', lineHeight: 1.35 }}>
+                {renderHeadingJsx('Din säkerhetskontroll är underkänd.')}
               </h2>
             )}
 
@@ -424,13 +448,13 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
         ) : (
           <div>
             {!isOmprovSakerhet && state.result.drivingResult === 'Godkänt' && (
-              <h2 style={{ color: 'green', fontSize: '20px', margin: '0 0 15px 0', fontWeight: 'bold' }}>
-                Din körning är godkänd.
+              <h2 style={{ color: 'green', fontSize: '18px', margin: '0 0 14px 0', fontWeight: 'bold', lineHeight: 1.35 }}>
+                {renderHeadingJsx('Din körning är godkänd.')}
               </h2>
             )}
             {isSafetyCheckRequired && state.result.safetyCheckResult === 'Godkänt' && (
-              <h2 style={{ color: 'green', fontSize: '20px', margin: '10px 0', fontWeight: 'bold' }}>
-                Din säkerhetskontroll är godkänd.
+              <h2 style={{ color: 'green', fontSize: '18px', margin: '10px 0', fontWeight: 'bold', lineHeight: 1.35 }}>
+                {renderHeadingJsx('Din säkerhetskontroll är godkänd.')}
               </h2>
             )}
           </div>

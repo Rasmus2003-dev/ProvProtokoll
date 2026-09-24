@@ -29,6 +29,7 @@ export function CandidateShareModal({ isOpen, onClose, state, examinerName }: Ca
   const [summary, setSummary] = useState<SharedProtocolSummary | null>(null);
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(true);
+  const [phoneNumber, setPhoneNumber] = useState('');
 
   useEffect(() => {
     if (!isOpen) return;
@@ -73,9 +74,12 @@ export function CandidateShareModal({ isOpen, onClose, state, examinerName }: Ca
     }
   };
 
-  const smsBody = encodeURIComponent(`Hej ${state.properties.studentName}! Här kan du se ditt digitala körprovsprotokoll: ${shareUrl}`);
-  const smsLink = `sms:?body=${smsBody}`;
-  const whatsappLink = `https://wa.me/?text=${smsBody}`;
+  const smsBody = encodeURIComponent(`Hej ${state.properties.studentName || 'Kandidat'}! Här kan du se ditt digitala körprovsprotokoll: ${shareUrl}`);
+  const cleanPhone = phoneNumber.replace(/[^0-9+]/g, '');
+  const smsLink = cleanPhone ? `sms:${cleanPhone}?body=${smsBody}` : `sms:?body=${smsBody}`;
+  const whatsappLink = cleanPhone 
+    ? `https://wa.me/${cleanPhone.replace('+', '')}?text=${smsBody}` 
+    : `https://wa.me/?text=${smsBody}`;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
@@ -172,25 +176,44 @@ export function CandidateShareModal({ isOpen, onClose, state, examinerName }: Ca
               </div>
             </div>
 
-            {/* Quick Share Action Buttons */}
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <a
-                href={smsLink}
-                className="h-10 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-800 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
-              >
-                <MessageSquare size={14} className="text-blue-600 dark:text-blue-400" />
-                <span>Skicka via SMS</span>
-              </a>
-
-              <a
-                href={whatsappLink}
-                target="_blank"
-                rel="noreferrer"
-                className="h-10 px-3 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
-              >
-                <Send size={14} className="text-emerald-600" />
-                <span>WhatsApp</span>
-              </a>
+            {/* Free SMS direct send section */}
+            <div className="p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 rounded-2xl space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-[#002f6c] dark:text-blue-300 flex items-center gap-1.5">
+                  <MessageSquare size={13} />
+                  <span>Skicka via SMS (Gratis via din enhet)</span>
+                </label>
+                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded">
+                  0 kr extra
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="tel"
+                  placeholder="Kandidatens mobilnr (t.ex. 0701234567)"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="flex-1 h-9 px-3 text-xs bg-white dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-xl text-gray-800 dark:text-slate-200 outline-none focus:border-[#002f6c]"
+                />
+                <a
+                  href={smsLink}
+                  className="h-9 px-3 rounded-xl bg-[#002f6c] hover:bg-[#00204a] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap shadow-2xs"
+                >
+                  <Send size={12} />
+                  <span>Öppna SMS</span>
+                </a>
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-gray-500 dark:text-slate-400 pt-0.5">
+                <span>Skickas via din telefons vanliga fria SMS</span>
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-emerald-700 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1"
+                >
+                  Eller via WhatsApp
+                </a>
+              </div>
             </div>
 
             {/* Preview Candidate View Button */}
