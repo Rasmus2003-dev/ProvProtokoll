@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
-import { BookOpen, FileText, Printer, ListChecks } from 'lucide-react';
+import { BookOpen, FileText, Printer, ListChecks, Truck } from 'lucide-react';
 import { useAppStore } from '../store/ProvContext';
 import { LICENSE_GUIDES } from '../data/licenseGuidesData';
 import { LicenseGuideView } from '../components/lathund/LicenseGuideView';
+import { HeavyVehicleGuideView } from '../components/lathund/HeavyVehicleGuideView';
 import { TdokViewer } from '../components/lathund/TdokViewer';
 import { useStoredState } from '../components/lathund/Highlight';
 
 export function LathundarScreen() {
   const { state } = useAppStore();
-  const [activeTab, setActiveTab] = useStoredState<'behorighet' | 'dokument'>('lathund-tab', 'behorighet');
+  const [activeTab, setActiveTab] = useStoredState<'behorighet' | 'tunga' | 'dokument'>('lathund-tab', 'behorighet');
   // Börja på behörigheten för det aktuella provet om det finns en lathund för den
   const [selectedLicense, setSelectedLicense] = useState<string>(() => {
     const current = state.properties.licenseType;
@@ -36,7 +37,7 @@ export function LathundarScreen() {
           <div>
             <h1 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white tracking-tight">Lathundar</h1>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              Snabbguide per behörighet med checklistor, samt rutinbeskrivningar med sökning.
+              Snabbguide per behörighet, tekniska fordonsguider för tunga fordon, samt sökbara rutinbeskrivningar.
             </p>
           </div>
         </div>
@@ -50,6 +51,14 @@ export function LathundarScreen() {
               }`}
             >
               <ListChecks size={14} /> Per behörighet
+            </button>
+            <button
+              onClick={() => setActiveTab('tunga')}
+              className={`h-9 px-3.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'tunga' ? 'bg-white dark:bg-slate-900 text-[#002f6c] dark:text-blue-400 shadow-xs' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              <Truck size={14} /> Tunga fordon & Teknik
             </button>
             <button
               onClick={() => setActiveTab('dokument')}
@@ -69,9 +78,11 @@ export function LathundarScreen() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl shadow-sm p-4 sm:p-6 flex-1 flex flex-col">
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl shadow-sm p-4 sm:p-6 flex-1 flex flex-col overflow-y-auto">
         {activeTab === 'behorighet' ? (
           <LicenseGuideView license={selectedLicense} onLicenseChange={setSelectedLicense} extraNote={extraNote} />
+        ) : activeTab === 'tunga' ? (
+          <HeavyVehicleGuideView />
         ) : (
           <TdokViewer />
         )}

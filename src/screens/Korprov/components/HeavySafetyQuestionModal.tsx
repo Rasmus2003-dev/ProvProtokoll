@@ -45,28 +45,54 @@ export function HeavySafetyQuestionModal({ isOpen, onClose, licenseType }: Heavy
     const pool = getQuestionsForLicense(licenseType);
     const usePool = pool.length > 0 ? pool : HEAVY_SAFETY_QUESTIONS_76;
     const randomIndex = Math.floor(Math.random() * usePool.length);
-    return usePool[randomIndex];
+    return usePool[randomIndex] || HEAVY_SAFETY_QUESTIONS_76[0];
   });
 
   const [showAnswer, setShowAnswer] = useState(false);
   const [showFollowUps, setShowFollowUps] = useState(false);
 
-  if (!isOpen) return null;
+  // Varje gång modalen öppnas (isOpen blir true): slumpa fram en ny fråga automatiskt och nollställ svar
+  const prevIsOpen = React.useRef(isOpen);
+  React.useEffect(() => {
+    if (isOpen && !prevIsOpen.current && availableQuestions.length > 0) {
+      const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+      setCurrentQuestion(availableQuestions[randomIndex]);
+      setShowAnswer(false);
+      setShowFollowUps(false);
+    }
+    prevIsOpen.current = isOpen;
+  }, [isOpen, availableQuestions]);
+
+  // Synka aktuell fråga om urvalspoolen ändras och frågan inte längre finns
+  React.useEffect(() => {
+    if (availableQuestions.length > 0 && (!currentQuestion || !availableQuestions.some(q => q.id === currentQuestion.id))) {
+      setCurrentQuestion(availableQuestions[0]);
+    }
+  }, [availableQuestions, currentQuestion]);
+
+  if (!isOpen || !currentQuestion) return null;
 
   const rollNewQuestion = () => {
     triggerHaptic('medium');
-    let nextIndex: number;
-    do {
-      nextIndex = Math.floor(Math.random() * availableQuestions.length);
-    } while (nextIndex === availableQuestions.findIndex(q => q.id === currentQuestion.id) && availableQuestions.length > 1);
+    if (!availableQuestions || availableQuestions.length === 0) return;
+    let nextIndex = 0;
+    if (availableQuestions.length > 1) {
+      let attempts = 0;
+      do {
+        nextIndex = Math.floor(Math.random() * availableQuestions.length);
+        attempts++;
+      } while (nextIndex === availableQuestions.findIndex(q => q.id === currentQuestion?.id) && attempts < 10);
+    }
 
     setShowAnswer(false);
     setShowFollowUps(false);
-    setCurrentQuestion(availableQuestions[nextIndex]);
+    if (availableQuestions[nextIndex]) {
+      setCurrentQuestion(availableQuestions[nextIndex]);
+    }
   };
 
   const isBus = ['D1', 'D', 'D1E', 'DE'].includes(licenseType.toUpperCase());
-  const isTrailer = ['C1E', 'CE', 'D1E', 'DE'].includes(licenseType.toUpperCase());
+  const isTrailer = ['C1E', 'CE', 'D1E', 'DE', 'BE', 'B96'].includes(licenseType.toUpperCase());
 
   return (
     <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4">
@@ -84,21 +110,19 @@ export function HeavySafetyQuestionModal({ isOpen, onClose, licenseType }: Heavy
                   {isBus ? <Bus size={12} /> : <Truck size={12} />}
                   <span>Behörighet {licenseType}</span>
                 </span>
+
+                <span className="text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-md border border-emerald-300/50 dark:border-emerald-800/40">
+                  Enkelt språk 😊 Inget krångligt
+                </span>
                 
                 {currentQuestion.vehicleFocus && (
                   <span className="text-[10px] font-extrabold uppercase tracking-wide bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-md border border-amber-300/50 dark:border-amber-800/40">
                     {currentQuestion.vehicleFocus}
                   </span>
                 )}
-
-                {currentQuestion.difficulty && (
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-800`}>
-                    {currentQuestion.difficulty}
-                  </span>
-                )}
               </div>
               <h3 className="text-base sm:text-lg font-black text-gray-900 dark:text-white leading-tight mt-1">
-                Funktionsfråga & Följdfrågor
+                Slumpad funktionsfråga & svar
               </h3>
             </div>
           </div>
@@ -106,6 +130,7 @@ export function HeavySafetyQuestionModal({ isOpen, onClose, licenseType }: Heavy
           <button 
             onClick={onClose}
             className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer shrink-0"
+            title="Stäng"
           >
             <X size={18} />
           </button>

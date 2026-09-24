@@ -537,7 +537,24 @@ export function ProtokollScreen() {
                 </div>
 
                 {/* Obligatoriska bekräftelserutor så man inte råkar skicka fel resultat av misstag */}
-                <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-zinc-400">Bekräftelse</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allReady = confirmResultChecked && confirmReportChecked && (!state.properties.email || confirmEmailChecked);
+                      const next = !allReady;
+                      setConfirmResultChecked(next);
+                      setConfirmReportChecked(next);
+                      if (state.properties.email) setConfirmEmailChecked(next);
+                    }}
+                    className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                  >
+                    {(confirmResultChecked && confirmReportChecked && (!state.properties.email || confirmEmailChecked)) ? 'Avmarkera alla' : 'Bocka för alla'}
+                  </button>
+                </div>
+
+                <div className="space-y-2 pt-0.5">
                   <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors">
                     <input
                       type="checkbox"

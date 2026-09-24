@@ -347,7 +347,7 @@ export function ElevProvScreen() {
     setIsLoggedIn(true);
   };
 
-  // Procedural Builder utilizing shared module function with randomized seed per attempt
+  // Procedural Builder utilizing shared module function with deterministic seed per candidate
   const buildTestQuestions = (testId: string) => {
     let customQs: Question[] = [];
     const customSaved = localStorage.getItem('custom_questions_pool');
@@ -356,11 +356,9 @@ export function ElevProvScreen() {
         customQs = JSON.parse(customSaved) || [];
       } catch (e) {}
     }
-    // Randomize uniquely per candidate test attempt using timestamp and random salt
-    const attemptSalt = Date.now() + '_' + Math.random().toString(36).substring(2, 8);
-    const candidateId = activeCandidate?.id || localStorage.getItem('current_candidate_id') || pnrInput || 'elev';
-    const seed = `${candidateId}_${attemptSalt}`;
-    return buildTestQuestionsShared(testId, customQs, seed);
+    // Deterministiskt frö baserat på kandidat-ID så att provet har samma frågor vid sidomladdning och matchar provledarens monitor
+    const candidateId = activeCandidate?.id || localStorage.getItem('current_candidate_id') || (pnrInput ? pnrInput.replace(/\D/g, '') : 'elev');
+    return buildTestQuestionsShared(testId, customQs, candidateId);
   };
 
   // Launch test selection
@@ -392,23 +390,26 @@ export function ElevProvScreen() {
   };
 
   // Audio Vocal read aloud helper (sv-SE Localization)
-  const handleTTS = (text: string) => {
+  const handleTTS = (text?: string) => {
+    if (!text) return;
     if ('speechSynthesis' in window) {
-      // Cancel previous
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      
-      // Attempt Swedish speaker
-      const voices = window.speechSynthesis.getVoices();
-      const svVoice = voices.find(v => v.lang.startsWith('sv'));
-      if (svVoice) {
-        utterance.voice = svVoice;
+      try {
+        // Cancel previous
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Attempt Swedish speaker
+        const voices = window.speechSynthesis.getVoices();
+        const svVoice = voices.find(v => v.lang.startsWith('sv'));
+        if (svVoice) {
+          utterance.voice = svVoice;
+        }
+        utterance.lang = 'sv-SE';
+        utterance.rate = 0.95;
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.warn('TTS playback error:', err);
       }
-      utterance.lang = 'sv-SE';
-      utterance.rate = 0.95;
-      window.speechSynthesis.speak(utterance);
-    } else {
-      alert("Röstuppläsning stöds inte i denna webbläsare.");
     }
   };
 
@@ -417,8 +418,9 @@ export function ElevProvScreen() {
     const nextAnswers = { ...selectedAnswers, [currentQuestion]: optIndex };
     setSelectedAnswers(nextAnswers);
 
-    // Calculate progression percentage
-    const progressPercent = Math.round((Object.keys(nextAnswers).length / currentTestQuestions.length) * 100);
+    // Calculate progression percentage with guard against zero
+    const totalQ = currentTestQuestions.length;
+    const progressPercent = totalQ > 0 ? Math.min(100, Math.round((Object.keys(nextAnswers).length / totalQ) * 100)) : 0;
 
     // Save live answers in master list
     updateMasterCandidateList({
@@ -460,7 +462,8 @@ export function ElevProvScreen() {
       }
     });
 
-    const passedLimit = Math.ceil(currentTestQuestions.length * 0.8);
+    const totalCount = currentTestQuestions.length || 1;
+    const passedLimit = Math.ceil(totalCount * 0.8);
     return { score, total: currentTestQuestions.length, passed: score >= passedLimit, categoryScores };
   };
 

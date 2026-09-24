@@ -7,6 +7,28 @@ import './index.css';
 // @ts-ignore
 import { registerSW } from 'virtual:pwa-register';
 
+// Globala felhanterare för att fånga oväntade asynkrona fel eller brutna nätverksanrop
+if (typeof window !== 'undefined') {
+  window.addEventListener('unhandledrejection', (event) => {
+    // Tysta vanliga ofarliga nätverks-/abortfel men logga strukturerat
+    const reason = event.reason;
+    if (reason && (reason.name === 'AbortError' || reason.message?.includes?.('aborted'))) {
+      event.preventDefault();
+      return;
+    }
+    console.warn('[Global Unhandled Rejection]', reason);
+  });
+
+  window.addEventListener('error', (event) => {
+    // Förhindra att skriptfel från externa tillägg eller tredjepart kraschar hela appen
+    if (event.filename && !event.filename.includes(window.location.origin) && !event.filename.startsWith('blob:')) {
+      console.warn('[External Script Error Ignored]', event.message);
+      return;
+    }
+    console.error('[Global Window Error]', event.error || event.message);
+  });
+}
+
 import { isTestStepPath } from './lib/activeTest';
 
 // Utvecklingsläge: en service worker från en tidigare byggd version (t.ex. efter

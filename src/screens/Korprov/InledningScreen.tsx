@@ -12,7 +12,7 @@ import {
   HelpCircle,
   BookOpen
 } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn, triggerHaptic } from '../../lib/utils';
 import { KompetensOmradenCard } from './components/KompetensOmradenCard';
 
 export function InledningScreen() {
@@ -24,6 +24,7 @@ export function InledningScreen() {
   };
 
   const toggleCheck = (field: keyof typeof state.checklist) => {
+    triggerHaptic('light');
     updateState((prev) => ({
       ...prev,
       checklist: { ...(prev.checklist || {}), [field]: !(prev.checklist?.[field]) }
@@ -39,6 +40,19 @@ export function InledningScreen() {
   ] as const;
 
   const allChecked = checks.every(c => state.checklist?.[c.id]);
+
+  const toggleAllChecks = () => {
+    triggerHaptic('medium');
+    const targetState = !allChecked;
+    const updated: Record<string, boolean> = {};
+    checks.forEach(c => {
+      updated[c.id] = targetState;
+    });
+    updateState((prev) => ({
+      ...prev,
+      checklist: { ...(prev.checklist || {}), ...updated }
+    }));
+  };
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 px-4 sm:px-6 w-full pb-24 font-sans text-gray-900 dark:text-gray-100 antialiased">
@@ -74,9 +88,18 @@ export function InledningScreen() {
               <span className="w-6 h-6 rounded-full bg-[#002f6c] text-white flex items-center justify-center text-xs">1</span>
               Checklista för provstart
             </h2>
-            <span className="text-xs font-bold text-gray-500 dark:text-zinc-400">
-              {checks.filter(c => state.checklist?.[c.id]).length} / {checks.length} klara
-            </span>
+            <div className="flex items-center gap-2.5">
+              <span className="text-xs font-bold text-gray-500 dark:text-zinc-400">
+                {checks.filter(c => state.checklist?.[c.id]).length}/{checks.length}
+              </span>
+              <button
+                type="button"
+                onClick={toggleAllChecks}
+                className="text-xs font-bold text-[#002f6c] dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline cursor-pointer"
+              >
+                {allChecked ? 'Avmarkera alla' : 'Markera alla'}
+              </button>
+            </div>
           </div>
           
           <Card className="border-2 border-gray-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 overflow-hidden rounded-2xl">

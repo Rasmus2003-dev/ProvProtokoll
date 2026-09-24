@@ -61,12 +61,12 @@ function AppContent() {
   // Student/candidate screen should run standalone without login
   if (location.pathname === '/elevprov') {
     return (
-      <>
+      <ErrorBoundary key={location.pathname}>
         <OfflineIndicator />
         <Suspense fallback={<RouteLoading />}>
           <ElevProvScreen />
         </Suspense>
-      </>
+      </ErrorBoundary>
     );
   }
 

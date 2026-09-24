@@ -1,4 +1,4 @@
-import React, { ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { Button } from './ui/Button';
 import { AlertCircle } from 'lucide-react';
@@ -12,7 +12,7 @@ interface State {
   error?: Error;
 }
 
-export class ErrorBoundary extends React.Component<Props, State> {
+export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false
   };
@@ -37,6 +37,14 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   private handleGoHome = () => {
     window.location.href = '/korprov/start';
+  };
+
+  private handleCopyError = () => {
+    if (!this.state.error) return;
+    const info = `Felmeddelande: ${this.state.error.message}\nPlats: ${window.location.href}\nTidpunkt: ${new Date().toISOString()}\nStack:\n${this.state.error.stack || 'Ingen stack'}`;
+    navigator.clipboard.writeText(info).then(() => {
+      alert('Felrapport kopierad till urklipp.');
+    }).catch(() => {});
   };
 
   public render() {
@@ -69,7 +77,16 @@ export class ErrorBoundary extends React.Component<Props, State> {
               </div>
               {this.state.error && (
                 <details className="text-left">
-                  <summary className="text-xs text-text-muted cursor-pointer select-none">Teknisk information</summary>
+                  <div className="flex items-center justify-between">
+                    <summary className="text-xs text-text-muted cursor-pointer select-none">Teknisk information</summary>
+                    <button
+                      type="button"
+                      onClick={this.handleCopyError}
+                      className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                    >
+                      Kopiera fel
+                    </button>
+                  </div>
                   <div className="mt-2 bg-danger/5 p-3 rounded-lg text-xs text-danger/80 w-full overflow-auto max-h-60 font-mono whitespace-pre-wrap">
                     <div className="font-bold text-sm mb-1">{this.state.error.message}</div>
                     <div>{this.state.error.stack}</div>

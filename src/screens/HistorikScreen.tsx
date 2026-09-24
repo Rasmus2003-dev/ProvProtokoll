@@ -1,6 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAppStore } from '../store/ProvContext';
-import { FileCheck, AlertTriangle, Calendar, FileText, Cloud, RefreshCw, Trash2, Search, ClipboardList, TrendingUp, X, ChevronLeft, ChevronRight, Download, Upload, Navigation } from 'lucide-react';
+import { 
+  FileCheck, AlertTriangle, Calendar, FileText, Cloud, RefreshCw, Trash2, Search, 
+  ClipboardList, TrendingUp, X, ChevronLeft, ChevronRight, Download, Upload, Navigation,
+  Printer, Table, Clock, Sparkles
+} from 'lucide-react';
 import { printProtocol } from '../lib/generateProtocolHtml';
 import { useToast } from '../components/Toast';
 import { RouteReviewModal } from '../components/route/RouteReview';
@@ -19,6 +23,7 @@ import {
   isSupabaseConfigured
 } from '../lib/supabase';
 import { PrivacyGuard } from '../components/PrivacyGuard';
+import { calculateDailyStats, exportProtocolsToCsv, printDailyReport } from '../lib/exportUtils';
 
 const PAGE_SIZE = 25;
 
@@ -180,9 +185,26 @@ export function HistorikScreen() {
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      showToast(`${protocols.length} protokoll exporterade.`, 'success');
+      showToast(`${protocols.length} protokoll exporterade till JSON.`, 'success');
     } catch (err: any) {
       showToast(`Exporten misslyckades: ${err?.message || 'okänt fel'}`, 'error');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportCsv = async () => {
+    setIsExporting(true);
+    try {
+      const protocols = await fetchAllProtocols();
+      if (protocols.length === 0) {
+        showToast('Det finns inga protokoll att exportera.', 'warning');
+        return;
+      }
+      exportProtocolsToCsv(protocols, evaluateIsPassed);
+      showToast(`${protocols.length} protokoll exporterade till CSV / Excel.`, 'success');
+    } catch (err: any) {
+      showToast(`CSV-export misslyckades: ${err?.message || 'okänt fel'}`, 'error');
     } finally {
       setIsExporting(false);
     }
@@ -225,6 +247,29 @@ export function HistorikScreen() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const hasAnyRecords = stats.total > 0 || testHistory.length > 0;
 
+  // Dagens statistik
+  const dailyStats = useMemo(() => {
+    const sourceRows: SavedProtocolRow[] = rows.length > 0 ? rows : testHistory.map((th, i) => ({
+      id: `local-${i}`,
+      student_name: th.properties.studentName || 'Okänd',
+      personal_number: th.properties.personalNumber || '',
+      license_type: th.properties.licenseType,
+      transmission: th.properties.transmission,
+      test_type: th.properties.testType,
+      driving_result: th.result.drivingResult,
+      safety_result: th.result.safetyCheckResult,
+      examiner: th.properties.examiner,
+      created_at: th.properties.testDate,
+      full_state: th
+    }));
+    const today = new Date().toISOString().split('T')[0];
+    return calculateDailyStats(sourceRows, today, evaluateIsPassed);
+  }, [rows, testHistory]);
+
+  const handlePrintDaily = () => {
+    printDailyReport(dailyStats, profile?.name);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-4 py-6 sm:py-8 h-full flex flex-col">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -241,11 +286,20 @@ export function HistorikScreen() {
             )}
           </div>
           <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xl">
-            Sök och ladda ned tidigare genomförda och arkiverade körprovsprotokoll från molndatabasen.
+            Sök och ladda ned tidigare körprovsprotokoll, exportera dagsrapporter till Excel/CSV samt arkivera.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleExportCsv}
+            disabled={isExporting}
+            className="px-3.5 py-2 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="Exportera protokoll till Excel-kompatibel CSV-fil"
+          >
+            <Table size={14} />
+            <span>Excel / CSV</span>
+          </button>
           <button
             onClick={handleExport}
             disabled={isExporting}
@@ -253,7 +307,7 @@ export function HistorikScreen() {
             title="Ladda ner alla protokoll som en säkerhetskopia (JSON-fil)"
           >
             <Download size={14} />
-            <span>Exportera</span>
+            <span>JSON</span>
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -278,6 +332,64 @@ export function HistorikScreen() {
             <RefreshCw size={14} className={loading ? 'animate-spin text-blue-600' : ''} />
             <span>Uppdatera</span>
           </button>
+        </div>
+      </div>
+
+      {/* Dagens sammanfattning Banner */}
+      <div className="bg-linear-to-br from-[#002f6c] to-[#001f48] text-white rounded-2xl p-4 sm:p-5 mb-5 shadow-md border border-blue-900/30">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[11px] font-black uppercase tracking-wider text-blue-200">Dagens Provsammanfattning</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight">
+              {new Date().toLocaleDateString('sv-SE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </h2>
+            <div className="text-xs text-blue-200 flex flex-wrap items-center gap-3 pt-0.5">
+              <span>Provförrättare: <strong className="text-white">{profile?.name || 'Trafikverket'}</strong></span>
+              {Object.keys(dailyStats.licenseCounts).length > 0 && (
+                <span>• Behörigheter idag: <strong className="text-white">{Object.entries(dailyStats.licenseCounts).map(([l, c]) => `${l} (${c})`).join(', ')}</strong></span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end">
+            <button
+              onClick={handlePrintDaily}
+              className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border border-white/20 shadow-xs cursor-pointer"
+            >
+              <Printer size={15} />
+              <span>Skriv ut dagsrapport</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 4 Mini Stat Pills for Today */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-4 pt-4 border-t border-white/15">
+          <div className="bg-white/10 rounded-xl p-3 text-center">
+            <div className="text-2xl font-black">{dailyStats.total}</div>
+            <div className="text-[10px] uppercase font-bold text-blue-200 mt-0.5">Genomförda idag</div>
+          </div>
+
+          <div className="bg-white/10 rounded-xl p-3 text-center">
+            <div className={`text-2xl font-black ${dailyStats.passRate >= 80 ? 'text-emerald-300' : dailyStats.passRate >= 50 ? 'text-amber-300' : 'text-red-300'}`}>
+              {dailyStats.total > 0 ? `${dailyStats.passRate}%` : '–'}
+            </div>
+            <div className="text-[10px] uppercase font-bold text-blue-200 mt-0.5">Godkänt-grad idag</div>
+          </div>
+
+          <div className="bg-white/10 rounded-xl p-3 text-center">
+            <div className="text-2xl font-black">
+              {dailyStats.passed} <span className="text-sm font-normal text-blue-200">/ {dailyStats.failed}</span>
+            </div>
+            <div className="text-[10px] uppercase font-bold text-blue-200 mt-0.5">Godkända / Underkända</div>
+          </div>
+
+          <div className="bg-white/10 rounded-xl p-3 text-center">
+            <div className="text-2xl font-black">~{dailyStats.averageMinutes} <span className="text-sm font-normal text-blue-200">min</span></div>
+            <div className="text-[10px] uppercase font-bold text-blue-200 mt-0.5">Snitt körtid</div>
+          </div>
         </div>
       </div>
 

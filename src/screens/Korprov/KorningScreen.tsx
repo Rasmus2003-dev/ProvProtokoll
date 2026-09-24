@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { useAppStore } from '../../store/ProvContext';
-import { cn } from '../../lib/utils';
+import { cn, triggerHaptic } from '../../lib/utils';
 import { TEST_CONTENT, ALL_SAFETY_ITEMS } from '../../data/testContentCatalog';
 import { AlertCircle, ShieldAlert, Search, X, Maximize, Minimize, BookOpen, Dice5, PenLine } from 'lucide-react';
 import { FailureForm } from './components/FailureForm';
@@ -26,6 +26,9 @@ export function KorningScreen() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLathundOpen, setIsLathundOpen] = useState(false);
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
+  const [filterMode, setFilterMode] = useState<'all' | 'tested' | 'untested'>('all');
+  const [showFloatingBar, setShowFloatingBar] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleFs = () => setIsFullscreen(isCurrentlyFullscreen());
@@ -37,6 +40,35 @@ export function KorningScreen() {
     };
   }, []);
 
+  // Tangentbordsgenväg: tryck '/' för att söka moment, 'Esc' för att rensa
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === '/' &&
+        document.activeElement !== searchInputRef.current &&
+        !(document.activeElement instanceof HTMLInputElement) &&
+        !(document.activeElement instanceof HTMLTextAreaElement)
+      ) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      } else if (e.key === 'Escape' && document.activeElement === searchInputRef.current) {
+        setSearchTerm('');
+        searchInputRef.current?.blur();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Lyssna på scrollning för att visa en flytande surfplatte-bar längst ner
+  useEffect(() => {
+    const onScroll = () => {
+      setShowFloatingBar(window.scrollY > 280);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const handleToggleFullscreen = () => {
     toggleAppFullscreen();
   };
@@ -45,14 +77,20 @@ export function KorningScreen() {
   const rawAvailableItems = TEST_CONTENT[licenseType] || TEST_CONTENT['B'];
   const isHeavy = HEAVY_LICENSES.includes(licenseType) || licenseType === 'BE';
 
-  // Filter items if search is active
-  const filteredAvailableItems = Array.from(
-    new Set(
-      searchTerm.trim() 
-        ? rawAvailableItems.filter(item => item.toLowerCase().includes(searchTerm.toLowerCase().trim()))
-        : rawAvailableItems
-    )
-  );
+  // Filter items if search or filter mode is active
+  const filteredAvailableItems = useMemo(() => {
+    let items = rawAvailableItems;
+    if (searchTerm.trim()) {
+      const q = searchTerm.toLowerCase().trim();
+      items = items.filter(item => item.toLowerCase().includes(q));
+    }
+    if (filterMode === 'tested') {
+      items = items.filter(item => (state.includedTestItems || []).includes(item));
+    } else if (filterMode === 'untested') {
+      items = items.filter(item => !(state.includedTestItems || []).includes(item));
+    }
+    return Array.from(new Set(items));
+  }, [rawAvailableItems, searchTerm, filterMode, state.includedTestItems]);
 
 
 
@@ -412,6 +450,16 @@ export function KorningScreen() {
 
           <button
             type="button"
+            onClick={() => setIsQuestionModalOpen(true)}
+            className="px-3 py-2 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-amber-500 shadow-xs active:scale-95"
+            title={`Slumpa funktionsfråga för behörighet ${licenseType} (enkelt språk)`}
+          >
+            <Dice5 size={14} className="text-white" />
+            <span>Funktionsfråga ({licenseType})</span>
+          </button>
+
+          <button
+            type="button"
             onClick={setIntervention}
             className={cn(
               "px-3.5 py-2 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none active:scale-95",
@@ -448,29 +496,95 @@ export function KorningScreen() {
         <LightSafetySuggestion />
       )}
 
-      {/* Sök bland momenten */}
-      <div className="relative">
-        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Sök moment, t.ex. cirkulation, backning..."
-          className="w-full h-11 pl-10 pr-10 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500 transition-colors"
-        />
-        {searchTerm && (
+      {/* Sök & Snabbfilter bland momenten */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Sök moment..."
+            className="w-full h-11 pl-10 pr-14 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500 transition-colors shadow-2xs"
+          />
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            {searchTerm ? (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="p-1 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-slate-800 cursor-pointer"
+                aria-label="Rensa sökning"
+              >
+                <X size={15} />
+              </button>
+            ) : (
+              <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono text-gray-400 bg-gray-100 dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-700 select-none pointer-events-none">
+                /
+              </kbd>
+            )}
+          </div>
+        </div>
+
+        {/* Filter-flikar: Alla / Provade / Kvar */}
+        <div className="flex items-center gap-1 bg-gray-100 dark:bg-slate-800/80 p-1 rounded-xl border border-gray-200/80 dark:border-slate-700 shrink-0 self-start sm:self-auto">
           <button
             type="button"
-            onClick={() => setSearchTerm('')}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-slate-800 cursor-pointer"
-            aria-label="Rensa sökning"
+            onClick={() => { triggerHaptic('light'); setFilterMode('all'); }}
+            className={cn(
+              "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
+              filterMode === 'all'
+                ? "bg-white dark:bg-slate-900 text-[#002f6c] dark:text-blue-400 shadow-2xs font-black"
+                : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"
+            )}
           >
-            <X size={15} />
+            Alla ({drivingItemsAll.length})
           </button>
-        )}
+          <button
+            type="button"
+            onClick={() => { triggerHaptic('light'); setFilterMode('tested'); }}
+            className={cn(
+              "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5",
+              filterMode === 'tested'
+                ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-2xs font-black"
+                : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"
+            )}
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span>Provade ({selectedDrivingCount})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => { triggerHaptic('light'); setFilterMode('untested'); }}
+            className={cn(
+              "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5",
+              filterMode === 'untested'
+                ? "bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400 shadow-2xs font-black"
+                : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"
+            )}
+          >
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
+            <span>Kvar ({drivingItemsAll.length - selectedDrivingCount})</span>
+          </button>
+        </div>
       </div>
+
       {searchTerm.trim() && baseDrivingItems.length === 0 && selectedSafetyItems.length === 0 && (
         <p className="text-sm text-gray-500 dark:text-slate-400 text-center py-4">Inga moment matchar "{searchTerm}".</p>
+      )}
+
+      {filterMode === 'tested' && selectedDrivingCount === 0 && (
+        <div className="text-center py-8 px-4 bg-gray-50 dark:bg-slate-800/30 rounded-2xl border border-dashed border-gray-200 dark:border-slate-800">
+          <p className="text-sm font-semibold text-gray-600 dark:text-slate-300">Inga moment markerade ännu.</p>
+          <p className="text-xs text-gray-400 mt-1">Klicka på ett moment för att bocka av det under körningen.</p>
+        </div>
+      )}
+
+      {filterMode === 'untested' && (drivingItemsAll.length - selectedDrivingCount) === 0 && (
+        <div className="text-center py-8 px-4 bg-emerald-50/60 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/50">
+          <p className="text-sm font-black text-emerald-800 dark:text-emerald-300">Alla moment har prövats!</p>
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">Samtliga moment för {licenseType} är avbockade.</p>
+        </div>
       )}
 
       {/* RENT 3-KOLUMNERS RUTNÄT */}
@@ -531,17 +645,16 @@ export function KorningScreen() {
                 Markera alla
               </button>
 
-              {/* Funktionsfråga knapp (särskilt anpassad för tunga fordon C, CE, D, DE etc.) */}
-              {HEAVY_LICENSES.includes(licenseType) && (
-                <button
-                  type="button"
-                  onClick={() => setIsQuestionModalOpen(true)}
-                  className="px-4 py-2.5 bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shadow-md hover:shadow-lg cursor-pointer active:scale-95 shrink-0 border border-amber-400/40"
-                >
-                  <Dice5 size={16} className="animate-pulse" />
-                  <span>Generera fråga & följdfrågor ({licenseType})</span>
-                </button>
-              )}
+              {/* Funktionsfråga knapp (slumpad fråga på enkelt språk) */}
+              <button
+                type="button"
+                onClick={() => setIsQuestionModalOpen(true)}
+                className="px-4 py-2.5 bg-linear-to-r from-amber-500 via-amber-600 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shadow-md hover:shadow-lg cursor-pointer active:scale-95 shrink-0 border border-amber-400/40"
+                title={`Slumpa funktionsfråga för ${licenseType}`}
+              >
+                <Dice5 size={16} className="animate-spin-once" />
+                <span>🎲 Slumpa funktionsfråga ({licenseType})</span>
+              </button>
             </div>
           </div>
 
@@ -689,12 +802,60 @@ export function KorningScreen() {
         defaultLicense={licenseType}
       />
 
-      {/* Slumpad säkerhetsfråga modal för tunga behörigheter */}
+      {/* Slumpad säkerhetsfråga modal för alla behörigheter */}
       <HeavySafetyQuestionModal
         isOpen={isQuestionModalOpen}
         onClose={() => setIsQuestionModalOpen(false)}
         licenseType={licenseType}
       />
+
+      {/* Flytande snabbmeny för surfplatta & mobil vid skrollning */}
+      {showFloatingBar && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-xl w-[calc(100vw-2rem)] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-gray-200 dark:border-slate-800 shadow-xl rounded-2xl p-2.5 flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5 duration-200 print:hidden">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="text-xs font-black uppercase bg-[#002f6c] dark:bg-blue-600 text-white px-2 py-1 rounded-md shrink-0">
+              {licenseType}
+            </span>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                {selectedDrivingCount}/{drivingItemsAll.length} moment ({drivingProgress}%)
+              </div>
+              {interventionCount > 0 && (
+                <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                  {interventionCount} ingripande{interventionCount > 1 ? 'n' : ''}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsQuestionModalOpen(true)}
+              className="p-2 rounded-xl bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300/50 cursor-pointer"
+              title="Slumpa funktionsfråga"
+            >
+              <Dice5 size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsLathundOpen(true)}
+              className="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-300/40 cursor-pointer"
+              title="Öppna lathund"
+            >
+              <BookOpen size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => { triggerHaptic('medium'); handleNext(); }}
+              className="px-4 py-2 bg-[#002f6c] hover:bg-[#00204a] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
+            >
+              <span>Resultat</span>
+              <span>→</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

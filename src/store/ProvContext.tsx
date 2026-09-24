@@ -247,8 +247,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    setSyncQueue(stillFailing);
-    writeJSON('provprotokoll-sync-queue', stillFailing);
+    setSyncQueue((current) => {
+      // Behåll eventuella prov som lades till i kön under tiden synken pågick
+      const newlyAdded = current.filter(item => !remaining.includes(item));
+      const nextQueue = [...stillFailing, ...newlyAdded];
+      writeJSON('provprotokoll-sync-queue', nextQueue);
+      return nextQueue;
+    });
     setIsSyncing(false);
   }, [profile?.name]);
 

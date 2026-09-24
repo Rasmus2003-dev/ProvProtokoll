@@ -1,4 +1,4 @@
-export type HeavyLicenseCode = 'C1' | 'C' | 'C1E' | 'CE' | 'D1' | 'D' | 'D1E' | 'DE';
+export type HeavyLicenseCode = 'B' | 'B1' | 'BE' | 'B96' | 'C1' | 'C' | 'C1E' | 'CE' | 'D1' | 'D' | 'D1E' | 'DE' | 'TAXI' | 'A' | 'A1' | 'A2' | 'AM';
 
 export interface FollowUpQuestion {
   question: string;
@@ -25,107 +25,107 @@ export const HEAVY_SAFETY_QUESTIONS_76: HeavySafetyQuestion[] = [
   {
     id: 1,
     category: 'Däck & Hjul',
-    question: 'Vad ska du kontrollera på däcken vid säkerhetskontroll?',
-    answer: 'Att det inte fastnat något mellan däcken i tvillingmontage. Kontrollera lufttryck, mönsterdjup, skador eller sprickor, däcktyp, att fälgen ser bra ut, ingen rost runt muttrarna, att alla muttrar sitter fast och att stänkskydden sitter fast.',
-    keyPoints: ['Inget mellan tvillingdäck', 'Mönsterdjup & lufttryck', 'Inga skador/sprickor', 'Hjulmuttrar & ingen rost', 'Stänkskydd fast'],
+    question: 'Vad ska du titta efter på däcken när du gör säkerhetskontroll?',
+    answer: 'Kolla att ingen sten sitter fast mellan tvillingdäcken. Kolla också mönsterdjup, lufttryck, att det inte finns sprickor eller skador och att alla hjulmuttrar sitter fast utan rost runt.',
+    keyPoints: ['Ingen sten mellan tvillingdäck', 'Mönsterdjup och lufttryck', 'Inga skador eller sprickor', 'Hjulmuttrar sitter fast'],
     applicableLicenses: ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'],
     vehicleFocus: 'Alla tunga fordon',
     difficulty: 'Bas',
     followUpQuestions: [
       {
-        question: 'Vilka är de direkta riskerna om en sten sitter fastkilad mellan tvillingdäcken under motorvägskörning?',
-        acceptableAnswer: 'Stenen kan slungas iväg i hög hastighet och träffa bakomvarande fordons vindruta med dödlig utgång, eller nöta hål på däckets stomme så däcket exploderar under färd.',
-        riskAspect: 'Projektilrisk mot medtrafikanter & plötslig däckexplosion i hög fart'
+        question: 'Vad kan hända om en sten sitter fastkilad mellan tvillingdäcken på motorvägen?',
+        acceptableAnswer: 'Stenen kan flyga iväg och krossa rutan på en bil bakom, eller nöta hål på däcket så det smäller i hög fart.',
+        riskAspect: 'Projektil mot bilar bakom & däckexplosion'
       },
       {
-        question: 'Vad riskerar du om du kör med ojämnt slitage eller för lågt lufttryck?',
-        acceptableAnswer: 'Överhettning av däcket vilket leder till separation av slitbanan eller däckbrand, samt markant ökad bromssträcka och instabilt ekipage vid en undanmanöver.',
-        riskAspect: 'Däckbrand & förlorad fordonskontroll'
+        question: 'Vad händer om du kör med för lite luft i däcket?',
+        acceptableAnswer: 'Däcket blir överhettat och kan börja brinna eller explodera. Dessutom blir bromssträckan mycket längre.',
+        riskAspect: 'Däckbrand & sämre väggrepp'
       }
     ]
   },
   {
     id: 2,
     category: 'Bromssystem & Tryckluft',
-    question: 'När du genomför en täthetskontroll upptäcker du att läckaget är för stort, vilket innebär körförbud. Hur kan du häva detta körförbud för att ta dig till verkstad?',
-    answer: 'Starta motorn med foten på färdbromsen och parkeringsbromsen lossad. Om kompressorn lyckas bygga upp och hålla fullt arbetstryck på tomgång kan du köra till närmaste verkstad.',
-    keyPoints: ['Starta motor på tomgång', 'Färdbroms nertryckt + P-broms lossad', 'Måste bygga upp fullt arbetstryck', 'Endast till närmaste verkstad'],
+    question: 'Täthetsprover visar att luften läcker för mycket. Hur kan du få köra till verkstad?',
+    answer: 'Starta motorn på tomgång med foten på fotbromsen och lossad handbroms. Om kompressorn orkar bygga upp och hålla fullt arbetstryck får du köra lugnt till närmaste verkstad.',
+    keyPoints: ['Starta på tomgång', 'Tryck ner fotbroms + lossa handbroms', 'Kompressorn måste orka hålla fullt tryck', 'Bara till närmaste verkstad'],
     applicableLicenses: ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'],
-    vehicleFocus: 'Tryckluftsbromsar (Alla)',
+    vehicleFocus: 'Tryckluftsbromsar',
     difficulty: 'Fördjupning',
     followUpQuestions: [
       {
-        question: 'Vilken är den yttersta risken med att ignorera ett stort luftläckage och ge sig ut på vägen?',
-        acceptableAnswer: 'Att kompressorn inte orkar mata luft vid upprepade inbromsningar, varvid trycket faller till lågtrycksnivå och spärrventilen slår till så fjäderbromsen tvärnitar hjulen mitt på vägen eller att färdbromsen helt slutar ta.',
-        riskAspect: 'Plötslig ofrivillig tvärnitning eller total bromsförlust mitt i trafikflödet'
+        question: 'Vad är risken om du kör vidare med ett stort luftläckage?',
+        acceptableAnswer: 'Luften tar slut vid några inbromsningar. Då slår spärrventilen till så fjäderbromsen tvärnitar hjulen mitt på vägen eller så försvinner bromsarna helt.',
+        riskAspect: 'Plötslig tvärnitning eller förlorade bromsar'
       }
     ]
   },
   {
     id: 3,
     category: 'Färdskrivare',
-    question: 'Hur många pappersrullar ska du ha med i reserv vid färd med digital färdskrivare?',
-    answer: 'Minst 6 pappersrullar (så du kan skriva ut de senaste 56 dagarna samt innevarande dag och eventuella kontroller).',
-    keyPoints: ['Minst 6 pappersrullar', 'Täcker 56 dagar bakåt + idag'],
+    question: 'Hur många extra pappersrullar måste du ha med till färdskrivaren?',
+    answer: 'Minst 6 stycken pappersrullar i reserv i fordonet.',
+    keyPoints: ['Minst 6 reservrullar'],
     applicableLicenses: ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'],
     vehicleFocus: 'Färdskrivare',
     difficulty: 'Bas',
     followUpQuestions: [
       {
-        question: 'Vad riskerar du vid en flygande poliskontroll om du saknar reservrullar eller inte kan skriva ut?',
-        acceptableAnswer: 'Böter och sanktionsavgift för bristande färdskrivarutrustning, samt risk för förbud mot fortsatt färd tills giltiga remsor anskaffats.',
-        riskAspect: 'Sanktionsavgifter & omedelbart körförbud'
+        question: 'Vad händer om polisen stoppar dig och du inte har reservrullar?',
+        acceptableAnswer: 'Du får böter och polisen kan förbjuda dig att köra vidare tills du skaffat godkända remsor.',
+        riskAspect: 'Böter och körförbud'
       }
     ]
   },
   {
     id: 4,
     category: 'Bromssystem & Tryckluft',
-    question: 'Hur kan du kontrollera att lufttorken fungerar?',
-    answer: 'Lyssna efter "nysningen" (avlastningen) när kompressorn når fullt arbetstryck i botten på torken.',
-    keyPoints: ['Lyssna efter nysning', 'Sker vid fullt arbetstryck', 'Avlastningsventil öppnar'],
+    question: 'Hur hör du att lufttorken fungerar?',
+    answer: 'Lyssna efter "nysningen" (ett pysande ljud) under bilen när kompressorn når fullt arbetstryck. Då blåser den ut fukt och olja.',
+    keyPoints: ['Lyssna efter nysningen / pyset', 'Sker vid fullt tryck', 'Blåser ut fukt'],
     applicableLicenses: ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'],
     vehicleFocus: 'Tryckluftstork',
     difficulty: 'Bas',
     followUpQuestions: [
       {
-        question: 'Vad är risken om avlastningsventilen aldrig blåser ut kondensvattnet?',
-        acceptableAnswer: 'Vatten och oljeklumpar pressas vidare in i fyrkretsskyddsventilen och bromsklockorna. På vintern fryser vattnet till is vilket blockerar ventiler och slår ut bromsverkan helt.',
-        riskAspect: 'Isproppar och totalt bromsbortfall vintertid'
+        question: 'Vad händer om lufttorken aldrig nyser?',
+        acceptableAnswer: 'Fukt och vatten samlas i bromsarna. På vintern fryser det till isproppar så bromsarna slutar fungera.',
+        riskAspect: 'Isproppar och tappad bromsverkan på vintern'
       }
     ]
   },
   {
     id: 5,
     category: 'Färdskrivare',
-    question: 'Hur ofta ska din färdskrivare besiktigas och var hittar du information om när den senast besiktigades?',
-    answer: 'Var 24:e månad (vartannat år) på ackrediterad verkstad. Kontrollmärket sitter fäst i lastbilens B-stolpe på förarsidan (eller på utskriftsremsan).',
-    keyPoints: ['Var 24:e månad (vartannat år)', 'Ackrediterad verkstad', 'Kontrollmärke på B-stolpe'],
+    question: 'Hur ofta ska färdskrivaren besiktigas och var sitter märket?',
+    answer: 'Vartannat år (var 24:e månad). Kontrollmärket sitter på B-stolpen vid förardörren.',
+    keyPoints: ['Vartannat år (var 24:e månad)', 'Sitter på B-stolpen vid förardörren'],
     applicableLicenses: ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'],
     vehicleFocus: 'Färdskrivare',
     difficulty: 'Bas',
     followUpQuestions: [
       {
-        question: 'Vilka risker och påföljder finns om kalibreringsintervallet på 2 år har passerats?',
-        acceptableAnswer: 'Fordonet betraktas som icke godkänt för yrkesmässig trafik, böter utdöms och färdskrivarens data underkänns som bevis i kör- och vilotidsrapportering.',
-        riskAspect: 'Underkänd dokumentation och böter för åkeri & förare'
+        question: 'Vad händer om datumet på märket har gått ut?',
+        acceptableAnswer: 'Bilen får inte köras i yrkestrafik och du riskerar böter.',
+        riskAspect: 'Böter och underkänd färdskrivare'
       }
     ]
   },
   {
     id: 6,
     category: 'Bromssystem & Tryckluft',
-    question: 'Vad innebär det för dig om nysningen i lufttorken uteblir?',
-    answer: 'Det innebär att avlastningsventilen i botten är igensatt eller trasig. Fukt och kondens hamnar då i bromssystemet vilket kan orsaka frysning på vintern (med risk för totalt bromsbortfall) eller skada ventiler och gummipackningar. Innebär körförbud tills det åtgärdats.',
-    keyPoints: ['Igensatt bottenventil', 'Vatten i bromssystemet', 'Frysrisk & förstörda ventiler', 'Körförbud'],
+    question: 'Vad gör du om nysningen från lufttorken uteblir helt?',
+    answer: 'Då är ventilen trasig eller igensatt. Det är körförbud tills den är lagad eftersom bromsarna kan frysa och sluta ta.',
+    keyPoints: ['Ventilen trasig eller igensatt', 'Körförbud tills det är lagat'],
     applicableLicenses: ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'],
     vehicleFocus: 'Tryckluftstork',
     difficulty: 'Fördjupning',
     followUpQuestions: [
       {
-        question: 'Får du köra vidare med last om du upptäcker att torken inte avlastar?',
-        acceptableAnswer: 'Nej, fordonet har formellt körförbud tills torken åtgärdats, eftersom säkerhetsmarginalerna i bromssystemet snabbt äventyras.',
-        riskAspect: 'Körförbud och förhöjd olycksrisk'
+        question: 'Varför är det extra farligt på vintern?',
+        acceptableAnswer: 'För att kondensvattnet fryser till is i bromsventilerna så bromsarna inte tar.',
+        riskAspect: 'Isproppar i bromsarna'
       }
     ]
   },
@@ -1375,25 +1375,197 @@ export const HEAVY_SAFETY_QUESTIONS_76: HeavySafetyQuestion[] = [
     id: 80,
     category: 'Allmän Fordonskontroll',
     question: 'Vilka regler gäller för passagerarnas säkerhetsbälten i en buss?',
-    answer: 'Samtliga sittplatser utrustade med bälte ska ha fungerande rullbälten. Föraren ansvarar för att informera passagerarna (via utrop, skylt eller video) att bälte är lagstadgat under färd.',
-    keyPoints: ['Hela rullbälten & lås', 'Informationsplikt till resenärer', 'Lagkrav för sittande'],
+    answer: 'Alla sittplatser med bälte ska ha fungerande bälten. Föraren ska påminna passagerarna om att bälte är lagkrav.',
+    keyPoints: ['Hela rullbälten & lås', 'Informera passagerarna', 'Lagkrav'],
     applicableLicenses: ['D1', 'D', 'D1E', 'DE'],
-    vehicleFocus: 'Buss & Bältesplikt',
+    vehicleFocus: 'Buss & Bälte',
     difficulty: 'Bas',
     followUpQuestions: [
       {
-        question: 'Vad händer vid en bussvältning om passagerarna inte använder säkerhetsbältet?',
-        acceptableAnswer: 'Passagerarna slungas runt i kupén, krossas mot tak och säten eller kastas ut genom fönsterrutorna och hamnar under bussen.',
-        riskAspect: 'Extrema masskador och dödsfall vid vältolycka'
+        question: 'Vad händer om bussen välter och folk inte har bälte?',
+        acceptableAnswer: 'Passagerarna flyger runt i bussen och skadas extremt svårt eller kastas ut genom rutorna.',
+        riskAspect: 'Svåra personskador vid olycka'
+      }
+    ]
+  },
+  // --- ENKLA FUNKTIONSFRÅGOR FÖR PERSONBIL, SLÄP & TAXI (B, BE, B96, TAXI) ---
+  {
+    id: 81,
+    category: 'Bromssystem & Tryckluft',
+    question: 'Hur kollar du att bromsservon fungerar?',
+    answer: 'Stäng av motorn. Pumpa på fotbromsen 4–5 gånger så den blir hård och stum. Håll kvar foten med tryck och starta motorn. Pedalen ska sjunka ner lite mjukt.',
+    keyPoints: ['Pumpa hård pedal med avstängd motor', 'Håll tryck och starta', 'Pedalen ska sjunka ner lite'],
+    applicableLicenses: ['B', 'B1', 'BE', 'B96', 'TAXI'],
+    vehicleFocus: 'Personbil / Lätt fordon',
+    difficulty: 'Bas',
+    followUpQuestions: [
+      {
+        question: 'Vad händer om bromsservon slutar fungera när du kör?',
+        acceptableAnswer: 'Bromsen blir jättehård så du måste trampa extremt hårt med benet för att stanna bilen.',
+        riskAspect: 'Mycket längre bromssträcka'
+      }
+    ]
+  },
+  {
+    id: 82,
+    category: 'Styrning & Vätskor',
+    question: 'Hur kollar du att styrservon fungerar?',
+    answer: 'Vrid lite lätt på ratten med motorn avstängd så du känner motstånd. Starta sedan motorn – ratten ska direkt bli mjuk och lätt att snurra på.',
+    keyPoints: ['Vrid lätt på ratten med avstängd motor', 'Starta motorn', 'Ratten ska bli lätt och mjuk'],
+    applicableLicenses: ['B', 'B1', 'BE', 'B96', 'TAXI'],
+    vehicleFocus: 'Styrning Personbil',
+    difficulty: 'Bas',
+    followUpQuestions: [
+      {
+        question: 'Vad händer om servoremmen går av under färd?',
+        acceptableAnswer: 'Bilen blir plötsligt väldigt tungstyrd, särskilt i korsningar och när du kör långsamt.',
+        riskAspect: 'Tungstyrd bil och svårt att svänga'
+      }
+    ]
+  },
+  {
+    id: 83,
+    category: 'Bromssystem & Tryckluft',
+    question: 'Hur kollar du att fotbromsen är tät och inte läcker?',
+    answer: 'Trampa ner fotbromsen hårt och håll kvar trycket i ca 20 sekunder. Pedalen ska stanna ungefär halvvägs, kännas stum och absolut inte sjunka ner mot golvet.',
+    keyPoints: ['Trampa hårt i 20 sekunder', 'Kännas stum halvvägs', 'Får inte sjunka neråt'],
+    applicableLicenses: ['B', 'B1', 'BE', 'B96', 'TAXI'],
+    vehicleFocus: 'Bromstätning hydraulik',
+    difficulty: 'Bas',
+    followUpQuestions: [
+      {
+        question: 'Vad betyder det om bromspedalen sakta sjunker ner mot golvet?',
+        acceptableAnswer: 'Att det läcker bromsvätska någonstans eller att huvudbromscylindern är trasig. Bilen har körförbud!',
+        riskAspect: 'Risk för total bromsförlust'
+      }
+    ]
+  },
+  {
+    id: 84,
+    category: 'Däck & Hjul',
+    question: 'Vad kollar du på däcken och vilka mönsterdjup gäller?',
+    answer: 'Kolla att lufttrycket är bra, att däcket är helt utan sprickor och att mönstret är minst 1,6 mm på sommaren och minst 3 mm på vintern.',
+    keyPoints: ['Minst 1,6 mm sommar', 'Minst 3 mm vinter', 'Rätt lufttryck & inga skador'],
+    applicableLicenses: ['B', 'B1', 'BE', 'B96', 'TAXI'],
+    vehicleFocus: 'Däck & Hjul Personbil',
+    difficulty: 'Bas',
+    followUpQuestions: [
+      {
+        question: 'Vad är risken om du kör med för lite mönsterdjup när det regnar?',
+        acceptableAnswer: 'Bilen får vattenplaning så däcken surfar på vattnet och du tappar all styrförmåga.',
+        riskAspect: 'Vattenplaning & sladd'
+      }
+    ]
+  },
+  {
+    id: 85,
+    category: 'Styrning & Vätskor',
+    question: 'Vilka vätskor kollar du under motorhuven och hur kollar du nivån?',
+    answer: 'Spolarvätska, kylarvätska, bromsvätska och motorolja. Nivån ska ligga mellan MIN och MAX på behållarna, och oljan mäts med oljestickan på plan mark.',
+    keyPoints: ['Spolarvätska, kylarvätska, bromsvätska, motorolja', 'Mellan MIN och MAX', 'Oljesticka för motorolja'],
+    applicableLicenses: ['B', 'B1', 'BE', 'B96', 'TAXI'],
+    vehicleFocus: 'Vätskor motorrum',
+    difficulty: 'Bas',
+    followUpQuestions: [
+      {
+        question: 'Vad gör du om bromsvätskan sjunkit under MIN-strecket?',
+        acceptableAnswer: 'Kör inte! Låg nivå tyder på läckage eller slitna bromsklossar och måste undersökas.',
+        riskAspect: 'Läckage och bromsbortfall'
+      }
+    ]
+  },
+  {
+    id: 86,
+    category: 'Allmän Fordonskontroll',
+    question: 'Hur kollar du att bilens alla lampor fungerar utanför bilen?',
+    answer: 'Sätt på tändning, halvljus och vänster blinkers. Gå ett varv runt bilen och titta. Gör samma sak med helljus och höger blinkers. Kolla bromsljuset mot en vägg eller be någon titta.',
+    keyPoints: ['Sätt på ljus & blinkers', 'Gå runt bilen och titta', 'Kolla bromsljus mot vägg'],
+    applicableLicenses: ['B', 'B1', 'BE', 'B96', 'TAXI'],
+    vehicleFocus: 'Belysning Personbil',
+    difficulty: 'Bas',
+    followUpQuestions: [
+      {
+        question: 'Hur märker du inifrån bilen om en blinkerslampa gått sönder?',
+        acceptableAnswer: 'Blinkerspilen på instrumentbrädan tickar och blinkar dubbelt så snabbt som vanligt.',
+        riskAspect: 'Trasig blinkers syns inte av andra'
+      }
+    ]
+  },
+  {
+    id: 87,
+    category: 'Allmän Fordonskontroll',
+    question: 'Hur kollar du att vindrutetorkarna och sikten är bra?',
+    answer: 'Spola rutan och se att torkarbladen torkar rent utan ränder. Sätt på defrosterfläkten på framrutan och elvärmen på bakrutan.',
+    keyPoints: ['Spola och torka rent utan ränder', 'Defroster på framrutan', 'Elvärme på bakrutan'],
+    applicableLicenses: ['B', 'B1', 'BE', 'B96', 'TAXI'],
+    vehicleFocus: 'Sikt & Torkare',
+    difficulty: 'Bas',
+    followUpQuestions: [
+      {
+        question: 'Vad gör du om spolarvätskan tar slut och rutan blir smutsig på motorvägen?',
+        acceptableAnswer: 'Sakta ner lugnt, ta nästa avfart och fyll på. Du får aldrig köra vidare utan sikt.',
+        riskAspect: 'Blindkörning och noll sikt'
+      }
+    ]
+  },
+  {
+    id: 88,
+    category: 'Kopplingsanordning',
+    question: 'Hur kollar du att släpvagnen sitter fast ordentligt i dragkroken?',
+    answer: 'Gör ett dragprov (veva upp stödhjulet lite eller ryck uppåt i kulhandsken för att se att den inte hoppar av), kolla att den gröna låsindikatorn syns och se till att katastrofvajern sitter i öglan.',
+    keyPoints: ['Dragprov / ryck uppåt', 'Grön låsindikering syns', 'Katastrofvajer fäst i ögla'],
+    applicableLicenses: ['BE', 'B96', 'B'],
+    vehicleFocus: 'Släpvagn & Kula',
+    difficulty: 'Bas',
+    followUpQuestions: [
+      {
+        question: 'Vad händer om släpet lossnar från bilen under körning?',
+        acceptableAnswer: 'Katastrofvajern dras åt och lägger i släpets parkeringsbroms så det stannar, innan vajern går av.',
+        riskAspect: 'Katastrofbromsning av släpet'
+      }
+    ]
+  },
+  {
+    id: 89,
+    category: 'Kopplingsanordning',
+    question: 'Vad händer om du har för lågt kultryck (baktungt släp)?',
+    answer: 'Bilen lyfts upp i baken, framhjulen får sämre styrförmåga och släpet kan börja slingra sig och sladda jättefarligt i högre fart.',
+    keyPoints: ['Baktungt släp ger instabilt ekipage', 'Bilen lyfts i baken', 'Släpet börjar orma sig / sladda'],
+    applicableLicenses: ['BE', 'B96', 'B'],
+    vehicleFocus: 'Kultryck & Last',
+    difficulty: 'Bas',
+    followUpQuestions: [
+      {
+        question: 'Vad gör du om släpet börjar slingra och vobbla på motorvägen?',
+        acceptableAnswer: 'Gasa inte! Släpp gasen mjukt och bromsa lugnt och bestämt tills ekipaget rätar upp sig.',
+        riskAspect: 'Svår vältnings- och sladdolycka'
+      }
+    ]
+  },
+  {
+    id: 90,
+    category: 'Bromssystem & Tryckluft',
+    question: 'Hur kollar du parkeringsbromsen (handbromsen)?',
+    answer: 'Dra åt handbromsen och försök köra iväg försiktigt på ettans växel (eller "D"). Bilen ska hållas kvar och inte rulla iväg.',
+    keyPoints: ['Dra åt handbromsen', 'Kör iväg försiktigt', 'Bilen ska stå stilla'],
+    applicableLicenses: ['B', 'B1', 'BE', 'B96', 'TAXI'],
+    vehicleFocus: 'Parkeringsbroms',
+    difficulty: 'Bas',
+    followUpQuestions: [
+      {
+        question: 'Vad händer om du glömmer handbromsen åtdragen och kör?',
+        acceptableAnswer: 'Bakhjulen går trögt, bromsarna blir glödheta och kan börja brinna eller sluta ta.',
+        riskAspect: 'Bromsbrand och skadade bromsar'
       }
     ]
   }
 ];
 
 export function getQuestionsForLicense(licenseType: string): HeavySafetyQuestion[] {
-  const norm = licenseType.trim().toUpperCase() as HeavyLicenseCode;
-  return HEAVY_SAFETY_QUESTIONS_76.filter(q => {
+  const norm = (licenseType || 'B').trim().toUpperCase() as HeavyLicenseCode;
+  const matched = HEAVY_SAFETY_QUESTIONS_76.filter(q => {
     if (!q.applicableLicenses || q.applicableLicenses.length === 0) return true;
     return q.applicableLicenses.includes(norm);
   });
+  return matched.length > 0 ? matched : HEAVY_SAFETY_QUESTIONS_76;
 }

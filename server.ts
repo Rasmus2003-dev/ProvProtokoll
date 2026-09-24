@@ -388,6 +388,14 @@ async function startServer() {
     res.json({ success: true, count: trvCandidates.length });
   });
 
+  // Error handling middleware for API routes
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error("Unhandled API error on", req.method, req.url, err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Ett internt serverfel uppstod", detail: err?.message });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
@@ -403,10 +411,28 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
+
+  // Handle graceful shutdown
+  const shutdown = () => {
+    server.close(() => {
+      process.exit(0);
+    });
+  };
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
 }
 
+process.on('unhandledRejection', (reason) => {
+  console.error('Process unhandledRejection caught:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Process uncaughtException caught:', err);
+});
+
 startServer();
+
 

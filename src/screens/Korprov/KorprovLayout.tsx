@@ -207,11 +207,11 @@ export function KorprovLayout() {
         </AnimatePresence>
       </div>
 
-      {/* Anteckningar och timer – bara under själva provet, inte på startsidan */}
-      {showNav && onTestStep && (
-        <div className={`fixed right-4 sm:right-6 md:right-12 z-40 print:hidden ${
+      {/* Anteckningar och timer – tillgänglig under provets alla moment, inklusive körning */}
+      {onTestStep && !isProtokoll && (
+        <div className={`fixed right-3 sm:right-6 md:right-8 z-40 print:hidden ${
           // Resultat har en fast åtgärdsrad längst ner – lyft knapparna ovanför den
-          isResultat ? 'bottom-36 md:bottom-24' : 'bottom-20 sm:bottom-24 md:bottom-12'
+          isResultat ? 'bottom-36 md:bottom-24' : isKorning ? 'bottom-24 sm:bottom-20' : 'bottom-20 sm:bottom-24 md:bottom-12'
         }`}>
           <AnimatePresence>
             {showNotes && (
