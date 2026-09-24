@@ -88,13 +88,14 @@ export function ProtokollScreen() {
 
     try {
       const html = generateEmailProtocolHtml(state, profile?.name);
+      const license = state.properties.licenseType || 'B';
       const res = await fetch('/api/send-protocol', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
         body: JSON.stringify({
           to: recipient,
           toName: state.properties.studentName,
-          subject: 'Körprovsresultat',
+          subject: `Resultat från ditt körprov (Behörighet ${license})`,
           html,
         }),
       });
@@ -379,7 +380,7 @@ export function ProtokollScreen() {
             </div>
             <div className="flex border-b border-gray-200 pb-1">
               <span className="w-16 font-bold text-gray-400 uppercase tracking-wider text-[9px]">Från:</span>
-              <span className="text-gray-950 font-semibold">ProvProtokoll &lt;info@rasmusl.se&gt;</span>
+              <span className="text-gray-950 font-semibold">ProvProtokoll Förarprov &lt;info@rasmusl.se&gt;</span>
             </div>
             <div className="flex border-b border-gray-200 pb-1">
               <span className="w-16 font-bold text-gray-400 uppercase tracking-wider text-[9px]">Till:</span>
@@ -389,9 +390,16 @@ export function ProtokollScreen() {
               <span className="w-16 font-bold text-gray-400 uppercase tracking-wider text-[9px]">Datum:</span>
               <span className="text-gray-800">{state.properties.testDate || new Date().toLocaleDateString('sv-SE')} – {new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
-            <div className="flex">
+            <div className="flex items-center">
               <span className="w-16 font-bold text-gray-400 uppercase tracking-wider text-[9px]">Ämne:</span>
-              <span className="text-black font-bold text-[12px]">Körprovsresultat</span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="px-1.5 py-0.5 bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 text-[10px] font-black rounded uppercase tracking-wider">
+                  ! Hög prio
+                </span>
+                <span className="text-black font-bold text-[12px]">
+                  Resultat från ditt körprov (Behörighet {state.properties.licenseType || 'B'})
+                </span>
+              </div>
             </div>
 
             <div className="pt-3 border-t border-gray-200 flex items-center justify-between gap-3">

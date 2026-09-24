@@ -430,20 +430,28 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
       <strong>Svara ej – detta mejl går inte att besvara.</strong>
     </div>`;
 
+  const priorityBadge = `
+    <div style="margin-bottom: 8px;">
+      <span style="display: inline-block; background: #fee2e2; border: 1px solid #fecaca; color: #b91c1c; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.06em;">
+        ! Hög prioritet – Officiellt provbesked
+      </span>
+    </div>`;
+
   const statusBanner = `
-    <div style="background: ${isPassed ? '#ecfdf5' : '#fef2f2'}; border: 1px solid ${isPassed ? '#a7f3d0' : '#fecaca'}; border-left: 5px solid ${isPassed ? '#10b981' : '#ef4444'}; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;">
+    <div style="background: ${isPassed ? '#ecfdf5' : '#fef2f2'}; border: 1px solid ${isPassed ? '#a7f3d0' : '#fecaca'}; border-left: 6px solid ${isPassed ? '#10b981' : '#dc2626'}; border-radius: 10px; padding: 16px 20px; margin-bottom: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+      ${priorityBadge}
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td>
-            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: ${isPassed ? '#047857' : '#b91c1c'}; margin-bottom: 3px;">
-              Officiellt provbesked • Förarprov
+            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: ${isPassed ? '#047857' : '#991b1b'}; margin-bottom: 3px;">
+              Officiellt förarprovsbeslut
             </div>
-            <div style="font-size: 19px; font-weight: 900; color: ${isPassed ? '#065f46' : '#991b1b'}; line-height: 1.2;">
+            <div style="font-size: 20px; font-weight: 900; color: ${isPassed ? '#065f46' : '#991b1b'}; line-height: 1.25; letter-spacing: -0.01em;">
               ${isPassed ? '✓ KÖRPROVET ÄR GODKÄNT' : '✕ KÖRPROVET ÄR UNDERKÄNT'}
             </div>
           </td>
           <td align="right" style="vertical-align: middle;">
-            <div style="display: inline-block; background: ${isPassed ? '#059669' : '#dc2626'}; color: #ffffff; font-weight: 800; font-size: 12px; padding: 5px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;">
+            <div style="display: inline-block; background: ${isPassed ? '#059669' : '#dc2626'}; color: #ffffff; font-weight: 800; font-size: 12px; padding: 6px 14px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
               Behörighet ${licenseType}
             </div>
           </td>
@@ -456,7 +464,7 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Körprovsresultat - ${studentName}</title>
+  <title>Resultat från ditt körprov (Behörighet ${licenseType}) - ${studentName}</title>
   ${styleTag}
   <style>
     body { line-height: 1.6; background-color: #f7f9fa; margin: 0; padding: 16px 8px; font-family: Arial, Helvetica, sans-serif; }
