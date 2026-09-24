@@ -407,9 +407,48 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
     .replace(/src="[^"]*"(\s+alt="ProvProtokoll")/, `src="${EMAIL_LOGO_URL}"$1`)
     .replace(/max-width:\s*195px;\s*max-height:\s*52px;/, 'max-width: 210px; max-height: 62px;');
 
+  const licenseType = state.properties.licenseType || 'B';
+  const HEAVY_LICENSES = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'];
+  const isSafetyCheckRequired = [...HEAVY_LICENSES, 'BE'].includes(licenseType);
+  const isOmprovSakerhet = state.properties.testType === 'Omprov säkerhetskontroll';
+  const isOmprovKorning = state.properties.testType === 'Omprov körning';
+
+  let isPassed = false;
+  if (isOmprovSakerhet) {
+    isPassed = state.result.safetyCheckResult === 'Godkänt';
+  } else if (isOmprovKorning) {
+    isPassed = state.result.drivingResult === 'Godkänt';
+  } else {
+    const safetyPassed = !isSafetyCheckRequired || state.result.safetyCheckResult === 'Godkänt';
+    const drivingPassed = state.result.drivingResult === 'Godkänt';
+    isPassed = drivingPassed && safetyPassed;
+  }
+  if (state.result.testAborted) isPassed = false;
+
   const noReplyBanner = `
-    <div style="background: #f7f9fc; border: 1px solid #dde3ea; border-left: 3px solid #99a6b8; border-radius: 4px; padding: 12px 16px; margin-bottom: 22px; font-size: 10pt; color: #555; line-height: 1.5;">
+    <div style="background: #f7f9fc; border: 1px solid #dde3ea; border-left: 3px solid #99a6b8; border-radius: 4px; padding: 10px 14px; margin-bottom: 18px; font-size: 9.5pt; color: #555; line-height: 1.4;">
       <strong>Svara ej – detta mejl går inte att besvara.</strong>
+    </div>`;
+
+  const statusBanner = `
+    <div style="background: ${isPassed ? '#ecfdf5' : '#fef2f2'}; border: 1px solid ${isPassed ? '#a7f3d0' : '#fecaca'}; border-left: 5px solid ${isPassed ? '#10b981' : '#ef4444'}; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td>
+            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: ${isPassed ? '#047857' : '#b91c1c'}; margin-bottom: 3px;">
+              Officiellt provbesked • Förarprov
+            </div>
+            <div style="font-size: 19px; font-weight: 900; color: ${isPassed ? '#065f46' : '#991b1b'}; line-height: 1.2;">
+              ${isPassed ? '✓ KÖRPROVET ÄR GODKÄNT' : '✕ KÖRPROVET ÄR UNDERKÄNT'}
+            </div>
+          </td>
+          <td align="right" style="vertical-align: middle;">
+            <div style="display: inline-block; background: ${isPassed ? '#059669' : '#dc2626'}; color: #ffffff; font-weight: 800; font-size: 12px; padding: 5px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;">
+              Behörighet ${licenseType}
+            </div>
+          </td>
+        </tr>
+      </table>
     </div>`;
 
   return `<!DOCTYPE html>
@@ -438,16 +477,24 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
     <tr>
       <td class="email-card" style="padding: 24px 22px 28px 22px;">
         ${noReplyBanner}
-        <div style="font-size: 11pt; line-height: 1.6; color: #2d3748; margin-bottom: 16px;">
-          Hej ${studentName}!<br /><br />
-          Här kommer ditt resultat från ditt körprov.<br /><br />
-          Vänliga hälsningar,<br />
-          <strong>ProvProtokoll</strong>
+        ${statusBanner}
+        <div style="font-size: 11pt; line-height: 1.6; color: #2d3748; margin-bottom: 18px;">
+          Hej <strong>${studentName}</strong>!<br /><br />
+          Här kommer ditt officiella körprovsresultat från ditt prov genomfört den ${state.properties.testDate || new Date().toISOString().split('T')[0]}.<br />
+          Nedan finner du ditt fullständiga provprotokoll med sammanställning och bedömning.
         </div>
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 18px 0;" />
         ${bodyContent}
-        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 12px;" />
-        <p style="font-size: 8.5pt; color: #718096; margin: 0; line-height: 1.5;">
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 14px;" />
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; text-align: center;">
+          <div style="font-size: 10.5pt; font-weight: bold; color: #1e293b; margin-bottom: 4px;">
+            Digitalt Provprotokoll Online
+          </div>
+          <p style="font-size: 9pt; color: #64748b; margin: 0; line-height: 1.4;">
+            Detta protokoll har genererats och arkiverats digitalt via ProvProtokoll Sverige.
+          </p>
+        </div>
+        <p style="font-size: 8.5pt; color: #718096; margin: 0; line-height: 1.5; text-align: center;">
           Svara ej – detta är ett automatiskt genererat mejl som inte kan besvaras.
         </p>
       </td>
