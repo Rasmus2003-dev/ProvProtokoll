@@ -26,6 +26,7 @@ import { VtrDetailsPanel } from '../components/VtrDetailsPanel';
 import { useToast } from '../components/Toast';
 import { fetchElever, addElev, deleteElev, subscribeToElever } from '../lib/elevregister';
 import { isSupabaseConfigured } from '../lib/supabase';
+import { EmailComposerModal, EmailComposerInitialData } from '../components/EmailComposerModal';
 import type { ElevRecord } from '../types';
 
 export type { ElevRecord };
@@ -41,6 +42,8 @@ export function ElevregisterScreen() {
   const [modalSource, setModalSource] = useState<'trv' | 'trafikskola'>('trv');
   const [expandedVtrId, setExpandedVtrId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showEmailComposer, setShowEmailComposer] = useState(false);
+  const [selectedEmailElev, setSelectedEmailElev] = useState<EmailComposerInitialData | undefined>(undefined);
 
   // Form State
   const [name, setName] = useState('');
@@ -183,6 +186,19 @@ export function ElevregisterScreen() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <button
+            onClick={() => {
+              triggerHaptic('light');
+              setSelectedEmailElev(undefined);
+              setShowEmailComposer(true);
+            }}
+            className="flex-1 md:flex-none px-4 py-3 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 text-[#002f6c] dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer"
+            title="Skicka kallelse, påminnelse eller anpassat mejl"
+          >
+            <Mail size={16} />
+            <span>Skicka meddelande</span>
+          </button>
+
           <button
             onClick={() => {
               setModalSource('trv');
@@ -353,6 +369,24 @@ export function ElevregisterScreen() {
                 </div>
 
                 <div className="border-t border-gray-100 dark:border-slate-800 pt-3 mt-4 flex items-center justify-between gap-2">
+                  <button
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setSelectedEmailElev({
+                        to: elev.email || '',
+                        toName: elev.name,
+                        licenseType: elev.licenseType,
+                        bookingTime: elev.bookingTime || '09:00',
+                        initialTemplate: 'kallelse'
+                      });
+                      setShowEmailComposer(true);
+                    }}
+                    className="p-2 text-gray-500 hover:text-[#002f6c] dark:text-slate-400 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    title={`Skicka kallelse / meddelande till ${elev.name}`}
+                  >
+                    <Mail size={15} />
+                  </button>
+
                   <button
                     onClick={() => handleDeleteElev(elev.id)}
                     className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
@@ -580,6 +614,12 @@ export function ElevregisterScreen() {
         </div>
       )}
 
+      {/* Email Composer Modal */}
+      <EmailComposerModal
+        isOpen={showEmailComposer}
+        onClose={() => setShowEmailComposer(false)}
+        initialData={selectedEmailElev}
+      />
     </div>
   );
 }

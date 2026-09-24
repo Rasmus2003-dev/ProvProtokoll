@@ -8,6 +8,7 @@ import { downloadProtocolHtml, downloadEmailProtocolHtml, generateEmailProtocolH
 import { authHeaders } from '../../lib/inspectors';
 import { useToast } from '../../components/Toast';
 import { CandidateShareModal } from './components/CandidateShareModal';
+import { EmailComposerModal } from '../../components/EmailComposerModal';
 
 export function ProtokollScreen() {
   const { state, saveTest, resetCurrentTest, profile } = useAppStore();
@@ -17,6 +18,7 @@ export function ProtokollScreen() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showCustomEmailComposer, setShowCustomEmailComposer] = useState(false);
   const [copiedEmailHtml, setCopiedEmailHtml] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isGeneratingHtml, setIsGeneratingHtml] = useState(false);
@@ -333,6 +335,15 @@ export function ProtokollScreen() {
               <div className="flex items-center gap-2">
                 <Button
                   size="sm"
+                  onClick={() => setShowCustomEmailComposer(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 font-bold cursor-pointer"
+                  title="Skicka intyg, trafikskolerapport eller annat mejl"
+                >
+                  <Mail size={13} />
+                  <span>Annat mejl (Intyg/Kallelse)</span>
+                </Button>
+                <Button
+                  size="sm"
                   variant="outline"
                   onClick={handleCopyEmailHTML}
                   className="bg-white hover:bg-violet-50 text-violet-700 border-violet-200 text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 font-bold"
@@ -645,6 +656,20 @@ export function ProtokollScreen() {
         onClose={() => setShowShareModal(false)}
         state={state}
         examinerName={profile?.name}
+      />
+
+      {/* Skicka annat mejl modal */}
+      <EmailComposerModal
+        isOpen={showCustomEmailComposer}
+        onClose={() => setShowCustomEmailComposer(false)}
+        initialData={{
+          to: state.properties.email,
+          toName: state.properties.studentName,
+          licenseType: state.properties.licenseType,
+          testDate: state.properties.testDate,
+          examiner: profile?.name,
+          result: state.result.drivingResult || 'Godkänt'
+        }}
       />
     </div>
   );
