@@ -119,62 +119,66 @@ export const failureCategories = {
   }
 };
 
-// Formuleringar i Trafikverkets nya protokoll ("Du måste bli bättre på:").
-// Visas bara när provet görs med ny provlayout, före de tidigare formuleringarna.
-// Bekräftade från ett riktigt protokoll: de tre första under Trafiksäkerhet och beteende.
-// Övriga är skrivna i samma stil och bör stämmas av mot fler nya protokoll.
+// Formuleringar i Trafikverkets nya protokoll under "Du måste bli bättre på:".
+// Följer Trafikverkets förarprovskatalog och kursplanemål (TSFS).
 export const newLayoutDeficiencies: Record<string, string[]> = {
   "Trafiksäkerhet och beteende": [
     "Planera din körning efter det du ser",
-    "Samspela väl med andra trafikanter",
-    "Välja rätt placering",
-    "Anpassa hastigheten efter situationen",
+    "Samspela med andra trafikanter",
+    "Välja lämplig placering",
+    "Anpassa hastigheten efter rådande förhållanden",
     "Hålla tillräckliga säkerhetsmarginaler",
-    "Upptäcka och bedöma risker i tid",
-    "Ha god uppsikt runt fordonet",
+    "Upptäcka och förutse risker i god tid",
+    "Ha god uppsikt och avsöka omgivningen rörligt",
+    "Kontrollera döda vinkeln och speglar vid körfältsbyte och sväng",
     "Visa hänsyn till oskyddade trafikanter",
-    "Anpassa körningen efter väglag och sikt"
+    "Anpassa körningen efter väglag och sikt",
+    "Avsöka och planera körningen i korsningar och cirkulationsplatser"
   ],
   "Manövrering": [
     "Manövrera fordonet mjukt och under kontroll",
-    "Hantera reglagen rutinmässigt",
-    "Styra med god precision",
+    "Hantera reglagen och växlingen rutinmässigt",
+    "Styra fordonet med god precision och linjeföring",
     "Anpassa manövreringen till utrymme och hinder",
-    "Bromsa effektivt och kontrollerat",
-    "Backa och parkera med god uppsikt"
+    "Bromsa effektivt och mjukt med god framförhållning",
+    "Backa och parkera med god uppsikt och orientering",
+    "Starta i motlut och krypköra utan bakåtrullning",
+    "Utföra säkra och kontrollerade riktningsförändringar"
   ],
   "Trafikregler": [
-    "Följa väjningsplikt och stopplikt",
-    "Följa hastighetsbegränsningarna",
+    "Iaktta väjningsplikt, högerregeln och stopplikt",
+    "Följa gällande hastighetsbegränsningar",
     "Följa vägmärken, trafiksignaler och vägmarkeringar",
     "Följa reglerna vid körfältsbyte och sammanvävning",
-    "Följa reglerna i cirkulationsplatser",
-    "Lämna företräde vid övergångsställen och cykelpassager"
+    "Följa reglerna vid infart, körning i och utfart ur cirkulationsplats",
+    "Lämna företräde vid övergångsställen och cykelpassager",
+    "Hålla tillräckligt avstånd till framförvarande fordon"
   ],
   "Fordonskännedom": [
-    "Kontrollera fordonets skick",
+    "Utföra en fullständig säkerhetskontroll av fordonet",
     "Upptäcka fel och föreslå åtgärder",
     "Förklara varför kontrollen är viktig för trafiksäkerheten",
-    "Använda fordonets reglage och hjälpsystem rätt",
-    "Ställa in en säker körställning"
+    "Använda fordonets belysning, reglage och stödsystem på rätt sätt",
+    "Ställa in en ergonomisk och säker körställning",
+    "Identifiera och förstå fordonets varnings- och kontrollampor"
   ],
   "Miljömedveten körning": [
-    "Planera din körning för en jämn fart",
-    "Utnyttja fordonets rörelseenergi",
-    "Välja växel och varvtal som ger låg förbrukning",
-    "Undvika onödig tomgång och onödiga accelerationer"
+    "Planera din körning för en jämn fart och undvika onödiga stopp",
+    "Utnyttja fordonets rörelseenergi och motorbroms",
+    "Välja växel och varvtal som ger låg förbrukning (EcoDriving)",
+    "Undvika onödig tomgångskörning och kraftiga accelerationer"
   ],
   "Passagerarvänlig körning": [
-    "Köra mjukt och behagligt för passagerarna",
-    "Anpassa hastigheten i kurvor efter passagerarna",
-    "Accelerera och bromsa mjukt",
+    "Köra mjukt och behagligt med hänsyn till passagerarkomfort",
+    "Anpassa hastigheten i kurvor så att sidokrafter minimeras",
+    "Accelerera och bromsa mjukt och förutsägbart",
     "Ta hänsyn till passagerare vid på- och avstigning"
   ],
   "Handlings- och omdömesförmåga": [
-    "Göra säkra bedömningar i svåra trafiksituationer",
-    "Agera lugnt och korrekt vid oväntade händelser",
+    "Göra säkra riskbedömningar i svåra trafiksituationer",
+    "Agera lugnt och med gott omdöme vid oväntade händelser",
     "Förutse risker och konsekvenser av ditt agerande",
-    "Hålla tillräckliga säkerhetsmarginaler"
+    "Hålla tillräckliga säkerhetsmarginaler till andra trafikanter"
   ]
 };
 
