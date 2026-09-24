@@ -425,10 +425,7 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
   }
   if (state.result.testAborted) isPassed = false;
 
-  const noReplyBanner = `
-    <div style="background: #f7f9fc; border: 1px solid #dde3ea; border-left: 3px solid #99a6b8; border-radius: 4px; padding: 10px 14px; margin-bottom: 18px; font-size: 9.5pt; color: #555; line-height: 1.4;">
-      <strong>Svara ej – detta mejl går inte att besvara.</strong>
-    </div>`;
+  const firstName = (studentName || 'Kandidat').trim().split(/\s+/)[0];
 
   const priorityBadge = `
     <div style="margin-bottom: 8px;">
@@ -484,12 +481,10 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="email-container" style="max-width: 720px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden;">
     <tr>
       <td class="email-card" style="padding: 24px 22px 28px 22px;">
-        ${noReplyBanner}
         ${statusBanner}
-        <div style="font-size: 11pt; line-height: 1.6; color: #2d3748; margin-bottom: 18px;">
-          Hej <strong>${studentName}</strong>!<br /><br />
-          Här kommer ditt officiella körprovsresultat från ditt prov genomfört den ${state.properties.testDate || new Date().toISOString().split('T')[0]}.<br />
-          Nedan finner du ditt fullständiga provprotokoll med sammanställning och bedömning.
+        <div style="font-size: 12pt; line-height: 1.6; color: #1e293b; margin-bottom: 18px;">
+          Hej <strong>${firstName}</strong>! Här kommer ditt provresultat!<br />
+          <span style="font-size: 10pt; color: #64748b;">Nedan finner du ditt fullständiga provprotokoll med sammanställning och bedömning.</span>
         </div>
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 18px 0;" />
         ${bodyContent}
@@ -502,8 +497,8 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
             Detta protokoll har genererats och arkiverats digitalt via ProvProtokoll Sverige.
           </p>
         </div>
-        <p style="font-size: 8.5pt; color: #718096; margin: 0; line-height: 1.5; text-align: center;">
-          Svara ej – detta är ett automatiskt genererat mejl som inte kan besvaras.
+        <p style="font-size: 8.5pt; color: #94a3b8; margin: 0; line-height: 1.5; text-align: center;">
+          ProvProtokoll Förarprov Sverige • protokoll.rasmusl.se
         </p>
       </td>
     </tr>

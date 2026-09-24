@@ -40,7 +40,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       },
       body: JSON.stringify({
         sender: { name: 'Provresultat', email: 'info@rasmusl.se' },
-        replyTo: { name: 'Svara inte på detta mejl', email: 'noreply@rasmusl.se' },
+        replyTo: { name: 'ProvProtokoll', email: 'noreply@rasmusl.se' },
         to: [{ email: to, name: toName || undefined }],
         subject,
         htmlContent: html,

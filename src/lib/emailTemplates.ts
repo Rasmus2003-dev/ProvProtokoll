@@ -102,11 +102,8 @@ function wrapHtmlTemplate(title: string, contentHtml: string): string {
     <!-- Footer -->
     <tr>
       <td style="padding: 20px 32px 28px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b; line-height: 1.5;">
-        <p style="margin: 0 0 8px 0; font-weight: 700; color: #475569;">
+        <p style="margin: 0 0 4px 0; font-weight: 700; color: #475569;">
           ProvProtokoll – Digitalt prov- och förarprovssystem
-        </p>
-        <p style="margin: 0 0 4px 0;">
-          Detta mejl har skickats automatiskt via ProvProtokolls säkra system. Vänligen svara inte direkt på detta mejl då inkorgen inte övervakas.
         </p>
         <p style="margin: 0; color: #94a3b8;">
           Referens-ID: MSG-${Date.now().toString(36).toUpperCase()} • protokoll.rasmusl.se
