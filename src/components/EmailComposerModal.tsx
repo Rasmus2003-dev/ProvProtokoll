@@ -24,6 +24,7 @@ import {
 } from '../lib/emailTemplates';
 import { triggerHaptic } from '../lib/utils';
 import { useToast } from './Toast';
+import { recordOutboundMessage } from '../lib/candidateMessages';
 
 export interface EmailComposerInitialData {
   to?: string;
@@ -115,6 +116,12 @@ export function EmailComposerModal({ isOpen, onClose, initialData }: EmailCompos
 
     if (res.success) {
       triggerHaptic('heavy');
+      recordOutboundMessage({
+        candidateEmail: to.trim(),
+        candidateName: toName.trim() || to.trim(),
+        subject: generated.subject,
+        body: customMessage.trim() || `[Officiellt mejl: ${currentTemplate.label}]`,
+      });
       showToast(`Mejlet "${generated.subject}" skickades till ${to}!`, 'success');
       onClose();
     } else {

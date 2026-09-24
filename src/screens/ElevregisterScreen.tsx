@@ -27,6 +27,13 @@ import { useToast } from '../components/Toast';
 import { fetchElever, addElev, deleteElev, subscribeToElever } from '../lib/elevregister';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { EmailComposerModal, EmailComposerInitialData } from '../components/EmailComposerModal';
+import { CandidateMessagesModal } from '../components/CandidateMessagesModal';
+import { 
+  getUnreadReplyCountForCandidate, 
+  getMessagesForCandidate, 
+  getTotalUnreadRepliesCount 
+} from '../lib/candidateMessages';
+import { MessageSquare } from 'lucide-react';
 import type { ElevRecord } from '../types';
 
 export type { ElevRecord };
@@ -36,7 +43,7 @@ export function ElevregisterScreen() {
   const { resetCurrentTest } = useAppStore();
   const { showToast } = useToast();
 
-  const [activeTab, setActiveTab] = useState<'all' | 'trv' | 'trafikskola'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'trv' | 'trafikskola' | 'replies'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [modalSource, setModalSource] = useState<'trv' | 'trafikskola'>('trv');
@@ -44,6 +51,14 @@ export function ElevregisterScreen() {
   const [loading, setLoading] = useState(true);
   const [showEmailComposer, setShowEmailComposer] = useState(false);
   const [selectedEmailElev, setSelectedEmailElev] = useState<EmailComposerInitialData | undefined>(undefined);
+  const [activeDialogCandidate, setActiveDialogCandidate] = useState<ElevRecord | null>(null);
+  const [messagesVer, setMessagesVer] = useState(0);
+
+  useEffect(() => {
+    const handler = () => setMessagesVer((v) => v + 1);
+    window.addEventListener('candidate_messages_updated', handler);
+    return () => window.removeEventListener('candidate_messages_updated', handler);
+  }, []);
 
   // Form State
   const [name, setName] = useState('');
@@ -140,9 +155,14 @@ export function ElevregisterScreen() {
     navigate('/korprov/start');
   };
 
+  const totalUnreadReplies = getTotalUnreadRepliesCount();
+
   const filteredElever = elever.filter(elev => {
+    const unread = getUnreadReplyCountForCandidate({ email: elev.email, personalNumber: elev.personalNumber, name: elev.name });
     const matchesTab = 
-      activeTab === 'all' ? true : elev.source === activeTab;
+      activeTab === 'all' ? true :
+      activeTab === 'replies' ? unread > 0 :
+      elev.source === activeTab;
     const cleanSearch = searchQuery.toLowerCase().trim();
     const matchesSearch = 
       !cleanSearch ||
@@ -266,6 +286,25 @@ export function ElevregisterScreen() {
               {skolaCount}
             </span>
           </button>
+
+          {totalUnreadReplies > 0 && (
+            <button
+              onClick={() => setActiveTab('replies')}
+              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'replies'
+                  ? 'bg-emerald-500 text-white shadow-xs'
+                  : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100'
+              }`}
+            >
+              <MessageSquare size={14} className={activeTab === 'replies' ? 'text-white' : 'text-emerald-600'} />
+              <span>Svar från elever</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-black ${
+                activeTab === 'replies' ? 'bg-white text-emerald-800' : 'bg-emerald-200 dark:bg-emerald-800 text-emerald-900 dark:text-emerald-100'
+              }`}>
+                {totalUnreadReplies}
+              </span>
+            </button>
+          )}
         </div>
 
         <div className="relative w-full sm:w-80">
@@ -301,13 +340,20 @@ export function ElevregisterScreen() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredElever.map(elev => {
             const isTrv = elev.source === 'trv';
+            const unreadCount = getUnreadReplyCountForCandidate({ email: elev.email, personalNumber: elev.personalNumber, name: elev.name });
+            const msgCount = getMessagesForCandidate({ email: elev.email, personalNumber: elev.personalNumber, name: elev.name }).length;
+
             return (
               <div 
                 key={elev.id}
-                className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                className={`bg-white dark:bg-slate-900 border rounded-2xl p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between ${
+                  unreadCount > 0 
+                    ? 'border-emerald-300 dark:border-emerald-700/80 ring-2 ring-emerald-500/20' 
+                    : 'border-gray-200/80 dark:border-slate-800'
+                }`}
               >
                 <div>
-                  <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center justify-between gap-2 mb-2">
                     <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md border flex items-center gap-1.5 ${
                       isTrv 
                         ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-900'
@@ -324,6 +370,36 @@ export function ElevregisterScreen() {
                   <h3 className="text-base font-black text-gray-900 dark:text-white mb-0.5">
                     {elev.name}
                   </h3>
+
+                  {/* Svarsindikator från kandidat */}
+                  {unreadCount > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        triggerHaptic('medium');
+                        setActiveDialogCandidate(elev);
+                      }}
+                      className="my-1.5 w-full py-1.5 px-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl text-[11px] font-black uppercase tracking-wider shadow-xs flex items-center justify-center gap-1.5 animate-pulse cursor-pointer transition-all"
+                      title="Eleven har besvarat ett mejl – klicka för att läsa och svara direkt"
+                    >
+                      <MessageSquare size={13} className="shrink-0" />
+                      <span>{unreadCount} nytt svar från elev! (Klicka för dialog)</span>
+                    </button>
+                  ) : msgCount > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        triggerHaptic('light');
+                        setActiveDialogCandidate(elev);
+                      }}
+                      className="my-1 py-1 px-2.5 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 text-[#002f6c] dark:text-blue-300 rounded-lg text-[10px] font-bold border border-blue-200 dark:border-blue-900/50 flex items-center gap-1.5 cursor-pointer transition-colors"
+                      title="Visa mejldialog"
+                    >
+                      <MessageSquare size={11} className="shrink-0 text-blue-600" />
+                      <span>Mejldialog ({msgCount} meddelanden)</span>
+                    </button>
+                  ) : null}
+
                   <div className="flex items-center gap-2 mb-3 flex-wrap">
                     <PrivacyGuard className="inline-block">
                       <div className="text-xs font-mono text-gray-500 dark:text-slate-400">
@@ -369,6 +445,26 @@ export function ElevregisterScreen() {
                 </div>
 
                 <div className="border-t border-gray-100 dark:border-slate-800 pt-3 mt-4 flex items-center justify-between gap-2">
+                  <button
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setActiveDialogCandidate(elev);
+                    }}
+                    className={`p-2 rounded-lg transition-colors cursor-pointer relative ${
+                      unreadCount > 0 
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold'
+                        : 'text-gray-500 hover:text-[#002f6c] dark:text-slate-400 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800'
+                    }`}
+                    title={`Mejldialog och svar (${msgCount} meddelanden)`}
+                  >
+                    <MessageSquare size={15} />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-600 text-white text-[8px] font-black rounded-full flex items-center justify-center animate-bounce">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+
                   <button
                     onClick={() => {
                       triggerHaptic('light');
@@ -619,6 +715,27 @@ export function ElevregisterScreen() {
         isOpen={showEmailComposer}
         onClose={() => setShowEmailComposer(false)}
         initialData={selectedEmailElev}
+      />
+
+      {/* Candidate Messages & Reply Thread Modal */}
+      <CandidateMessagesModal
+        isOpen={Boolean(activeDialogCandidate)}
+        onClose={() => setActiveDialogCandidate(null)}
+        candidate={activeDialogCandidate ? {
+          name: activeDialogCandidate.name,
+          personalNumber: activeDialogCandidate.personalNumber,
+          email: activeDialogCandidate.email,
+          phone: activeDialogCandidate.phone,
+          licenseType: activeDialogCandidate.licenseType,
+        } : null}
+        onReply={(replyData) => {
+          setSelectedEmailElev({
+            to: replyData.to,
+            toName: replyData.toName,
+            initialTemplate: 'custom',
+          });
+          setShowEmailComposer(true);
+        }}
       />
     </div>
   );

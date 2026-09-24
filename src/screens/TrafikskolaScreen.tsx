@@ -3,9 +3,11 @@ import {
   GraduationCap, Users, Calendar, Clock, Plus, CheckCircle2, 
   Search, BookOpen, Award, FileText, ChevronRight, AlertCircle, 
   Trash2, UserCheck, ShieldCheck, Check, Smartphone, CheckSquare,
-  Sparkles, Download, Layers, Printer, Eye, Building2, Car, Edit3, Mail
+  Sparkles, Download, Layers, Printer, Eye, Building2, Car, Edit3, Mail, MessageSquare
 } from 'lucide-react';
 import { EmailComposerModal, EmailComposerInitialData } from '../components/EmailComposerModal';
+import { CandidateMessagesModal } from '../components/CandidateMessagesModal';
+import { getUnreadReplyCountForCandidate } from '../lib/candidateMessages';
 import { 
   TrafikskolaProfile, 
   LektionsProtokoll, 
@@ -169,6 +171,12 @@ export function TrafikskolaScreen() {
   // Email Composer state
   const [showEmailComposer, setShowEmailComposer] = useState(false);
   const [emailComposerData, setEmailComposerData] = useState<EmailComposerInitialData | undefined>(undefined);
+  const [activeDialogStudent, setActiveDialogStudent] = useState<{
+    name: string;
+    personalNumber?: string;
+    phone?: string;
+    licenseType?: string;
+  } | null>(null);
   const [protocolFilterStudent, setProtocolFilterStudent] = useState<string>('alla');
 
   // New Student Form State
@@ -403,6 +411,7 @@ export function TrafikskolaScreen() {
                   const isAct = stud.id === activeStudentId;
                   const studCompleted = stud.curriculum.filter(m => m.status === 'Klar').length;
                   const percent = Math.round((studCompleted / stud.curriculum.length) * 100);
+                  const unreadReplies = getUnreadReplyCountForCandidate({ personalNumber: stud.personalNumber, name: stud.name });
 
                   return (
                     <div
@@ -420,8 +429,13 @@ export function TrafikskolaScreen() {
                             {stud.name[0]}
                           </div>
                           <div>
-                            <div className="text-xs font-bold text-gray-900 dark:text-white">
-                              {stud.name}
+                            <div className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                              <span>{stud.name}</span>
+                              {unreadReplies > 0 && (
+                                <span className="px-1.5 py-0.2 bg-emerald-500 text-white text-[9px] font-black rounded-md animate-pulse">
+                                  Svar!
+                                </span>
+                              )}
                             </div>
                             <div className="text-[10px] text-gray-400 font-mono">
                               {stud.personalNumber} • {stud.licenseType}
@@ -465,6 +479,22 @@ export function TrafikskolaScreen() {
                   </div>
 
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        triggerHaptic('light');
+                        setActiveDialogStudent({
+                          name: activeStudent.name,
+                          personalNumber: activeStudent.personalNumber,
+                          phone: activeStudent.phone,
+                          licenseType: activeStudent.licenseType,
+                        });
+                      }}
+                      className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#002f6c] dark:bg-blue-950/40 dark:text-blue-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-blue-200 dark:border-blue-900"
+                      title="Visa mejldialog och inkomna svar från eleven"
+                    >
+                      <MessageSquare size={13} />
+                      <span>Mejldialog</span>
+                    </button>
                     <button
                       onClick={() => setShowCreateProtocolModal(true)}
                       className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
@@ -927,6 +957,21 @@ export function TrafikskolaScreen() {
         isOpen={showEmailComposer}
         onClose={() => setShowEmailComposer(false)}
         initialData={emailComposerData}
+      />
+
+      {/* Candidate Messages & Reply Thread Modal */}
+      <CandidateMessagesModal
+        isOpen={Boolean(activeDialogStudent)}
+        onClose={() => setActiveDialogStudent(null)}
+        candidate={activeDialogStudent}
+        onReply={(replyData) => {
+          setEmailComposerData({
+            to: replyData.to,
+            toName: replyData.toName,
+            initialTemplate: 'custom',
+          });
+          setShowEmailComposer(true);
+        }}
       />
 
     </div>
