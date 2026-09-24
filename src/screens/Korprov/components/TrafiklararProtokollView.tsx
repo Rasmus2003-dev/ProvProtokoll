@@ -44,11 +44,11 @@ export function TrafiklararProtokollView({ state, inspectorName }: TrafiklararPr
     if (drivingFail?.primaryCause?.area) {
       return `${drivingFail.primaryCause.area} (${drivingFail.primaryCause.deficiencies.join(', ')})`;
     }
-    return 'Cirkulationsplatser, backning runt hörn och självständig körning mot mål.';
+    return 'Cirkulationsplatser (placering och teckengivning) samt backning runt hörn.';
   });
   const [teacherNotes, setTeacherNotes] = useState<string>(state.testNotes || '');
   const [privatePracticeAdvice, setPrivatePracticeAdvice] = useState<string>(
-    'Träna med handledare på att titta långt fram och hålla blicken rörlig i korsningar och cirkulationsplatser.'
+    'Öva med handledare på avsökning i god tid inför korsningar och rondeller.'
   );
 
   const handlePrint = () => {
@@ -58,7 +58,7 @@ export function TrafiklararProtokollView({ state, inspectorName }: TrafiklararPr
 
   const handleSaveNotes = () => {
     triggerHaptic('medium');
-    showToast('Trafiklärarprotokollet har sparats i elevakten!', 'success');
+    showToast('Protokollet har sparats i elevakten!', 'success');
   };
 
   // Kompetensområden för STR & Trafikskolans kursplan
@@ -67,31 +67,31 @@ export function TrafiklararProtokollView({ state, inspectorName }: TrafiklararPr
       title: '1. Fordonskännedom & Manövrering',
       desc: 'Start i motlut, krypkörning, backning, växling, styrning och säkerhetskontroll.',
       status: state.result.safetyCheckResult === 'Underkänt' || drivingFail?.primaryCause?.area === 'Fordonskännedom' ? 'Brist' : 'Godkänd',
-      feedback: state.result.safetyCheckResult === 'Underkänt' ? 'Säkerhetskontrollen underkändes.' : 'Godkänd hantering och manövrering.'
+      feedback: state.result.safetyCheckResult === 'Underkänt' ? 'Underkänd säkerhetskontroll.' : 'God fordonskontroll och hantering.'
     },
     {
       title: '2. Miljö & Sparsam körning',
       desc: 'Ecodriving, motorbroms, framförhållning och anpassad acceleration.',
       status: drivingFail?.primaryCause?.area === 'Miljö och sparsam körning' ? 'Brist' : 'Godkänd',
-      feedback: 'Bra planering av körningen med god retardationsplanering.'
+      feedback: 'Kör med bra framförhållning och planerad motorbroms.'
     },
     {
       title: '3. Trafikregler & Tillämpning',
       desc: 'Väjningsplikt, högerregeln, cirkulationsplatser, hastighet och skyltavläsning.',
       status: drivingFail?.primaryCause?.area === 'Trafikregler' ? 'Brist' : 'Godkänd',
-      feedback: drivingFail?.primaryCause?.area === 'Trafikregler' ? 'Regelavvikelser noterade.' : 'Följer anvisningar och trafikregler säkert.'
+      feedback: drivingFail?.primaryCause?.area === 'Trafikregler' ? 'Brister i regeltillämpning under provet.' : 'Följer regler och anvisningar.'
     },
     {
       title: '4. Trafiksäkerhet & Beteende',
       desc: 'Avsökning, uppsikt, döda vinkeln, samspel med cyklister/fotgängare och riskmedvetenhet.',
       status: state.result.interventionOccurred || drivingFail?.primaryCause?.area === 'Trafiksäkerhet och beteende' ? 'Brist' : 'Godkänd',
-      feedback: state.result.interventionOccurred ? 'Ingripande skedde under provet.' : 'God observation och avsökningsrutin.'
+      feedback: state.result.interventionOccurred ? 'Ingripande skedde under provet.' : 'God uppsikt och bra rörlig blick.'
     },
     {
       title: '5. Personliga förutsättningar & Självvärdering',
       desc: 'Självständig körning mot mål, stresshantering, koncentration och riskbedömning.',
       status: state.result.testAborted ? 'Brist' : 'Godkänd',
-      feedback: 'Fungerar självständigt i blandad trafik.'
+      feedback: 'Kör självständigt med goda marginaler.'
     }
   ];
 
@@ -99,22 +99,22 @@ export function TrafiklararProtokollView({ state, inspectorName }: TrafiklararPr
     <div className="space-y-6 print:m-0 print:p-0">
       
       {/* Lärar-specifik åtgärdslist */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-emerald-50/80 dark:bg-emerald-950/25 border border-emerald-300 dark:border-emerald-800 rounded-2xl print:hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-slate-100 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-2xl print:hidden">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-emerald-600 text-white rounded-xl shadow-xs">
+          <div className="p-2 bg-slate-800 dark:bg-slate-700 text-white rounded-xl shadow-xs">
             <GraduationCap size={20} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-200 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-200">
-                Endast för Trafiklärare & Utbildare
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200">
+                Intern lärarbedömning
               </span>
-              <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
-                • Ej synligt för kandidaten
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                • Visas ej för eleven
               </span>
             </div>
-            <h3 className="text-sm font-black text-emerald-950 dark:text-emerald-100 mt-0.5">
-              Pedagogiskt Utbildningsprotokoll ({licenseType})
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+              Lärarprotokoll ({licenseType})
             </h3>
           </div>
         </div>
@@ -123,7 +123,7 @@ export function TrafiklararProtokollView({ state, inspectorName }: TrafiklararPr
           <button
             type="button"
             onClick={handleSaveNotes}
-            className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-emerald-100 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+            className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
           >
             <Save size={14} />
             <span>Spara i elevakten</span>
@@ -132,10 +132,10 @@ export function TrafiklararProtokollView({ state, inspectorName }: TrafiklararPr
           <button
             type="button"
             onClick={handlePrint}
-            className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+            className="px-3.5 py-2 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
           >
             <Printer size={14} />
-            <span>Skriv ut lärarprotokoll</span>
+            <span>Skriv ut protokoll</span>
           </button>
         </div>
       </div>
@@ -146,24 +146,24 @@ export function TrafiklararProtokollView({ state, inspectorName }: TrafiklararPr
         style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}
       >
         {/* Vattenstämpel / Header */}
-        <div className="flex items-center justify-between border-b-2 border-emerald-700 pb-4 mb-6">
+        <div className="flex items-center justify-between border-b-2 border-slate-800 pb-4 mb-6">
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
-              TRAFIKSKOLANS INTERNA UTBILDNINGSAKT • STR / FÖRARUTBILDNING
+            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+              TRAFIKSKOLANS INTERNA DOKUMENTATION • STR KURSPLAN
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-gray-950 mt-1">
-              Trafiklärarprotokoll & Utvärdering
+              Lärarbedömning & Utbildningskort
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              Pedagogisk analys av genomfört körprov / utbildningskontroll
+              Sammanställning och bedömning efter körning
             </p>
           </div>
 
           <div className="text-right">
-            <span className={`inline-block px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider text-white ${
+            <span className={`inline-block px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider text-white ${
               isPassed ? 'bg-emerald-600' : 'bg-red-600'
             }`}>
-              {isPassed ? 'PROVSTATUS: GODKÄNT' : 'PROVSTATUS: UNDERKÄNT'}
+              {isPassed ? 'RESULTAT: GODKÄNT' : 'RESULTAT: UNDERKÄNT'}
             </span>
             <div className="text-[11px] font-mono text-gray-400 mt-1">
               Ref: LÄRARE-{Date.now().toString(36).toUpperCase()}
@@ -186,7 +186,7 @@ export function TrafiklararProtokollView({ state, inspectorName }: TrafiklararPr
             <strong className="text-gray-950">{licenseType} ({state.properties.transmission})</strong>
           </div>
           <div>
-            <span className="text-[10px] font-bold uppercase text-gray-400 block">Lärare / Inspektör:</span>
+            <span className="text-[10px] font-bold uppercase text-gray-400 block">Lärare:</span>
             <strong className="text-gray-950 truncate">{teacher}</strong>
           </div>
         </div>
@@ -194,7 +194,7 @@ export function TrafiklararProtokollView({ state, inspectorName }: TrafiklararPr
         {/* De 5 Kompetensområdena (Utbildningsöversikt) */}
         <div className="space-y-3 mb-6">
           <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 border-b border-gray-200 pb-1 flex items-center justify-between">
-            <span>Bedömning av de 5 kompetensområdena</span>
+            <span>De 5 kompetensområdena (kursplan)</span>
             <span className="text-[10px] text-gray-400 font-normal">Krav enligt Transportstyrelsens föreskrifter</span>
           </h3>
 
@@ -205,14 +205,14 @@ export function TrafiklararProtokollView({ state, inspectorName }: TrafiklararPr
                 className="p-3 rounded-xl border border-gray-200 flex items-start justify-between gap-3 text-xs bg-white"
               >
                 <div className="space-y-0.5">
-                  <div className="font-black text-gray-950">{area.title}</div>
+                  <div className="font-bold text-gray-950">{area.title}</div>
                   <div className="text-[11px] text-gray-500 leading-tight">{area.desc}</div>
-                  <div className="text-[11px] font-semibold text-gray-700 pt-0.5">
-                    Kommentar: {area.feedback}
+                  <div className="text-[11px] text-gray-700 pt-0.5">
+                    <span className="font-semibold">Notering:</span> {area.feedback}
                   </div>
                 </div>
 
-                <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase shrink-0 ${
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase shrink-0 ${
                   area.status === 'Godkänd'
                     ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                     : 'bg-red-100 text-red-800 border border-red-300'
@@ -227,7 +227,7 @@ export function TrafiklararProtokollView({ state, inspectorName }: TrafiklararPr
         {/* Bristanalys & Situationer (om provet hade anmärkningar) */}
         {(drivingFail?.primaryCause?.area || safetyFail?.primaryCause?.area) && (
           <div className="p-4 bg-red-50/80 rounded-xl border border-red-200 text-xs space-y-2 mb-6">
-            <div className="font-black uppercase text-red-900 flex items-center gap-1.5">
+            <div className="font-bold uppercase text-red-900 flex items-center gap-1.5">
               <AlertCircle size={14} />
               <span>Identifierade brister under körningen:</span>
             </div>
@@ -261,16 +261,16 @@ export function TrafiklararProtokollView({ state, inspectorName }: TrafiklararPr
         </div>
 
         {/* Trafiklärarens Handlingsplan & Vidare Utbildningsrekommendation */}
-        <div className="p-4 bg-emerald-50/50 rounded-xl border-2 border-emerald-200/80 space-y-3 text-xs mb-6">
-          <div className="font-black uppercase text-emerald-950 flex items-center gap-1.5">
-            <Sparkles size={14} className="text-emerald-600" />
-            <span>Trafiklärarens pedagogiska handlingsplan:</span>
+        <div className="p-4 bg-slate-50 rounded-xl border border-slate-300 space-y-3 text-xs mb-6">
+          <div className="font-bold uppercase text-slate-800 flex items-center gap-1.5">
+            <FileText size={14} className="text-slate-600" />
+            <span>Åtgärder och planering:</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="text-[10px] font-bold uppercase text-gray-500 block mb-1">
-                Rekommenderade lektioner:
+                Rekommenderat antal lektioner:
               </label>
               <select
                 value={recommendedLessons}
@@ -287,7 +287,7 @@ export function TrafiklararProtokollView({ state, inspectorName }: TrafiklararPr
 
             <div className="sm:col-span-2">
               <label className="text-[10px] font-bold uppercase text-gray-500 block mb-1">
-                Fokusområden för körträning:
+                Fokusområden:
               </label>
               <input
                 type="text"
@@ -300,7 +300,7 @@ export function TrafiklararProtokollView({ state, inspectorName }: TrafiklararPr
 
           <div>
             <label className="text-[10px] font-bold uppercase text-gray-500 block mb-1">
-              Råd till privat handledare (om tillämpligt):
+              Råd till handledaren (hemmaträning):
             </label>
             <input
               type="text"
@@ -312,13 +312,13 @@ export function TrafiklararProtokollView({ state, inspectorName }: TrafiklararPr
 
           <div>
             <label className="text-[10px] font-bold uppercase text-gray-500 block mb-1">
-              Interna anteckningar i elevakten:
+              Anteckningar i elevakten:
             </label>
             <textarea
               rows={2}
               value={teacherNotes}
               onChange={(e) => setTeacherNotes(e.target.value)}
-              placeholder="Lärarens privata anteckningar..."
+              placeholder="Lärarens anteckningar..."
               className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs resize-none"
             />
           </div>

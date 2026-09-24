@@ -45,7 +45,7 @@ export interface LektionsProtokoll {
   styrkor: string;
   utvecklingsomraden: string;
   radHandledare: string;
-  betygHelhet: 'Utmärkt framsteg' | 'Godkänd lektion' | 'Behöver mer repetition';
+  betygHelhet: 'Bra genomfört' | 'Godkänd nivå' | 'Behöver mer träning' | string;
   nastaLektionRekommendation: string;
   createdAt: string;
 }
@@ -70,7 +70,7 @@ export interface Utbildningskontroll {
 // Fiktiv officiell trafikskola: Svea Trafikakademi AB
 export const DEFAULT_TRAFIKSKOLA: TrafikskolaProfile = {
   name: 'Svea Trafikakademi AB',
-  slogan: 'Kvalitetsutbildning för trygga & medvetna förare sedan 1998',
+  slogan: 'Auktoriserad trafikutbildning i Västerås sedan 1998',
   strNumber: 'STR-8492-SE',
   orgNumber: '556812-4921',
   utbildningsledare: 'Rasmus Lundin (Leg. Trafiklärare)',
@@ -104,15 +104,15 @@ export const INITIAL_LEKTIONS_PROTOKOLL: LektionsProtokoll[] = [
     larare: 'Rasmus Lundin',
     lektionstyp: 'Stadstrafik & Samspel',
     ovadeMoment: [
-      { momentNr: 6, momentTitel: 'Mindre bostadsområden & Högerregeln', category: 'Trafikmiljö', niva: 3, kommentar: 'Mycket god avsökning i skymda korsningar.' },
-      { momentNr: 7, momentTitel: 'Trafikljus & Cirkulationsplatser', category: 'Trafikmiljö', niva: 2, kommentar: 'Bra placering. Behöver påminnas om blinkers ut ur rondell.' },
-      { momentNr: 3, momentTitel: 'Växling & Ecodriving', category: 'Manövrering', niva: 3, kommentar: 'Självständig motorbroms och mjuk nedväxling.' }
+      { momentNr: 6, momentTitel: 'Mindre bostadsområden & Högerregeln', category: 'Trafikmiljö', niva: 3, kommentar: 'Bra avsökning i skymda korsningar.' },
+      { momentNr: 7, momentTitel: 'Trafikljus & Cirkulationsplatser', category: 'Trafikmiljö', niva: 2, kommentar: 'Bra placering. Kom ihåg högerblinkers i god tid före utfart.' },
+      { momentNr: 3, momentTitel: 'Växling & Ecodriving', category: 'Manövrering', niva: 3, kommentar: 'Bra motorbroms och mjuk nedväxling.' }
     ],
-    styrkor: 'Lugn körställning, fantastisk uppsikt framåt och mjuk pedalkänsla.',
-    utvecklingsomraden: 'Rutinmässig teckengivning till höger i god tid innan utfart ur flerspåriga rondeller.',
-    radHandledare: 'Öva i helgen på cirkulationsplatser med minst 2 körfält. Fokusera på tidig högerblinkers och spegel-döda vinkeln.',
-    betygHelhet: 'Godkänd lektion',
-    nastaLektionRekommendation: 'Lektion 9: Landsväg med omkörningssituationer och viltfara.',
+    styrkor: 'Lugn i bilen, bra rörlig blick och mjuk körning.',
+    utvecklingsomraden: 'Blinka till höger i god tid före utfart ur flerspåriga cirkulationsplatser.',
+    radHandledare: 'Öva i helgen på cirkulationsplatser med två körfält. Fokusera på tidig högerblinkers och spegel-döda vinkeln.',
+    betygHelhet: 'Godkänd nivå',
+    nastaLektionRekommendation: 'Lektion 9: Landsväg, hastighetsanpassning och omkörningar.',
     createdAt: '2026-09-22T14:50:00.000Z'
   },
   {
@@ -128,15 +128,15 @@ export const INITIAL_LEKTIONS_PROTOKOLL: LektionsProtokoll[] = [
     larare: 'Rasmus Lundin',
     lektionstyp: 'Grundövning',
     ovadeMoment: [
-      { momentNr: 1, momentTitel: 'Körställning & Reglage', category: 'Körställning', niva: 3, kommentar: 'Bra stol- och spegelinställning.' },
-      { momentNr: 2, momentTitel: 'Gas & Broms (Krypkörning)', category: 'Manövrering', niva: 3, kommentar: 'Mjuk dosering av One-Pedal Drive.' },
-      { momentNr: 4, momentTitel: 'Backning & Parkering', category: 'Manövrering', niva: 2, kommentar: 'Goda referenspunkter, men titta mer bakåt med blicken.' }
+      { momentNr: 1, momentTitel: 'Körställning & Reglage', category: 'Körställning', niva: 3, kommentar: 'Stol, speglar och bälte sitter bra.' },
+      { momentNr: 2, momentTitel: 'Gas & Broms (Krypkörning)', category: 'Manövrering', niva: 3, kommentar: 'Mjuk dosering på pedalen.' },
+      { momentNr: 4, momentTitel: 'Backning & Parkering', category: 'Manövrering', niva: 2, kommentar: 'Bra referenspunkter, men titta mer bakåt genom rutan.' }
     ],
-    styrkor: 'Snabb inlärningsförmåga och trygg vid precisionskörning.',
-    utvecklingsomraden: 'Vända huvudet bakåt under hela backningsmomentet istället för att enbart lita på backkameran.',
-    radHandledare: 'Träna på rak backning längs trottoarkant och backning runt lugnt gathörn.',
-    betygHelhet: 'Godkänd lektion',
-    nastaLektionRekommendation: 'Lektion 4: Enklare villatrafik och väjningsregler.',
+    styrkor: 'Hittade dragläget snabbt och manövrerar mjukt.',
+    utvecklingsomraden: 'Vrid på huvudet och titta bakåt under backning istället för att enbart titta på skärmen.',
+    radHandledare: 'Träna på rak backning längs trottoarkant och backning runt hörn på lugn villagata.',
+    betygHelhet: 'Godkänd nivå',
+    nastaLektionRekommendation: 'Lektion 4: Enklare villatrafik och högerregeln.',
     createdAt: '2026-09-23T10:55:00.000Z'
   },
   {
@@ -152,15 +152,15 @@ export const INITIAL_LEKTIONS_PROTOKOLL: LektionsProtokoll[] = [
     larare: 'Rasmus Lundin',
     lektionstyp: 'Provsimulering',
     ovadeMoment: [
-      { momentNr: 5, momentTitel: 'Säkerhetskontroll (Inre & Yttre)', category: 'Körställning', niva: 3, kommentar: 'Full poäng på yttre och inre kontroll.' },
-      { momentNr: 11, momentTitel: 'Självständig körning mot mål', category: 'Självständig körning', niva: 3, kommentar: 'Tydlig skyltläsning mot centrum och sjukhus.' },
-      { momentNr: 7, momentTitel: 'Trafikljus & Cirkulationsplatser', category: 'Trafikmiljö', niva: 3, kommentar: 'Perfekt samspel och filval.' }
+      { momentNr: 5, momentTitel: 'Säkerhetskontroll (Inre & Yttre)', category: 'Körställning', niva: 3, kommentar: 'Genomförde fullständig inre och yttre kontroll utan problem.' },
+      { momentNr: 11, momentTitel: 'Självständig körning mot mål', category: 'Självständig körning', niva: 3, kommentar: 'Följde vägvisning mot centrum säkert.' },
+      { momentNr: 7, momentTitel: 'Trafikljus & Cirkulationsplatser', category: 'Trafikmiljö', niva: 3, kommentar: 'Bra placering och planering.' }
     ],
-    styrkor: 'Mogen, trafiksäker och mycket självständig. Kör med gott säkerhetsavstånd.',
-    utvecklingsomraden: 'Inga anmärkningar. Redo för Trafikverkets körprov!',
-    radHandledare: 'Håll igång körningen med lugna mängdträningsturer inför uppkörningen.',
-    betygHelhet: 'Utmärkt framsteg',
-    nastaLektionRekommendation: 'Körprov bokat hos Trafikverket. Skolan utfärdar godkänt utbildningsintyg!',
+    styrkor: 'Självständig och trygg körning med goda marginaler och bra samspel.',
+    utvecklingsomraden: 'Inga direkta brister. Redo för förarprovet.',
+    radHandledare: 'Underhåll körningen med mängdträning hemma fram till provdagen.',
+    betygHelhet: 'Bra genomfört',
+    nastaLektionRekommendation: 'Körprov bokat hos Trafikverket. Skolan utfärdar godkänt utbildningsintyg.',
     createdAt: '2026-09-24T10:25:00.000Z'
   }
 ];

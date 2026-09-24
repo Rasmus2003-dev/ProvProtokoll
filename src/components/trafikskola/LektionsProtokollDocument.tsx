@@ -43,19 +43,19 @@ export function LektionsProtokollDocument({
       case 1:
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
-            Nivå 1 • Visat / Instruktion
+            Nivå 1: Introduktion
           </span>
         );
       case 2:
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-900 border border-blue-300">
-            Nivå 2 • Övad med stöd
+            Nivå 2: Övning
           </span>
         );
       case 3:
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
-            Nivå 3 • Självständig / Klar
+            Nivå 3: Självständig
           </span>
         );
     }
@@ -71,7 +71,7 @@ export function LektionsProtokollDocument({
             <GraduationCap size={16} />
           </div>
           <span className="text-xs font-bold tracking-wide uppercase">
-            Körlektionskort • Lektionsprotokoll
+            Körlektionsprotokoll
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -137,22 +137,22 @@ export function LektionsProtokollDocument({
         {/* Title Banner */}
         <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <div className="text-[10px] font-black uppercase tracking-wider text-blue-700">
-              Pedagogiskt Utbildningskort & Lektionsbedömning
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              Körlektionsprotokoll & Kursplan
             </div>
-            <h2 className="text-lg font-black text-slate-900 mt-0.5">
-              Körlektion #{protokoll.lektionNr} — {protokoll.lektionstyp}
+            <h2 className="text-lg font-bold text-slate-900 mt-0.5">
+              Lektion {protokoll.lektionNr} — {protokoll.lektionstyp}
             </h2>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
-              protokoll.betygHelhet === 'Utmärkt framsteg'
+            <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider border ${
+              protokoll.betygHelhet === 'Bra genomfört' || protokoll.betygHelhet === 'Utmärkt framsteg'
                 ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                : protokoll.betygHelhet === 'Godkänd lektion'
+                : protokoll.betygHelhet === 'Godkänd nivå' || protokoll.betygHelhet === 'Godkänd lektion'
                 ? 'bg-blue-50 text-blue-800 border-blue-300'
                 : 'bg-amber-50 text-amber-800 border-amber-300'
             }`}>
-              ★ {protokoll.betygHelhet}
+              {protokoll.betygHelhet}
             </span>
           </div>
         </div>
@@ -180,7 +180,7 @@ export function LektionsProtokollDocument({
               <Car size={12} /> Utbildningsbil
             </div>
             <div className="font-bold text-slate-900 mt-0.5 truncate">{protokoll.fordon}</div>
-            <div className="text-[10px] text-slate-500">Skolans vagnpark</div>
+            <div className="text-[10px] text-slate-500">Skolans bil</div>
           </div>
 
           <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200">
@@ -195,12 +195,12 @@ export function LektionsProtokollDocument({
         {/* Practiced moments table with STR 3-tier grading */}
         <div className="space-y-2">
           <div className="flex items-center justify-between pb-1">
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
-              <BookOpen size={14} className="text-[#002f6c]" />
-              Övade Moment under lektionen (STR Kursplan)
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+              <BookOpen size={14} className="text-slate-700" />
+              Övade moment (kursplan)
             </h3>
             <span className="text-[10px] text-slate-500">
-              Skala: 1 = Visat, 2 = Övad, 3 = Självständig
+              Skala: 1 = Introduktion, 2 = Övning, 3 = Självständig
             </span>
           </div>
 
@@ -208,7 +208,7 @@ export function LektionsProtokollDocument({
             {protokoll.ovadeMoment.map((entry) => (
               <div key={entry.momentNr} className="p-3 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-slate-50/50">
                 <div className="flex items-start gap-2.5">
-                  <span className="w-5 h-5 rounded-md bg-[#002f6c]/10 text-[#002f6c] font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="w-5 h-5 rounded-md bg-slate-100 text-slate-800 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
                     {entry.momentNr}
                   </span>
                   <div>
@@ -235,39 +235,39 @@ export function LektionsProtokollDocument({
 
         {/* Teacher Feedback & Strengths */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200 space-y-1">
-            <div className="text-[10px] font-black uppercase text-emerald-800 tracking-wider flex items-center gap-1">
-              <CheckCircle2 size={13} /> Dagens Styrkor & Framsteg
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+            <div className="text-[10px] font-bold uppercase text-slate-700 tracking-wider flex items-center gap-1">
+              <CheckCircle2 size={13} className="text-emerald-600" /> Det som fungerade bra
             </div>
             <p className="text-slate-800 text-xs leading-relaxed">
-              {protokoll.styrkor || 'Gott engagemang och god koncentration genom hela lektionen.'}
+              {protokoll.styrkor || 'Lugn och kontrollerad körning genom lektionen.'}
             </p>
           </div>
 
-          <div className="p-4 rounded-xl bg-amber-50/60 border border-amber-200 space-y-1">
-            <div className="text-[10px] font-black uppercase text-amber-800 tracking-wider flex items-center gap-1">
-              <AlertCircle size={13} /> Utvecklingsområden
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+            <div className="text-[10px] font-bold uppercase text-slate-700 tracking-wider flex items-center gap-1">
+              <AlertCircle size={13} className="text-amber-600" /> Att öva vidare på
             </div>
             <p className="text-slate-800 text-xs leading-relaxed">
-              {protokoll.utvecklingsomraden || 'Fortsätt nöta på spegelrutiner och planering i förväg.'}
+              {protokoll.utvecklingsomraden || 'Fortsätt träna på framförhållning och spegelrutiner.'}
             </p>
           </div>
         </div>
 
         {/* Home practice advice for supervisor */}
-        <div className="p-4 rounded-xl bg-blue-50/60 border border-blue-200 space-y-1 text-xs">
-          <div className="text-[10px] font-black uppercase text-blue-900 tracking-wider flex items-center gap-1">
-            <Sparkles size={13} className="text-blue-700" /> Råd & Träningsuppgift till privat handledare
+        <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-200 space-y-1 text-xs">
+          <div className="text-[10px] font-bold uppercase text-blue-900 tracking-wider flex items-center gap-1">
+            <BookOpen size={13} className="text-blue-700" /> Råd till handledaren (hemmaträning)
           </div>
           <p className="text-slate-800 text-xs leading-relaxed">
-            {protokoll.radHandledare || 'Träna på att köra i blandad miljö med fokus på avsökning och mjuk inbromsning.'}
+            {protokoll.radHandledare || 'Mängdträna i lugn miljö med fokus på avsökning och mjuk körning.'}
           </p>
         </div>
 
         {/* Next recommended step */}
         <div className="p-3 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-between text-xs">
           <div>
-            <span className="text-[10px] font-bold uppercase text-slate-500 block">Nästa steg / Rekommendation:</span>
+            <span className="text-[10px] font-bold uppercase text-slate-500 block">Planering inför nästa lektion:</span>
             <span className="font-bold text-slate-900">{protokoll.nastaLektionRekommendation}</span>
           </div>
         </div>

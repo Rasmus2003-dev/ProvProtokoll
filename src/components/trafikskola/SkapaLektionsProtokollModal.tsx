@@ -70,15 +70,15 @@ export function SkapaLektionsProtokollModal({
 
   // Selected moments
   const [ovadeMoment, setOvadeMoment] = useState<OvadeMomentEntry[]>([
-    { momentNr: 6, momentTitel: 'Mindre bostadsområden & Högerregeln', category: 'Trafikmiljö', niva: 2, kommentar: 'God uppsikt men behöver hålla lägre fart vid skymda hörn.' },
+    { momentNr: 6, momentTitel: 'Mindre bostadsområden & Högerregeln', category: 'Trafikmiljö', niva: 2, kommentar: 'Bra avsökning i korsningar.' },
     { momentNr: 7, momentTitel: 'Trafikljus & Cirkulationsplatser', category: 'Trafikmiljö', niva: 2, kommentar: 'Bra placering och planering.' }
   ]);
 
-  const [styrkor, setStyrkor] = useState('Lugn körning, bra uppsikt framåt och mjuk pedaldosering.');
-  const [utvecklingsomraden, setUtvecklingsomraden] = useState('Tidig teckengivning och bättre avsökning bakåt vid inbromsning.');
-  const [radHandledare, setRadHandledare] = useState('Öva på cirkulationsplatser och spegel-döda vinkeln-rutiner i lugna områden.');
-  const [betygHelhet, setBetygHelhet] = useState<LektionsProtokoll['betygHelhet']>('Godkänd lektion');
-  const [nastaSteg, setNastaSteg] = useState('Lektion ' + (lektionNr + 1) + ': Fördjupning landsväg och hastighetsanpassning.');
+  const [styrkor, setStyrkor] = useState('Lugn och kontrollerad körning med god uppsikt.');
+  const [utvecklingsomraden, setUtvecklingsomraden] = useState('Blinka i god tid och kontrollera backspegeln före inbromsning.');
+  const [radHandledare, setRadHandledare] = useState('Träna på cirkulationsplatser och spegel-döda vinkeln inför sväng.');
+  const [betygHelhet, setBetygHelhet] = useState<LektionsProtokoll['betygHelhet']>('Godkänd nivå');
+  const [nastaSteg, setNastaSteg] = useState('Lektion ' + (lektionNr + 1) + ': Landsväg och hastighetsanpassning.');
 
   const toggleMoment = (choice: typeof STR_MOMENT_CHOICES[0]) => {
     triggerHaptic('light');
@@ -353,7 +353,7 @@ export function SkapaLektionsProtokollModal({
                               m.niva === 1 ? 'bg-amber-500 text-white' : 'text-gray-600 dark:text-gray-400'
                             }`}
                           >
-                            1: Visat
+                            1: Intro
                           </button>
                           <button
                             type="button"
@@ -362,7 +362,7 @@ export function SkapaLektionsProtokollModal({
                               m.niva === 2 ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400'
                             }`}
                           >
-                            2: Övad
+                            2: Övning
                           </button>
                           <button
                             type="button"
@@ -377,7 +377,7 @@ export function SkapaLektionsProtokollModal({
 
                         <input
                           type="text"
-                          placeholder="Kort kommentar..."
+                          placeholder="Kort notering..."
                           value={m.kommentar || ''}
                           onChange={(e) => updateMomentKommentar(m.momentNr, e.target.value)}
                           className="h-7 px-2 text-[11px] bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-md w-44"
@@ -394,8 +394,8 @@ export function SkapaLektionsProtokollModal({
           <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-slate-800">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-bold text-emerald-700 dark:text-emerald-400 block mb-1">
-                  ✓ Vad gick bra idag? (Styrkor)
+                <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+                  Det som fungerade bra
                 </label>
                 <textarea
                   rows={2}
@@ -406,8 +406,8 @@ export function SkapaLektionsProtokollModal({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-amber-700 dark:text-amber-400 block mb-1">
-                  ⚠ Utvecklingsområden
+                <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+                  Att öva vidare på
                 </label>
                 <textarea
                   rows={2}
@@ -419,8 +419,8 @@ export function SkapaLektionsProtokollModal({
             </div>
 
             <div>
-              <label className="text-xs font-bold text-blue-700 dark:text-blue-400 block mb-1">
-                🎓 Råd & Träningsuppgift till privat handledare
+              <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+                Råd till handledaren (hemmaträning)
               </label>
               <input
                 type="text"
@@ -434,22 +434,22 @@ export function SkapaLektionsProtokollModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
-                  Helhetsomdöme för lektionen
+                  Lektionsnivå
                 </label>
                 <select
                   value={betygHelhet}
                   onChange={(e) => setBetygHelhet(e.target.value as any)}
                   className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-bold"
                 >
-                  <option value="Utmärkt framsteg">★ Utmärkt framsteg</option>
-                  <option value="Godkänd lektion">✓ Godkänd lektion</option>
-                  <option value="Behöver mer repetition">⚠ Behöver mer repetition</option>
+                  <option value="Bra genomfört">Bra genomfört</option>
+                  <option value="Godkänd nivå">Godkänd nivå</option>
+                  <option value="Behöver mer träning">Behöver mer träning</option>
                 </select>
               </div>
 
               <div>
                 <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
-                  Nästa steg / Rekommendation
+                  Planering inför nästa lektion
                 </label>
                 <input
                   type="text"

@@ -281,7 +281,7 @@ export function TrafikskolaScreen() {
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-              Trafikskolans Utbildningsportal & Protokoll
+              Trafikskola — Elever & Körprotokoll
             </h1>
           </div>
         </div>
@@ -291,10 +291,10 @@ export function TrafikskolaScreen() {
           <button
             onClick={() => setShowCreateProtocolModal(true)}
             className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95"
-            title="Skapa nytt officiellt lektionsprotokoll"
+            title="Skapa nytt lektionsprotokoll"
           >
             <FileText size={15} />
-            <span>Nytt Lektionsprotokoll</span>
+            <span>Nytt protokoll</span>
           </button>
 
           <button
@@ -302,7 +302,7 @@ export function TrafikskolaScreen() {
             className="px-3.5 py-2 bg-[#002f6c] hover:bg-[#00224f] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95"
           >
             <Plus size={15} />
-            <span>Skriv in Elev</span>
+            <span>Ny elev</span>
           </button>
         </div>
       </div>
@@ -651,9 +651,9 @@ export function TrafikskolaScreen() {
                       </div>
 
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
-                        p.betygHelhet === 'Utmärkt framsteg'
+                        p.betygHelhet === 'Bra genomfört' || p.betygHelhet === 'Utmärkt framsteg'
                           ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                          : p.betygHelhet === 'Godkänd lektion'
+                          : p.betygHelhet === 'Godkänd nivå' || p.betygHelhet === 'Godkänd lektion'
                           ? 'bg-blue-50 text-blue-800 border-blue-300'
                           : 'bg-amber-50 text-amber-800 border-amber-300'
                       }`}>
@@ -688,7 +688,7 @@ export function TrafikskolaScreen() {
                   {/* Actions */}
                   <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between text-xs">
                     <span className="text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1">
-                      <Eye size={13} /> Visa fullständigt kort
+                      <Eye size={13} /> Visa protokoll
                     </span>
                     <button
                       onClick={(e) => handleDeleteProtocol(p.id, e)}

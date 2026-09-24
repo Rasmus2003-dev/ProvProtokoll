@@ -291,7 +291,7 @@ export function ProtokollScreen() {
         {/* Rad 2: vy och export */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="inline-flex p-0.5 rounded-lg bg-slate-200/70 dark:bg-slate-800 self-start" role="tablist">
-            {([['beslut', 'Officiellt protokoll'], ['larare', '🎓 Trafiklärarprotokoll'], ['email', 'E-post till kandidaten']] as const).map(([id, label]) => (
+            {([['beslut', 'Officiellt protokoll'], ['larare', 'Lärarprotokoll'], ['email', 'E-post till kandidaten']] as const).map(([id, label]) => (
               <button
                 key={id}
                 type="button"
