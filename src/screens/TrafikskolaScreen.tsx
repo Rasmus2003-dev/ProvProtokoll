@@ -3,8 +3,9 @@ import {
   GraduationCap, Users, Calendar, Clock, Plus, CheckCircle2, 
   Search, BookOpen, Award, FileText, ChevronRight, AlertCircle, 
   Trash2, UserCheck, ShieldCheck, Check, Smartphone, CheckSquare,
-  Sparkles, Download, Layers, Printer, Eye, Building2, Car, Edit3
+  Sparkles, Download, Layers, Printer, Eye, Building2, Car, Edit3, Mail
 } from 'lucide-react';
+import { EmailComposerModal, EmailComposerInitialData } from '../components/EmailComposerModal';
 import { 
   TrafikskolaProfile, 
   LektionsProtokoll, 
@@ -164,6 +165,10 @@ export function TrafikskolaScreen() {
   const [protocols, setProtocols] = useState<LektionsProtokoll[]>(() => getLektionsProtokollList());
   const [viewingProtocol, setViewingProtocol] = useState<LektionsProtokoll | null>(null);
   const [showCreateProtocolModal, setShowCreateProtocolModal] = useState(false);
+
+  // Email Composer state
+  const [showEmailComposer, setShowEmailComposer] = useState(false);
+  const [emailComposerData, setEmailComposerData] = useState<EmailComposerInitialData | undefined>(undefined);
   const [protocolFilterStudent, setProtocolFilterStudent] = useState<string>('alla');
 
   // New Student Form State
@@ -295,6 +300,25 @@ export function TrafikskolaScreen() {
           >
             <FileText size={15} />
             <span>Nytt protokoll</span>
+          </button>
+
+          <button
+            onClick={() => {
+              triggerHaptic('light');
+              const activeStudent = students.find(s => s.id === activeStudentId);
+              setEmailComposerData({
+                toName: activeStudent?.name || '',
+                licenseType: activeStudent?.licenseType || 'B',
+                examiner: skola.name || 'Trafiklärare',
+                initialTemplate: 'custom',
+              });
+              setShowEmailComposer(true);
+            }}
+            className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 text-[#002f6c] dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+            title="Skicka fritextmejl eller mall till elev"
+          >
+            <Mail size={15} />
+            <span>Skicka mejl</span>
           </button>
 
           <button
@@ -897,6 +921,13 @@ export function TrafikskolaScreen() {
           </div>
         </div>
       )}
+
+      {/* Email Composer Modal */}
+      <EmailComposerModal
+        isOpen={showEmailComposer}
+        onClose={() => setShowEmailComposer(false)}
+        initialData={emailComposerData}
+      />
 
     </div>
   );

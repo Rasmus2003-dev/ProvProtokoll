@@ -353,10 +353,10 @@ export function ProtokollScreen() {
                   size="sm"
                   onClick={() => setShowCustomEmailComposer(true)}
                   className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 font-bold cursor-pointer"
-                  title="Skicka intyg, trafikskolerapport eller annat mejl"
+                  title="Skicka fritextmejl, intyg, kallelse eller rapport i sidans officiella design"
                 >
                   <Mail size={13} />
-                  <span>Annat mejl (Intyg/Kallelse)</span>
+                  <span>Fritextmejl & mallar</span>
                 </Button>
                 <Button
                   size="sm"

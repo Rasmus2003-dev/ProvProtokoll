@@ -281,22 +281,86 @@ export function EmailComposerModal({ isOpen, onClose, initialData }: EmailCompos
             </div>
 
             {templateType === 'custom' && (
-              <input
-                type="text"
-                value={customSubject}
-                onChange={(e) => setCustomSubject(e.target.value)}
-                placeholder={currentTemplate.defaultSubject}
-                className="w-full h-10 px-3 text-xs rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white outline-none focus:border-blue-500 font-bold"
-              />
+              <>
+                <input
+                  type="text"
+                  value={customSubject}
+                  onChange={(e) => setCustomSubject(e.target.value)}
+                  placeholder={currentTemplate.defaultSubject}
+                  className="w-full h-10 px-3 text-xs rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white outline-none focus:border-blue-500 font-bold"
+                />
+
+                {/* Snabbmallar / Snabbknappar för fritext */}
+                <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar py-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 shrink-0">Förslag:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setCustomSubject('Viktig information inför din körning');
+                      setCustomMessage('Hej!\n\nInför din kommande körning vill vi påminna om att ta med giltig fysisk ID-handling (eller godkänt Freja eID+).\n\nVänligen anländ minst 15 minuter innan utsatt starttid så att vi hinner gå igenom förberedelser i lugn och ro.\n\nVarmt välkommen!');
+                    }}
+                    className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 text-[#002f6c] dark:text-blue-300 rounded-lg text-[11px] font-semibold transition-all shrink-0 border border-blue-200 dark:border-blue-900/40 cursor-pointer"
+                  >
+                    🚗 Inför körning
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setCustomSubject('Sammanfattning och övningspunkter från dagens lektion');
+                      setCustomMessage('Hej!\n\nTack för en bra insats under dagens körning. Här kommer en kort sammanfattning av vad vi övade på och vad du bör fokusera på till nästa gång:\n\n• Avsökning och blick framåt i cirkulationsplatser.\n• Planering av fartanpassning och motorbroms.\n• Säkerhetskontroll (yttre och inre kontroll).\n\nFortsätt det fina arbetet så ses vi snart igen!');
+                    }}
+                    className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 text-[#002f6c] dark:text-blue-300 rounded-lg text-[11px] font-semibold transition-all shrink-0 border border-blue-200 dark:border-blue-900/40 cursor-pointer"
+                  >
+                    📋 Lektionsuppföljning
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setCustomSubject('Ändring av bokad tid');
+                      setCustomMessage('Hej!\n\nVi har uppdaterat din inbokade tid. Vänligen kontrollera den nya tiden och återkom omgående om tiden inte passar dig.');
+                    }}
+                    className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 text-[#002f6c] dark:text-blue-300 rounded-lg text-[11px] font-semibold transition-all shrink-0 border border-blue-200 dark:border-blue-900/40 cursor-pointer"
+                  >
+                    ⏰ Tidsändring
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setCustomSubject('Komplettering av underlag');
+                      setCustomMessage('Hej!\n\nVi behöver komplettera dina uppgifter inför registrering av ditt prov. Vänligen kontakta oss snarast.');
+                    }}
+                    className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 text-[#002f6c] dark:text-blue-300 rounded-lg text-[11px] font-semibold transition-all shrink-0 border border-blue-200 dark:border-blue-900/40 cursor-pointer"
+                  >
+                    📄 Komplettering
+                  </button>
+                </div>
+              </>
             )}
 
             <textarea
-              rows={templateType === 'custom' ? 5 : 3}
+              rows={templateType === 'custom' ? 6 : 3}
               value={customMessage}
               onChange={(e) => setCustomMessage(e.target.value)}
-              placeholder={templateType === 'custom' ? 'Skriv ditt meddelande här...' : 'Lägg till eventuellt särskilt meddelande...'}
+              placeholder={templateType === 'custom' ? 'Skriv ditt meddelande här... Du kan skriva flera stycken med blankrader emellan.' : 'Lägg till eventuellt särskilt meddelande...'}
               className="w-full p-3 text-xs rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white outline-none focus:border-blue-500 leading-relaxed resize-none"
             />
+
+            {templateType === 'custom' && (
+              <div className="flex items-center gap-2 pt-1">
+                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider shrink-0">Avsändare undertecknas som:</span>
+                <input
+                  type="text"
+                  value={examiner}
+                  onChange={(e) => setExaminer(e.target.value)}
+                  placeholder="T.ex. Trafiklärare / Trafikinspektör"
+                  className="flex-1 h-8 px-2.5 text-xs rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white outline-none focus:border-blue-500"
+                />
+              </div>
+            )}
           </div>
 
           {/* Live Preview Drawer */}

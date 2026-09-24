@@ -20,34 +20,34 @@ export interface EmailParams {
 
 export const EMAIL_TEMPLATES: { id: EmailTemplateType; label: string; description: string; defaultSubject: string }[] = [
   {
+    id: 'custom',
+    label: '✍️ Fritextmejl (Eget meddelande)',
+    description: 'Skriv eget meddelande i ProvProtokolls officiella design med hög prioritet',
+    defaultSubject: 'Viktigt meddelande – ProvProtokoll Förarprov',
+  },
+  {
     id: 'kallelse',
-    label: 'Kallelse / Bokningsbekräftelse',
+    label: '📅 Kallelse / Bokning',
     description: 'Officiell kallelse med tid, plats, villkor och legitimation',
     defaultSubject: 'Kallelse till körprov',
   },
   {
     id: 'paminnelse',
-    label: 'Påminnelse inför körprov',
+    label: '⏰ Påminnelse',
     description: 'Skickas 24–48h innan provet med kom-ihåg punkter',
     defaultSubject: 'Påminnelse inför ditt körprov imorgon',
   },
   {
     id: 'trafikskola',
-    label: 'Rapport till Trafikskola / Lärare',
+    label: '🏫 Rapport till Trafikskola',
     description: 'Pedagogisk sammanställning till elevens utbildare',
     defaultSubject: 'Resultat och provsammanfattning för elev',
   },
   {
     id: 'intyg',
-    label: 'Intyg om genomfört förarprov',
+    label: '📜 Officiellt Intyg',
     description: 'Officiellt intyg för arbetsgivare, skola eller myndighet',
     defaultSubject: 'Intyg – Genomfört förarprov',
-  },
-  {
-    id: 'custom',
-    label: 'Anpassat meddelande (Fritext)',
-    description: 'Skriv eget meddelande i ProvProtokolls officiella mall',
-    defaultSubject: 'Viktigt meddelande angående ditt förarprov',
   },
 ];
 
@@ -67,8 +67,21 @@ function wrapHtmlTemplate(title: string, contentHtml: string): string {
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
             <td>
-              <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #93c5fd; margin-bottom: 4px;">
-                PROVPROTOKOLL FÖRARPROV
+              <div style="margin-bottom: 6px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td>
+                      <span style="font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #93c5fd;">
+                        PROVPROTOKOLL FÖRARPROV
+                      </span>
+                    </td>
+                    <td align="right">
+                      <span style="display: inline-block; background: #dc2626; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em;">
+                        ! HÖG PRIORITET
+                      </span>
+                    </td>
+                  </tr>
+                </table>
               </div>
               <h1 style="margin: 0; font-size: 20px; font-weight: 800; color: #ffffff; letter-spacing: -0.01em;">
                 ${title}
@@ -265,11 +278,37 @@ export function generateTemplateEmailHtml(params: EmailParams): { subject: strin
   }
 
   // Custom / Fritext
-  const subject = customSubject || `Meddelande angående ditt förarprov för behörighet ${licenseType}`;
+  const subject = customSubject || `Meddelande angående ditt förarprov – ProvProtokoll`;
+  const rawMsg = customMessage || 'Vi har ett meddelande gällande ditt förarprov.';
+  const formattedParagraphs = rawMsg
+    .split(/\n\s*\n/)
+    .map(p => `<p style="margin: 0 0 14px 0; font-size: 14.5px; line-height: 1.65; color: #1e293b;">${p.trim().replace(/\n/g, '<br />')}</p>`)
+    .join('');
+
   const content = `
-    <p style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 0;">Hej ${toName}!</p>
-    <div style="font-size: 14px; line-height: 1.6; color: #334155; margin: 16px 0; white-space: pre-wrap;">${customMessage || 'Vi har ett meddelande gällande ditt förarprov.'}</div>
-    <p style="margin-top: 24px; font-weight: 700; color: #0f172a;">Med vänlig hälsning,<br>${examiner}<br><span style="font-size: 12px; color: #64748b; font-weight: normal;">ProvProtokoll</span></p>
+    <div style="font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 16px;">
+      Hej ${toName}!
+    </div>
+
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #002F6C; border-radius: 12px; padding: 20px 24px; margin: 16px 0 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      ${formattedParagraphs}
+    </div>
+
+    <div style="background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; padding: 12px 18px; margin: 20px 0; font-size: 12px; color: #64748b;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><strong>Behörighet:</strong> ${licenseType}</td>
+          <td><strong>Datum:</strong> ${testDate}</td>
+          <td align="right"><strong>Handläggare:</strong> ${examiner}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+      <p style="margin: 0; font-weight: 700; color: #0f172a; font-size: 13px;">Med vänlig hälsning,</p>
+      <p style="margin: 3px 0 0 0; font-weight: 800; color: #002F6C; font-size: 15px;">${examiner}</p>
+      <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748b;">ProvProtokoll Förarprov Sverige • protokoll.rasmusl.se</p>
+    </div>
   `;
   return { subject, html: wrapHtmlTemplate(subject, content) };
 }
