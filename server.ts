@@ -167,6 +167,38 @@ async function startServer() {
     }
   });
 
+  app.get("/api/email-quota", requireInspector, async (req, res) => {
+    try {
+      const apiKey = process.env.BREVO_API_KEY;
+      if (!apiKey) {
+        return res.json({ planType: "free", creditsRemainingToday: 300, dailyLimit: 300, resetsAt: "00:00 UTC (varje natt)" });
+      }
+
+      const brevoRes = await fetch("https://api.brevo.com/v3/account", {
+        headers: { "api-key": apiKey, Accept: "application/json" },
+      });
+
+      if (!brevoRes.ok) {
+        return res.json({ planType: "free", creditsRemainingToday: 300, dailyLimit: 300, resetsAt: "00:00 UTC (varje natt)" });
+      }
+
+      const data: any = await brevoRes.json();
+      const plans = data.plan || [];
+      const freePlan = plans.find((p: any) => p.creditsType === "sendLimit" || p.type === "free") || plans[0];
+
+      res.json({
+        email: data.email,
+        companyName: data.companyName,
+        planType: freePlan?.type || "free",
+        creditsRemainingToday: freePlan?.credits ?? 300,
+        dailyLimit: 300,
+        resetsAt: "00:00 UTC (varje natt)",
+      });
+    } catch (e: any) {
+      res.json({ planType: "free", creditsRemainingToday: 300, dailyLimit: 300, resetsAt: "00:00 UTC (varje natt)" });
+    }
+  });
+
   // Authoritative server-side grading for a completed theory exam.
   // The client sends the testId it was assigned plus the selected answer index per question;
   // the server rebuilds the same question set and computes the score, so the pass/fail
