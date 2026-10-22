@@ -25,7 +25,7 @@ export const RoadSign = ({ type, icon: Icon, text }: { type: string, icon?: any,
       <div className="relative w-48 h-48 flex items-center justify-center">
         <div className="absolute inset-0 w-full h-full rounded-full border-[14px] border-red-500 bg-yellow-300 drop-shadow-lg" />
         <div className="relative z-10 text-black flex items-center justify-center">
-          {Icon ? <Icon className="w-20 h-20 stroke-[1.5]" /> : <span className="font-black text-[5rem] tracking-tighter leading-none">{text}</span>}
+          {Icon ? <Icon className="w-20 h-20 stroke-[1.5]" /> : <span className="font-bold text-[5rem] tracking-tighter leading-none">{text}</span>}
         </div>
       </div>
     );
@@ -46,7 +46,7 @@ export const RoadSign = ({ type, icon: Icon, text }: { type: string, icon?: any,
         <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full drop-shadow-lg">
           <polygon points="30,5 70,5 95,30 95,70 70,95 30,95 5,70 5,30" fill="#ef4444" stroke="white" strokeWidth="3" />
         </svg>
-        <div className="relative z-10 text-white font-black text-3xl tracking-widest mt-1">STOP</div>
+        <div className="relative z-10 text-white font-bold text-3xl mt-1">STOP</div>
       </div>
     );
   }
@@ -96,7 +96,7 @@ export const RoadSign = ({ type, icon: Icon, text }: { type: string, icon?: any,
         <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full drop-shadow-lg">
           <polygon points="30,5 70,5 95,30 95,70 70,95 30,95 5,70 5,30" fill="#d2232a" stroke="white" strokeWidth="3" />
         </svg>
-        <div className="relative z-10 text-white font-black text-2xl tracking-widest">STOP</div>
+        <div className="relative z-10 text-white font-bold text-2xl ">STOP</div>
       </div>
     );
   }

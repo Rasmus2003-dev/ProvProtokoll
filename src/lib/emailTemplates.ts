@@ -1,4 +1,3 @@
-import provprotokollLogoImg from '../assets/images/provprotokoll_logo.png';
 import { authHeaders } from './inspectors';
 
 export type EmailTemplateType = 'kallelse' | 'paminnelse' | 'trafikskola' | 'intyg' | 'custom';
@@ -21,93 +20,134 @@ export interface EmailParams {
 export const EMAIL_TEMPLATES: { id: EmailTemplateType; label: string; description: string; defaultSubject: string }[] = [
   {
     id: 'custom',
-    label: '✍️ Fritextmejl (Eget meddelande)',
-    description: 'Skriv eget meddelande i ProvProtokolls officiella design med hög prioritet',
-    defaultSubject: 'Viktigt meddelande – ProvProtokoll Förarprov',
+    label: 'Eget meddelande',
+    description: 'Skriv fritt – mejlet får samma layout som övriga utskick',
+    defaultSubject: 'Meddelande om ditt förarprov',
   },
   {
     id: 'kallelse',
-    label: '📅 Kallelse / Bokning',
-    description: 'Officiell kallelse med tid, plats, villkor och legitimation',
+    label: 'Kallelse',
+    description: 'Tid, plats och vad kandidaten ska ta med',
     defaultSubject: 'Kallelse till körprov',
   },
   {
     id: 'paminnelse',
-    label: '⏰ Påminnelse',
-    description: 'Skickas 24–48h innan provet med kom-ihåg punkter',
-    defaultSubject: 'Påminnelse inför ditt körprov imorgon',
+    label: 'Påminnelse',
+    description: 'Skickas dagen innan med några saker att komma ihåg',
+    defaultSubject: 'Påminnelse om ditt körprov',
   },
   {
     id: 'trafikskola',
-    label: '🏫 Rapport till Trafikskola',
-    description: 'Pedagogisk sammanställning till elevens utbildare',
-    defaultSubject: 'Resultat och provsammanfattning för elev',
+    label: 'Rapport till trafikskola',
+    description: 'Kort sammanfattning till elevens trafikskola',
+    defaultSubject: 'Sammanfattning av körprov',
   },
   {
     id: 'intyg',
-    label: '📜 Officiellt Intyg',
-    description: 'Officiellt intyg för arbetsgivare, skola eller myndighet',
-    defaultSubject: 'Intyg – Genomfört förarprov',
+    label: 'Intyg',
+    description: 'Intyg om genomfört prov, till exempel till arbetsgivare',
+    defaultSubject: 'Intyg om genomfört förarprov',
   },
 ];
 
-function wrapHtmlTemplate(title: string, contentHtml: string): string {
+// Mejlklienter kan inte läsa appens inbyggda bilder – logotypen måste ligga på en publik adress
+const LOGO_URL = 'https://protokoll.rasmusl.se/provprotokoll_logo_trim.png';
+
+const INK = '#0f1b2d';
+const TEXT = '#334155';
+const MUTED = '#64748b';
+const LINE = '#e3e8ef';
+const NAVY = '#002f6c';
+
+/** Skyddar text som skrivits in i appen från att tolkas som HTML */
+function esc(value: string | undefined | null): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/** Fritext till stycken: tom rad = nytt stycke, radbrytning = <br> */
+function paragraphs(text: string): string {
+  return esc(text)
+    .split(/\n\s*\n/)
+    .map(p => p.trim())
+    .filter(Boolean)
+    .map(p => `<p style="margin: 0 0 14px 0;">${p.replace(/\n/g, '<br />')}</p>`)
+    .join('');
+}
+
+/** Uppgiftsruta med etikett och värde per rad */
+function details(rows: [string, string][]): string {
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 20px 0; background: #f6f8fb; border: 1px solid ${LINE}; border-radius: 10px;">
+      <tr><td style="padding: 14px 18px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 14px;">
+          ${rows.map(([label, value]) => `
+          <tr>
+            <td style="padding: 5px 16px 5px 0; color: ${MUTED}; width: 120px; vertical-align: top;">${esc(label)}</td>
+            <td style="padding: 5px 0; color: ${INK}; font-weight: 600; vertical-align: top;">${value}</td>
+          </tr>`).join('')}
+        </table>
+      </td></tr>
+    </table>`;
+}
+
+function list(items: string[]): string {
+  return `<ul style="margin: 0 0 18px 0; padding-left: 20px;">${items.map(i => `<li style="margin: 0 0 6px 0;">${i}</li>`).join('')}</ul>`;
+}
+
+function signature(name: string, closing = 'Vänliga hälsningar'): string {
+  return `
+    <p style="margin: 24px 0 0 0;">${closing},</p>
+    <p style="margin: 2px 0 0 0; font-weight: 700; color: ${INK};">${esc(name)}</p>
+    <p style="margin: 0; font-size: 13px; color: ${MUTED};">Förarprov</p>`;
+}
+
+/**
+ * Gemensam layout för alla utskick som inte är provprotokoll:
+ * logotyp, ett vitt kort med rubrik och innehåll, och en diskret sidfot.
+ */
+export function emailLayout(opts: { eyebrow: string; title: string; body: string; preheader?: string }): string {
   return `<!DOCTYPE html>
 <html lang="sv">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
+  <meta name="color-scheme" content="light">
+  <title>${esc(opts.title)}</title>
+  <style>
+    @media only screen and (max-width: 600px) {
+      .pp-card { padding: 24px 20px !important; }
+      .pp-title { font-size: 21px !important; }
+    }
+  </style>
 </head>
-<body style="margin: 0; padding: 24px 12px; background-color: #f2f4f8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; -webkit-font-smoothing: antialiased;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-    <!-- Header -->
+<body style="margin: 0; padding: 0; background: #f3f5f8; font-family: Arial, Helvetica, sans-serif; color: ${TEXT}; -webkit-text-size-adjust: 100%;">
+  ${opts.preheader ? `<div style="display: none; max-height: 0; overflow: hidden; opacity: 0;">${esc(opts.preheader)}</div>` : ''}
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #f3f5f8;">
     <tr>
-      <td style="padding: 24px 32px; background: #002F6C; color: #ffffff;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <td align="center" style="padding: 28px 12px 36px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px;">
           <tr>
-            <td>
-              <div style="margin-bottom: 6px;">
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                  <tr>
-                    <td>
-                      <span style="font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #93c5fd;">
-                        PROVPROTOKOLL FÖRARPROV
-                      </span>
-                    </td>
-                    <td align="right">
-                      <span style="display: inline-block; background: #dc2626; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em;">
-                        ! HÖG PRIORITET
-                      </span>
-                    </td>
-                  </tr>
-                </table>
-              </div>
-              <h1 style="margin: 0; font-size: 20px; font-weight: 800; color: #ffffff; letter-spacing: -0.01em;">
-                ${title}
-              </h1>
+            <td style="padding: 0 4px 16px;">
+              <img src="${LOGO_URL}" alt="ProvProtokoll" height="44" style="display: block; height: 44px; width: auto; border: 0;" />
+            </td>
+          </tr>
+          <tr>
+            <td class="pp-card" style="background: #ffffff; border: 1px solid ${LINE}; border-radius: 14px; padding: 32px 36px; font-size: 15px; line-height: 1.65; color: ${TEXT};">
+              <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 700; color: ${NAVY};">${esc(opts.eyebrow)}</p>
+              <h1 class="pp-title" style="margin: 0 0 20px 0; font-size: 24px; line-height: 1.25; font-weight: 700; color: ${INK};">${esc(opts.title)}</h1>
+              ${opts.body}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 18px 8px 0; font-size: 12px; line-height: 1.5; color: #94a3b8; text-align: center;">
+              Skickat från ProvProtokoll. Har du frågor går det bra att svara direkt på det här mejlet.
             </td>
           </tr>
         </table>
-      </td>
-    </tr>
-
-    <!-- Body Content -->
-    <tr>
-      <td style="padding: 32px 32px 24px 32px; font-size: 14px; line-height: 1.6; color: #334155;">
-        ${contentHtml}
-      </td>
-    </tr>
-
-    <!-- Footer -->
-    <tr>
-      <td style="padding: 20px 32px 28px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b; line-height: 1.5;">
-        <p style="margin: 0 0 4px 0; font-weight: 700; color: #475569;">
-          ProvProtokoll – Digitalt prov- och förarprovssystem
-        </p>
-        <p style="margin: 0; color: #94a3b8;">
-          Referens-ID: MSG-${Date.now().toString(36).toUpperCase()} • protokoll.rasmusl.se
-        </p>
       </td>
     </tr>
   </table>
@@ -120,194 +160,108 @@ export function generateTemplateEmailHtml(params: EmailParams): { subject: strin
     toName,
     templateType,
     licenseType = 'B',
-    testDate = new Date().toISOString().split('T')[0],
+    testDate = new Date().toLocaleDateString('sv-SE'),
     bookingTime = '09:00',
     location = 'Förarprovskontoret',
-    examiner = 'Trafikinspektör',
+    examiner = 'Förarprövaren',
     schoolName = 'Trafikskolan',
     result = 'Godkänt',
     customSubject,
-    customMessage
+    customMessage,
   } = params;
 
+  const first = esc((toName || '').trim().split(/\s+/)[0] || 'där');
+  const lic = esc(licenseType);
+  const passed = result === 'Godkänt';
+
   if (templateType === 'kallelse') {
-    const subject = `Kallelse till körprov för behörighet ${licenseType} – ${testDate}`;
-    const content = `
-      <p style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 0;">Hej ${toName}!</p>
-      <p>Du är välkommen till ditt körprov för <strong>behörighet ${licenseType}</strong>.</p>
-
-      <div style="background: #f1f5f9; border-left: 4px solid #002F6C; border-radius: 8px; padding: 16px 20px; margin: 20px 0;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 13px;">
-          <tr>
-            <td style="padding: 4px 0; color: #64748b; width: 130px; font-weight: 600;">Datum:</td>
-            <td style="padding: 4px 0; font-weight: 700; color: #0f172a;">${testDate}</td>
-          </tr>
-          <tr>
-            <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Tid:</td>
-            <td style="padding: 4px 0; font-weight: 700; color: #002F6C;">${bookingTime} (Var på plats 15 min innan)</td>
-          </tr>
-          <tr>
-            <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Plats:</td>
-            <td style="padding: 4px 0; font-weight: 700; color: #0f172a;">${location}</td>
-          </tr>
-          <tr>
-            <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Behörighet:</td>
-            <td style="padding: 4px 0; font-weight: 700; color: #0f172a;">${licenseType}</td>
-          </tr>
-        </table>
-      </div>
-
-      <h3 style="font-size: 14px; font-weight: 800; text-transform: uppercase; color: #0f172a; margin: 24px 0 8px 0; letter-spacing: 0.05em;">
-        Viktigt att tänka på inför provet:
-      </h3>
-      <ul style="padding-left: 20px; margin: 0 0 20px 0; color: #334155;">
-        <li style="margin-bottom: 6px;"><strong>Ta med giltig legitimation:</strong> Körkort, pass eller nationellt ID-kort är ett absolut krav för att få starta provet.</li>
-        <li style="margin-bottom: 6px;"><strong>Om du har villkor för glasögon/linser:</strong> Kom ihåg att bära eller ta med dem till provet.</li>
-        <li style="margin-bottom: 6px;"><strong>Provfordon:</strong> Fordonet ska uppfylla Transportstyrelsens formella krav för behörighet ${licenseType}.</li>
-      </ul>
-
-      <p style="margin-top: 24px; color: #475569;">Lycka till med ditt körprov!</p>
-      <p style="margin: 0; font-weight: 700; color: #0f172a;">Vänliga hälsningar,<br>${examiner}</p>
-    `;
-    return { subject, html: wrapHtmlTemplate(`Kallelse till körprov (${licenseType})`, content) };
+    const subject = `Kallelse till körprov ${licenseType} – ${testDate}`;
+    const body = `
+      <p style="margin: 0 0 14px 0;">Hej ${first}!</p>
+      <p style="margin: 0 0 14px 0;">Välkommen till ditt körprov för behörighet ${lic}. Här är det du behöver veta.</p>
+      ${details([
+        ['Datum', esc(testDate)],
+        ['Tid', `${esc(bookingTime)} <span style="font-weight: 400; color: ${MUTED};">– kom gärna 15 minuter innan</span>`],
+        ['Plats', esc(location)],
+        ['Behörighet', lic],
+      ])}
+      <p style="margin: 0 0 8px 0; font-weight: 700; color: ${INK};">Ta med dig</p>
+      ${list([
+        'Giltig legitimation – körkort, pass eller nationellt id-kort. Utan den kan provet inte genomföras.',
+        'Glasögon eller linser om du har villkor för det.',
+        `Ett fordon som uppfyller kraven för ${lic}, om du inte kör trafikskolans.`,
+      ])}
+      <p style="margin: 0;">Lycka till – vi ses!</p>
+      ${signature(examiner)}`;
+    return { subject, html: emailLayout({ eyebrow: 'Kallelse', title: `Körprov ${licenseType}`, body, preheader: `${testDate} kl. ${bookingTime}, ${location}` }) };
   }
 
   if (templateType === 'paminnelse') {
-    const subject = `Påminnelse: Ditt körprov för behörighet ${licenseType} äger rum snart`;
-    const content = `
-      <p style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 0;">Hej ${toName}!</p>
-      <p>Detta är en vänlig påminnelse om att ditt körprov för <strong>behörighet ${licenseType}</strong> närmar sig.</p>
-
-      <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 18px 20px; margin: 20px 0;">
-        <p style="margin: 0 0 6px 0; font-size: 13px; color: #1e40af; font-weight: 700;">📅 PROVTID OCH PLATS:</p>
-        <p style="margin: 0; font-size: 15px; font-weight: 800; color: #1e3a8a;">
-          ${testDate} kl. ${bookingTime} på ${location}
-        </p>
-      </div>
-
-      <p style="font-weight: 700; color: #0f172a;">Checklista inför provdagen:</p>
-      <ul style="padding-left: 20px; margin: 0 0 20px 0; color: #334155;">
-        <li style="margin-bottom: 6px;">Giltig fysisk ID-handling (pass, nationellt ID-kort eller svenskt körkort).</li>
-        <li style="margin-bottom: 6px;">Kom i god tid – gärna 15 minuter innan provtiden.</li>
-        <li style="margin-bottom: 6px;">Var utvilad och förberedd på säkerhetskontrollen.</li>
-      </ul>
-
-      <p style="margin: 0; font-weight: 700; color: #0f172a;">Varmt välkommen!<br>${examiner}</p>
-    `;
-    return { subject, html: wrapHtmlTemplate(`Påminnelse inför körprov`, content) };
+    const subject = `Påminnelse: körprov ${licenseType} ${testDate}`;
+    const body = `
+      <p style="margin: 0 0 14px 0;">Hej ${first}!</p>
+      <p style="margin: 0 0 14px 0;">En liten påminnelse om att ditt körprov närmar sig.</p>
+      ${details([
+        ['Datum', esc(testDate)],
+        ['Tid', esc(bookingTime)],
+        ['Plats', esc(location)],
+      ])}
+      <p style="margin: 0 0 8px 0; font-weight: 700; color: ${INK};">Kom ihåg</p>
+      ${list([
+        'Legitimationen – körkort, pass eller nationellt id-kort.',
+        'Var på plats i god tid, gärna 15 minuter innan.',
+        'Sov gott och ät ordentligt innan. Det gör skillnad.',
+      ])}
+      <p style="margin: 0;">Välkommen!</p>
+      ${signature(examiner)}`;
+    return { subject, html: emailLayout({ eyebrow: 'Påminnelse', title: 'Snart är det dags', body, preheader: `Ditt körprov ${testDate} kl. ${bookingTime}` }) };
   }
 
   if (templateType === 'trafikskola') {
-    const subject = `Provrapport för elev ${toName} (${licenseType}) – ${result}`;
-    const content = `
-      <p style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 0;">Till ${schoolName} / Utbildare,</p>
-      <p>Här kommer en sammanfattning av genomfört körprov för eleven <strong>${toName}</strong> för behörighet <strong>${licenseType}</strong>.</p>
-
-      <div style="background: ${result === 'Godkänt' ? '#ecfdf5' : '#fef2f2'}; border: 1px solid ${result === 'Godkänt' ? '#a7f3d0' : '#fecaca'}; border-radius: 12px; padding: 16px 20px; margin: 20px 0;">
-        <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: ${result === 'Godkänt' ? '#047857' : '#b91c1c'};">Provresultat:</span>
-        <h2 style="margin: 4px 0 0 0; font-size: 20px; font-weight: 800; color: ${result === 'Godkänt' ? '#065f46' : '#991b1b'};">
-          ${result.toUpperCase()}
-        </h2>
-        <p style="margin: 6px 0 0 0; font-size: 12px; color: #475569;">
-          Datum: ${testDate} • Förarprövare: ${examiner}
-        </p>
-      </div>
-
+    const subject = `Körprov ${licenseType} för ${toName} – ${result}`;
+    const body = `
+      <p style="margin: 0 0 14px 0;">Hej ${esc(schoolName)}!</p>
+      <p style="margin: 0 0 14px 0;">Här kommer en kort sammanfattning av körprovet för er elev ${esc(toName)}.</p>
+      ${details([
+        ['Elev', esc(toName)],
+        ['Behörighet', lic],
+        ['Datum', esc(testDate)],
+        ['Resultat', `<span style="color: ${passed ? '#047857' : '#b91c1c'};">${esc(result)}</span>`],
+        ['Förarprövare', esc(examiner)],
+      ])}
       ${customMessage ? `
-        <div style="background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; padding: 14px 16px; margin: 16px 0;">
-          <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 4px;">Inspektörens noteringar till trafikskolan:</div>
-          <p style="margin: 0; font-size: 13px; color: #1e293b; white-space: pre-wrap;">${customMessage}</p>
-        </div>
-      ` : ''}
-
-      <p style="font-size: 13px; color: #64748b;">
-        Den fullständiga protokollskopian finns även registrerad i ProvProtokoll.
-      </p>
-
-      <p style="margin: 20px 0 0 0; font-weight: 700; color: #0f172a;">Med vänlig hälsning,<br>${examiner}</p>
-    `;
-    return { subject, html: wrapHtmlTemplate(`Provrapport till Trafikskola`, content) };
+        <p style="margin: 0 0 8px 0; font-weight: 700; color: ${INK};">Mina kommentarer</p>
+        <div style="margin: 0 0 14px 0; padding-left: 14px; border-left: 3px solid ${LINE};">${paragraphs(customMessage)}</div>` : ''}
+      <p style="margin: 0; color: ${MUTED}; font-size: 14px;">Eleven har fått sitt protokoll direkt från oss.</p>
+      ${signature(examiner)}`;
+    return { subject, html: emailLayout({ eyebrow: 'Till trafikskolan', title: `Körprov ${licenseType} – ${result.toLowerCase()}`, body }) };
   }
 
   if (templateType === 'intyg') {
-    const subject = `Intyg om genomfört förarprov för ${toName} (${licenseType})`;
-    const content = `
-      <div style="text-align: center; border-bottom: 2px solid #002F6C; padding-bottom: 16px; margin-bottom: 24px;">
-        <h2 style="margin: 0; font-size: 22px; font-weight: 800; color: #002F6C; letter-spacing: -0.01em;">INTYG OM GENOMFÖRT FÖRARPROV</h2>
-        <p style="margin: 4px 0 0 0; font-size: 12px; font-weight: 600; color: #64748b;">Utfärdat via ProvProtokolls auktoriserade provsystem</p>
-      </div>
-
-      <p>Härmed intygas att följande kandidat har genomfört förarprov enligt gällande föreskrifter:</p>
-
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 13px; margin: 20px 0; background: #f8fafc; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0;">
-        <tr>
-          <td style="padding: 6px 0; color: #64748b; font-weight: 600; width: 140px;">Kandidatens namn:</td>
-          <td style="padding: 6px 0; font-weight: 800; color: #0f172a;">${toName}</td>
-        </tr>
-        <tr>
-          <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Sökt behörighet:</td>
-          <td style="padding: 6px 0; font-weight: 800; color: #0f172a;">${licenseType}</td>
-        </tr>
-        <tr>
-          <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Provdatum:</td>
-          <td style="padding: 6px 0; font-weight: 700; color: #0f172a;">${testDate}</td>
-        </tr>
-        <tr>
-          <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Resultat:</td>
-          <td style="padding: 6px 0; font-weight: 800; color: ${result === 'Godkänt' ? '#059669' : '#dc2626'};">${result}</td>
-        </tr>
-        <tr>
-          <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Ansvarig prövare:</td>
-          <td style="padding: 6px 0; font-weight: 700; color: #0f172a;">${examiner}</td>
-        </tr>
-      </table>
-
-      ${customMessage ? `<p style="font-size: 13px; color: #334155; margin: 16px 0;">${customMessage}</p>` : ''}
-
-      <div style="margin-top: 32px; border-top: 1px dashed #cbd5e1; pt-4">
-        <p style="font-size: 12px; color: #64748b; margin: 8px 0 0 0;">
-          Elektroniskt intygat och registrerat i ProvProtokoll.<br>
-          Datum för utfärdande: ${new Date().toLocaleDateString('sv-SE')}
-        </p>
-      </div>
-    `;
-    return { subject, html: wrapHtmlTemplate(`Intyg – Genomfört förarprov`, content) };
+    const subject = `Intyg om genomfört förarprov – ${toName}`;
+    const issued = new Date().toLocaleDateString('sv-SE');
+    const body = `
+      <p style="margin: 0 0 14px 0;">Härmed intygas att nedanstående person har genomfört förarprov.</p>
+      ${details([
+        ['Namn', esc(toName)],
+        ['Behörighet', lic],
+        ['Provdatum', esc(testDate)],
+        ['Resultat', `<span style="color: ${passed ? '#047857' : '#b91c1c'};">${esc(result)}</span>`],
+        ['Förarprövare', esc(examiner)],
+      ])}
+      ${customMessage ? paragraphs(customMessage) : ''}
+      <p style="margin: 0; font-size: 13px; color: ${MUTED};">Utfärdat ${issued}.</p>
+      ${signature(examiner, 'Med vänlig hälsning')}`;
+    return { subject, html: emailLayout({ eyebrow: 'Intyg', title: 'Intyg om genomfört förarprov', body }) };
   }
 
-  // Custom / Fritext
-  const subject = customSubject || `Meddelande angående ditt förarprov – ProvProtokoll`;
-  const rawMsg = customMessage || 'Vi har ett meddelande gällande ditt förarprov.';
-  const formattedParagraphs = rawMsg
-    .split(/\n\s*\n/)
-    .map(p => `<p style="margin: 0 0 14px 0; font-size: 14.5px; line-height: 1.65; color: #1e293b;">${p.trim().replace(/\n/g, '<br />')}</p>`)
-    .join('');
-
-  const content = `
-    <div style="font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 16px;">
-      Hej ${toName}!
-    </div>
-
-    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #002F6C; border-radius: 12px; padding: 20px 24px; margin: 16px 0 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-      ${formattedParagraphs}
-    </div>
-
-    <div style="background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; padding: 12px 18px; margin: 20px 0; font-size: 12px; color: #64748b;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><strong>Behörighet:</strong> ${licenseType}</td>
-          <td><strong>Datum:</strong> ${testDate}</td>
-          <td align="right"><strong>Handläggare:</strong> ${examiner}</td>
-        </tr>
-      </table>
-    </div>
-
-    <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
-      <p style="margin: 0; font-weight: 700; color: #0f172a; font-size: 13px;">Med vänlig hälsning,</p>
-      <p style="margin: 3px 0 0 0; font-weight: 800; color: #002F6C; font-size: 15px;">${examiner}</p>
-      <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748b;">ProvProtokoll Förarprov Sverige • protokoll.rasmusl.se</p>
-    </div>
-  `;
-  return { subject, html: wrapHtmlTemplate(subject, content) };
+  // Eget meddelande
+  const subject = customSubject || 'Meddelande om ditt förarprov';
+  const body = `
+    <p style="margin: 0 0 14px 0;">Hej ${first}!</p>
+    ${paragraphs(customMessage || 'Jag har ett meddelande om ditt förarprov.')}
+    ${signature(examiner)}`;
+  return { subject, html: emailLayout({ eyebrow: 'Meddelande', title: subject, body }) };
 }
 
 /**

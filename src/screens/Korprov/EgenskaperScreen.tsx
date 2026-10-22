@@ -1,593 +1,527 @@
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
+import { AppLogo } from '../../components/icons/AppLogo';
+import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '../../store/ProvContext';
 import { TEST_CONTENT } from '../../data/testContentCatalog';
-import { useMemo, useState } from 'react';
 import { OfficialPrintLayout } from './components/OfficialPrintLayout';
-import { 
-  User, 
-  Map, 
-  Settings, 
-  FileCheck2, 
-  Edit3, 
-  CheckCircle, 
-  History, 
-  Sparkles, 
-  Check, 
-  ChevronRight, 
-  Scale, 
-  ShieldAlert, 
+import { LICENSE_GUIDES } from '../../data/licenseGuidesData';
+import { SignaturePad } from '../../components/SignaturePad';
+import { LicenseScanModal } from '../../components/LicenseScanModal';
+import { fetchLatestFailedCloud, findLatestFailedLocal, isRetest, normalizePersonalNumber } from '../../lib/previousTest';
+import { triggerHaptic } from '../../lib/utils';
+import type { AppState } from '../../types';
+import {
+  FileCheck2,
+  History,
+  Check,
+  ChevronRight,
+  Scale,
+  ShieldAlert,
   Info,
-  Sliders,
   Award,
   Globe2,
   Calendar,
-  Lock
+  PenLine,
+  Pencil,
+  Clock3,
+  IdCard,
+  ScanLine,
 } from 'lucide-react';
 
-const licenseTypes = [
-  'AM', 'A1', 'A2', 'A', 'B', 'B1', 'BE', 'B96', 'C1', 'C1E', 'C', 'CE', 'D1', 'D1E', 'D', 'DE', 'TAXI',
-  'Traktor (Traktorkort)', 'Snöskoter (Förarbevis)', 'Terränghjuling (ATV)', 'Truck (A+B)', 'Grävmaskin / Hjullastare',
-  'Lokförare', 'Lokförare (Person)', 'Lokförare (Gods)', 'Spårvagn', 'Tunnelbana'
-];
+// Egenskaper: det som inte redan fylls i på startsidan. Kandidat, provtyp,
+// behörighet, fordon och provförrättare visas bara som en sammanfattning.
+
+const ID_TYPES = ['Svenskt körkort', 'Pass', 'Nationellt id-kort', 'Id-kort (SIS-märkt)', 'Tjänstekort', 'Annan legitimation'];
+const SKIP_REASONS = ['Kandidaten vill inte signera', 'Signeras på papper', 'Kontrollerat i annat system'];
 
 export function EgenskaperScreen() {
   const navigate = useNavigate();
-  const { state, updateState, syncQueue } = useAppStore();
+  const { state, updateState, syncQueue, testHistory } = useAppStore();
   const [loadedFromHistory, setLoadedFromHistory] = useState(false);
-  const [activeTab, setActiveTab] = useState<'info' | 'protocol'>('info');
-  const [showEditCandidate, setShowEditCandidate] = useState(false);
+  const [showPrevious, setShowPrevious] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
 
-  const handleNext = () => {
-    navigate('/korprov/inledning');
-  };
+  const p = state.properties;
+  const license = p.licenseType || 'B';
+  const guide = LICENSE_GUIDES[license] ?? LICENSE_GUIDES[license.split(' (')[0]];
+  const isHeavy = ['C', 'C1', 'CE', 'C1E', 'D', 'D1', 'DE', 'D1E'].includes(license);
+  const totalMoments = TEST_CONTENT[license]?.length || 0;
+  const isTestprov = Boolean(p.testType?.includes('Testprov'));
+  const mainTestType = p.testType?.split(',').map(s => s.trim()).filter(t => t !== 'Testprov').join(', ') || 'Förstaprov';
 
-  const handleBack = () => {
-    navigate('/korprov/start');
-  };
+  // --- Föregående underkända prov vid omprov: lokalt först, annars molnet ---
+  const pnrKey = normalizePersonalNumber(p.personalNumber);
+  const retest = isRetest(p.testType);
+  const localPrevious = useMemo(
+    () => (retest ? findLatestFailedLocal(pnrKey, [testHistory, syncQueue]) : null),
+    [retest, pnrKey, testHistory, syncQueue]
+  );
+  const [cloudPrevious, setCloudPrevious] = useState<{ key: string; test: AppState | null } | null>(null);
+  useEffect(() => {
+    if (!retest || localPrevious || pnrKey.length < 10) return;
+    let cancelled = false;
+    fetchLatestFailedCloud(pnrKey).then(test => {
+      if (!cancelled) setCloudPrevious({ key: pnrKey, test });
+    });
+    return () => { cancelled = true; };
+  }, [retest, localPrevious, pnrKey]);
+  const previous = localPrevious ?? (retest && cloudPrevious?.key === pnrKey ? cloudPrevious.test : null);
+  const lookingUp = retest && !localPrevious && pnrKey.length >= 10 && cloudPrevious?.key !== pnrKey;
 
-  const previousFailedTest = useMemo(() => {
-    if (!state.properties.personalNumber || state.properties.personalNumber.length < 10) return null;
-    
-    // Check if test type is an omprov
-    if (!state.properties.testType || (!state.properties.testType.includes('Omprov') && !state.properties.testType.includes('Testprov'))) return null;
-
-    // Find the most recent test for this candidate in the sync queue that had a failure
-    const latestTest = [...syncQueue]
-      .reverse()
-      .find(t => 
-        t.properties.personalNumber === state.properties.personalNumber && 
-        (t.result.drivingResult === 'Underkänt' || t.result.safetyCheckResult === 'Underkänt')
-      );
-      
-    return latestTest;
-  }, [state.properties.personalNumber, state.properties.testType, syncQueue]);
+  // Visa protokollet direkt när det hittas
+  const previousKey = previous ? `${pnrKey}|${previous.properties.testDate}` : '';
+  useEffect(() => {
+    if (previousKey) setShowPrevious(true);
+  }, [previousKey]);
 
   const loadPreviousFailures = () => {
-    if (!previousFailedTest) return;
-    
+    if (!previous) return;
+    triggerHaptic('success');
     updateState(prev => {
-      const prevDrivingSituations = previousFailedTest.result.drivingFailure?.situations || [];
-      const prevSafetySituations = previousFailedTest.result.safetyCheckFailure?.situations || [];
-      
-      const fallbackItems = (prevDrivingSituations.length === 0 && prevSafetySituations.length === 0) 
-        ? previousFailedTest.includedTestItems 
-        : [];
-      
-      const newIncludedItems = [...new Set([
-        ...(prev.includedTestItems || []),
-        ...prevDrivingSituations,
-        ...prevSafetySituations,
-        ...(fallbackItems || [])
-      ])];
-      
+      const situations = [
+        ...(previous.result.drivingFailure?.situations || []),
+        ...(previous.result.safetyCheckFailure?.situations || []),
+      ];
+      const fallback = situations.length === 0 ? previous.includedTestItems || [] : [];
       return {
         ...prev,
-        properties: {
-          ...prev.properties,
-          licenseType: prev.properties.licenseType || previousFailedTest.properties.licenseType,
-          transmission: prev.properties.transmission || previousFailedTest.properties.transmission,
-          email: prev.properties.email || previousFailedTest.properties.email,
-        },
-        includedTestItems: newIncludedItems.filter(Boolean)
+        includedTestItems: [...new Set([...(prev.includedTestItems || []), ...situations, ...fallback])].filter(Boolean),
       };
     });
     setLoadedFromHistory(true);
   };
 
-  const updateField = (field: keyof typeof state.properties, value: string) => {
-    if (field === 'personalNumber') {
-      setLoadedFromHistory(false);
-    }
-    updateState((prev) => {
-      const newProps = { ...prev.properties, [field]: value };
-      let newTestItems = prev.includedTestItems;
-      
-      if (field === 'licenseType') {
-        const allowedItems = TEST_CONTENT[value] || TEST_CONTENT['B'];
-        newTestItems = (prev.includedTestItems || []).filter(item => allowedItems.includes(item));
-      }
-      
-      return {
-        ...prev,
-        properties: newProps,
-        includedTestItems: newTestItems
-      };
-    });
+  const setProp = <K extends keyof AppState['properties']>(key: K, value: AppState['properties'][K]) =>
+    updateState(prev => ({ ...prev, properties: { ...prev.properties, [key]: value } }));
+
+  const toggleTestprov = (on: boolean) => {
+    const parts = (p.testType || 'Förstaprov').split(',').map(s => s.trim()).filter(t => t && t !== 'Testprov');
+    setProp('testType', (on ? ['Testprov', ...parts] : parts).join(', '));
   };
 
-  const totalMoments = TEST_CONTENT[state.properties.licenseType || 'B']?.length || 0;
+  // --- Intygande om körkort i annat EU/EES-land ---
+  const declaration = state.euLicenseDeclaration;
+  const setDeclaration = (next: AppState['euLicenseDeclaration']) => updateState(prev => ({ ...prev, euLicenseDeclaration: next }));
+  const [skipping, setSkipping] = useState(declaration?.status === 'skipped');
+
+  const rowCheck = 'flex items-center gap-3 min-h-12 px-3.5 rounded-control border border-line bg-surface hover:bg-surface-2 cursor-pointer transition-colors';
+  const cardCls = 'bg-surface border border-line rounded-card';
+
+  const summary: [string, string][] = [
+    ['Provtyp', mainTestType + (isTestprov ? ' (testprov)' : '')],
+    ['Behörighet', license],
+    ['Växellåda', p.transmission === 'Automat' ? 'Automat (villkor 78)' : 'Manuell'],
+    ...(isHeavy ? [['Färdskrivare', p.tachograph === 'Utan färdskrivare' ? 'Utan färdskrivare' : 'Med färdskrivare'] as [string, string]] : []),
+    ['Provförrättare', p.examiner || '–'],
+    ['Datum', p.testDate || '–'],
+  ];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 px-4 sm:px-6 w-full pb-20 dark:text-gray-100">
-      
-      <div className="mb-6 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-gray-200 dark:border-zinc-800 pb-5">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Provkonfiguration</h2>
-          <p className="text-gray-500 dark:text-zinc-400 text-sm mt-0.5">Finjustera provparametrar, fordonets egenskaper och återställ tidigare underkända moment.</p>
-        </div>
-        <span className="px-3 py-1 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 text-xs font-bold uppercase rounded-lg border border-gray-200 dark:border-zinc-700 flex items-center gap-1.5 self-start sm:self-center">
-          <Settings size={13} className="text-red-500" /> Momentredigering
-        </span>
-      </div>
+    <div className="max-w-6xl mx-auto sm:px-2 w-full text-ink">
 
-      {/* 1. Candidate Profilkort Summarizing registration details from Step 1 */}
-      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-sm p-4 sm:p-6 overflow-hidden relative">
-        <div className="absolute top-0 right-0 p-24 -mr-12 -mt-12 bg-red-500/5 rounded-full blur-2xl pointer-events-none"></div>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-xl bg-[#002f6c]/10 dark:bg-blue-500/10 flex items-center justify-center text-[#002f6c] dark:text-blue-400 shrink-0 font-bold border border-blue-100 dark:border-blue-900/20">
-              <User size={22} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-extrabold text-gray-900 dark:text-white text-base sm:text-lg">
-                  {state.properties.studentName || 'Kandidat saknas'}
-                </h3>
-                {state.checklist.identityChecked ? (
-                  <span className="text-[10px] font-black tracking-widest uppercase px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/40">
-                    Legitimation kontrollerad
+      <header className="mb-5">
+        <div className="flex items-center gap-3">
+          <AppLogo variant="icon" size="sm" className="shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[13px] font-medium text-ink-3">Innan vi kör</p>
+            <h1 className="text-[26px] sm:text-4xl font-bold text-ink leading-[1.1] truncate">
+              {license.split(' (')[0]} – {p.studentName || 'Namn saknas'}
+            </h1>
+          </div>
+        </div>
+        <p className="text-[15px] text-ink-2 mt-1.5 max-w-2xl">
+          Kontrollera legitimationen och låt kandidaten skriva under EES-intyget. Det du ändrar sparas direkt.
+        </p>
+      </header>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start">
+        <div className="lg:col-span-7 space-y-5">
+
+          {/* Sammanfattning från startsidan – ändras där, inte här */}
+          <section className={`${cardCls} overflow-hidden`}>
+            <div className="p-4 sm:p-5 flex items-start gap-3.5">
+              <div className="w-11 h-11 rounded-full bg-navy/10 dark:bg-blue-500/15 text-navy dark:text-blue-300 flex items-center justify-center shrink-0 font-semibold">
+                {(p.studentName || '?').trim().charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-lg font-semibold text-ink truncate">{p.studentName || 'Namn saknas'}</h2>
+                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${state.checklist.identityChecked
+                    ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300'
+                    : 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300'}`}>
+                    {state.checklist.identityChecked ? 'Id kontrollerad' : 'Id ej kontrollerad'}
                   </span>
-                ) : (
-                  <span className="text-[10px] font-black tracking-widest uppercase px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/40">
-                    Legitimation ej kontrollerad
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-gray-500 dark:text-zinc-400 font-mono mt-0.5">
-                {state.properties.personalNumber || 'Saknar personnummer'} • {state.properties.email || 'Saknar e-post'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 sm:self-center w-full sm:w-auto mt-2 sm:mt-0">
-            <div className="px-3.5 py-1.5 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-100 dark:border-zinc-700 text-center shrink-0">
-              <span className="block text-[9px] font-black text-gray-500 dark:text-zinc-400 uppercase tracking-widest">Klass</span>
-              <span className="text-sm font-black text-red-600 dark:text-red-400">{state.properties.licenseType || 'B'}</span>
-            </div>
-            
-            <button
-              onClick={() => setShowEditCandidate(!showEditCandidate)}
-              className="px-3 py-2.5 min-h-10 text-xs font-bold text-gray-600 dark:text-zinc-300 hover:text-red-600 border border-gray-200 dark:border-zinc-700 hover:border-red-200 rounded-lg transition-all flex items-center justify-center gap-1 bg-white dark:bg-zinc-800 cursor-pointer w-full sm:w-auto"
-            >
-              <Edit3 size={13} />
-              <span>{showEditCandidate ? 'Dölj redigering' : 'Justera namn'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Expansible compact form fields directly under profile if examiner wants to edit */}
-        {showEditCandidate && (
-          <div className="mt-6 pt-6 border-t border-gray-100 dark:border-zinc-800 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 bg-gray-50/50 dark:bg-zinc-850 p-4 rounded-xl">
-            <Input 
-              label="Kandidatens namn" 
-              placeholder="Förnamn Efternamn"
-              value={state.properties.studentName}
-              onChange={(e) => updateField('studentName', e.target.value)}
-              className="bg-white dark:bg-zinc-800 h-11"
-            />
-            <Input 
-              label="Personnummer" 
-              placeholder="ÅÅÅÅMMDD-XXXX"
-              value={state.properties.personalNumber}
-              onChange={(e) => updateField('personalNumber', e.target.value)}
-              className="bg-white dark:bg-zinc-800 font-mono h-11"
-            />
-            <Input 
-              label="E-postadress" 
-              type="email"
-              placeholder="namn@exempel.se"
-              value={state.properties.email}
-              onChange={(e) => updateField('email', e.target.value)}
-              className="bg-white dark:bg-zinc-800 h-11"
-            />
-          </div>
-        )}
-      </div>
-
-      {/* 2. Previous failures alert box (Förebyggeri / Omprov recovery) */}
-      {previousFailedTest && (
-        <div className={`border rounded-2xl overflow-hidden transition-all shadow-sm ${loadedFromHistory ? 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/10' : 'border-amber-200 dark:border-amber-900/50 bg-amber-50/10'}`}>
-          <div className={`flex flex-col sm:flex-row border-b sm:items-center justify-between px-4 sm:px-6 py-1 gap-1 sm:gap-0 ${loadedFromHistory ? 'bg-emerald-50/55 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900/50' : 'bg-amber-50/55 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900/50'}`}>
-             <div className="flex overflow-x-auto hide-scrollbar">
-               <button
-                 onClick={() => setActiveTab('info')}
-                 className={`px-3 py-3.5 font-bold text-xs uppercase tracking-wider transition-all border-b-2 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${activeTab === 'info' ? (loadedFromHistory ? 'text-emerald-900 dark:text-emerald-400 border-emerald-600' : 'text-amber-900 dark:text-amber-400 border-amber-600') : 'text-gray-500 dark:text-zinc-400 border-transparent hover:text-gray-800'}`}
-               >
-                 <History size={13} />
-                 <span>Resultatåterställning</span>
-               </button>
-               <button
-                 onClick={() => setActiveTab('protocol')}
-                 className={`px-3 py-3.5 font-bold text-xs uppercase tracking-wider transition-all border-b-2 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${activeTab === 'protocol' ? (loadedFromHistory ? 'text-emerald-900 dark:text-emerald-400 border-emerald-600' : 'text-amber-900 dark:text-amber-400 border-amber-600') : 'text-gray-500 dark:text-zinc-400 border-transparent hover:text-gray-800'}`}
-               >
-                 <FileCheck2 size={13} />
-                 <span>Granska föregående protokoll</span>
-               </button>
-             </div>
-             <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded self-start sm:self-auto mb-1.5 sm:mb-0 ${loadedFromHistory ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30'}`}>
-               Föreliggande
-             </span>
-          </div>
-          
-          <div className="p-5 sm:p-6 bg-white dark:bg-zinc-900">
-            {activeTab === 'info' ? (
-              <div className="flex flex-col md:flex-row gap-5 justify-between items-start md:items-center">
-                <div className="space-y-1.5 flex-1">
-                  <div className="flex items-center gap-2">
-                    <ShieldAlert className={loadedFromHistory ? 'text-emerald-600' : 'text-amber-500'} size={18} />
-                    <h4 className={`font-extrabold text-sm sm:text-base ${loadedFromHistory ? 'text-emerald-900 dark:text-emerald-400' : 'text-amber-900 dark:text-amber-400'}`}>
-                      {loadedFromHistory ? 'Information och underkända moment har överförts' : 'Kandidaten blev underkänd i föregående prov'}
-                    </h4>
-                  </div>
-                  <p className="text-xs sm:text-sm text-gray-500 dark:text-zinc-400 leading-relaxed max-w-2xl">
-                    Kandidaten fick underkänt i klassen <strong className="font-bold text-gray-800 dark:text-white">{previousFailedTest.properties.licenseType}</strong> på sitt prov den {previousFailedTest.properties.testDate}. Underkända områden omfattade <strong className="font-semibold text-red-600 dark:text-red-400 font-mono">{([...(previousFailedTest.result.drivingFailure?.situations || []), ...(previousFailedTest.result.safetyCheckFailure?.situations || [])]).join(', ') || 'provmoment'}</strong>.
-                  </p>
                 </div>
-                
-                <button 
-                  onClick={loadPreviousFailures}
-                  disabled={loadedFromHistory}
-                  className={`w-full md:w-auto shrink-0 px-5 h-11 text-xs font-bold transition-all border rounded-xl flex items-center justify-center gap-1.5 cursor-pointer ${
-                    loadedFromHistory 
-                      ? "bg-emerald-50 border-emerald-300 text-emerald-700 dark:bg-emerald-950/20 dark:border-emerald-800 dark:text-emerald-400 opacity-80 cursor-default" 
-                      : "bg-amber-600 border-amber-600 text-white hover:bg-amber-700 shadow-sm"
-                  }`}
-                >
-                  {loadedFromHistory ? (
-                    <>
-                      <Check size={14} />
-                      <span>Hämtat och konfigurerat</span>
-                    </>
-                  ) : (
-                    <>
-                      <History size={14} />
-                      <span>Läs in underkända delar</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            ) : (
-              <div className="overflow-x-auto max-h-[350px] border border-gray-100 dark:border-zinc-800 rounded-xl p-4 bg-gray-50 dark:bg-zinc-950/40 relative">
-                 <div className="scale-[0.8] origin-top-left overflow-hidden min-w-[700px] pointer-events-none">
-                   <OfficialPrintLayout testState={previousFailedTest} />
-                 </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* 3. Provdetaljer Configuration sections (Bento setup card) */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        
-        {/* Left Side: Provtyp, fordons växellåda */}
-        <div className="md:col-span-8 space-y-6">
-          <Card className="border border-gray-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
-            <CardContent className="p-5 sm:p-7 space-y-6">
-              
-              {/* Test Type Interactive Buttons Selector */}
-              <div className="space-y-3">
-                <label className="text-xs font-bold text-gray-500 dark:text-zinc-400 tracking-wide uppercase flex items-center gap-1.5">
-                  <Sliders size={13} className="text-red-500" /> Provtyp och Bedömningsprofil
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {[
-                    { id: 'Förstaprov', label: 'Förstaprov', desc: 'Ny prövning med fullständigt prov' },
-                    { id: 'Omprov', label: 'Omprov', desc: 'Fullständigt omprov av alla delar' },
-                    { id: 'Omprov säkerhetskontroll', label: 'Omprov säkerhetskontroll', desc: 'Komplettering av säkerhetsmoment' },
-                    { id: 'Omprov körning', label: 'Omprov körning', desc: 'Endast trafikbedömning' },
-                    { id: 'Bedömningsprov', label: 'Bedömningsprov', desc: 'Pedagogisk bedömning – Ingen behörighet uppnås vid godkänt' }
-                  ].map(type => {
-                    const isSelected = state.properties.testType?.includes(type.id);
-                    return (
-                      <button
-                        key={type.id}
-                        type="button"
-                        onClick={() => {
-                           let current = state.properties.testType ? state.properties.testType.split(',').map(s => s.trim()).filter(Boolean) : [];
-                           // If picking a main type, remove other main types but keep Testprov
-                           current = current.filter(id => id === 'Testprov'); 
-                           current.push(type.id);
-                           updateField('testType', current.join(', '));
-                        }}
-                        className={`p-3.5 text-left border rounded-xl transition-all cursor-pointer select-none ${
-                          isSelected
-                            ? 'bg-[#002f6c]/10 border-[#002f6c] dark:bg-blue-600/10 dark:border-blue-500 text-[#002f6c] dark:text-blue-300 ring-2 ring-blue-100 dark:ring-blue-900/20'
-                            : 'bg-white dark:bg-zinc-800 hover:border-gray-305 dark:hover:border-zinc-700 border-gray-100 dark:border-zinc-800'
-                        }`}
-                      >
-                        <div className="font-bold text-xs uppercase text-gray-900 dark:text-white flex items-center justify-between">
-                          <span>{type.label}</span>
-                          {isSelected && <div className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400"></div>}
-                        </div>
-                        <p className="text-[10px] sm:text-[11px] text-gray-400 dark:text-zinc-500 mt-1">{type.desc}</p>
-                      </button>
-                    );
-                  })}
-                </div>
-                
-                {/* Testprov Flagga */}
-                <label className={`mt-2 p-3.5 flex items-start gap-3 border rounded-xl transition-all cursor-pointer select-none ${
-                    state.properties.testType?.includes('Testprov') 
-                    ? 'bg-purple-50/50 border-purple-300 dark:bg-purple-900/20 dark:border-purple-700 ring-2 ring-purple-100 dark:ring-purple-900/40' 
-                    : 'bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
-                }`}>
-                  <div className="pt-0.5">
-                    <input 
-                      type="checkbox" 
-                      className="w-4.5 h-4.5 accent-purple-600 rounded cursor-pointer" 
-                      checked={state.properties.testType?.includes('Testprov') || false}
-                      onChange={(e) => {
-                         let current = state.properties.testType ? state.properties.testType.split(',').map(s => s.trim()).filter(Boolean) : [];
-                         if (e.target.checked) {
-                            if (!current.includes('Testprov')) current.push('Testprov');
-                         } else {
-                            current = current.filter(id => id !== 'Testprov');
-                         }
-                         updateField('testType', current.join(', '));
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <div className="font-bold text-xs uppercase text-gray-900 dark:text-white">
-                      Testprov (Särskild Flagga)
-                    </div>
-                    <p className="text-[10px] sm:text-[11px] text-gray-500 dark:text-zinc-400 mt-0.5">
-                      Om aktiverad registreras detta som ett "Testprov". Ingen behörighet uppnås även vid godkänt resultat, men provet bedöms som vanligt.
-                    </p>
-                  </div>
-                </label>
-              </div>
-
-              {/* Equipment and Vehicles settings */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 dark:text-zinc-400 tracking-wide uppercase">Växellåda / Transmission</label>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => updateField('transmission', 'Manuell')}
-                      className={`flex-1 h-11 text-xs font-bold border transition-all rounded-xl select-none cursor-pointer ${
-                        state.properties.transmission !== 'Automat'
-                          ? 'bg-[#002f6c] dark:bg-blue-600 text-white border-[#002f6c] dark:border-blue-500 shadow-sm'
-                          : 'bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 border-gray-200 dark:border-zinc-700 hover:bg-gray-100'
-                      }`}
-                    >
-                      Manuell Växel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => updateField('transmission', 'Automat')}
-                      className={`flex-1 h-11 text-xs font-bold border transition-all rounded-xl select-none cursor-pointer ${
-                        state.properties.transmission === 'Automat'
-                          ? 'bg-[#002f6c] dark:bg-blue-600 text-white border-[#002f6c] dark:border-blue-500 shadow-sm'
-                          : 'bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 border-gray-200 dark:border-zinc-700 hover:bg-gray-100'
-                      }`}
-                    >
-                      Automat (Villkor 78)
-                    </button>
-                  </div>
-
-                  {['C', 'C1', 'CE', 'C1E', 'D', 'D1', 'DE', 'D1E'].includes(state.properties.licenseType || '') && (
-                    <div className="pt-2 animate-in fade-in duration-200">
-                      <label className="text-[11px] font-bold text-gray-500 dark:text-zinc-400 tracking-wide uppercase block mb-1.5">Färdskrivare (Tunga fordon)</label>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => updateField('tachograph' as any, 'Med färdskrivare')}
-                          className={`flex-1 h-9 text-xs font-bold border transition-all rounded-xl select-none cursor-pointer ${
-                            (state.properties.tachograph || 'Med färdskrivare') !== 'Utan färdskrivare'
-                              ? 'bg-[#002f6c] dark:bg-blue-600 text-white border-[#002f6c] dark:border-blue-500 shadow-sm font-black'
-                              : 'bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 border-gray-200 dark:border-zinc-700 hover:bg-gray-100'
-                          }`}
-                        >
-                          Med färdskrivare
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => updateField('tachograph' as any, 'Utan färdskrivare')}
-                          className={`flex-1 h-9 text-xs font-bold border transition-all rounded-xl select-none cursor-pointer ${
-                            state.properties.tachograph === 'Utan färdskrivare'
-                              ? 'bg-[#c40000] text-white border-[#c40000] shadow-sm font-black'
-                              : 'bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 border-gray-200 dark:border-zinc-700 hover:bg-gray-100'
-                          }`}
-                        >
-                          Utan färdskrivare
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 dark:text-zinc-400 tracking-wide uppercase">Provförrättare & Datum</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="px-3 py-2 bg-gray-50 dark:bg-zinc-850 border border-gray-100 dark:border-zinc-800 rounded-lg text-xs font-semibold text-gray-500 select-none">
-                      <span className="block text-[8px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest">Signerare</span>
-                      <span className="text-gray-700 dark:text-zinc-300 truncate block mt-0.5">{state.properties.examiner || 'Examiner'}</span>
-                    </div>
-                    <div className="px-3 py-2 bg-gray-50 dark:bg-zinc-850 border border-gray-100 dark:border-zinc-800 rounded-lg text-xs font-semibold text-gray-500 select-none">
-                      <span className="block text-[8px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest">Datum</span>
-                      <span className="text-gray-700 dark:text-zinc-300 block mt-0.5">{state.properties.testDate || 'Datum'}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Special options & Interpreter */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2 border-t border-gray-100 dark:border-zinc-800">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 dark:text-zinc-400 tracking-wide uppercase flex items-center gap-1.5">
-                    <Lock size={12} className="text-gray-400" /> Särskilda myndighetsvillkor
-                  </label>
-                  <div className="flex flex-col gap-2 p-3 bg-gray-50 dark:bg-zinc-850 border border-gray-150 dark:border-zinc-800 rounded-xl">
-                    {['Medicinska villkor 69 (Alkolås)', 'Handikappanpassning (Klass 78+)'].map(condition => (
-                      <label key={condition} className="flex items-center gap-2 cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 accent-red-600 rounded"
-                          checked={(state.properties.specialConditions || []).includes(condition)}
-                          onChange={(e) => updateState(prev => {
-                            const current = prev.properties.specialConditions || [];
-                            return {
-                              ...prev,
-                              properties: {
-                                ...prev.properties,
-                                specialConditions: e.target.checked ? [...current, condition] : current.filter(c => c !== condition),
-                              },
-                            };
-                          })}
-                        />
-                        <span className="text-xs font-semibold text-gray-700 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white">{condition}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 dark:text-zinc-400 tracking-wide uppercase flex items-center gap-1.5">
-                    <Globe2 size={12} className="text-blue-500" /> Tolk & Språkhjälp
-                  </label>
-                  <div className="flex flex-col gap-2 p-3 bg-gray-50 dark:bg-zinc-850 border border-gray-150 dark:border-zinc-800 rounded-xl h-[80px] justify-center">
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 accent-red-600 rounded"
-                        checked={Boolean(state.properties.interpreterPresent)}
-                        onChange={(e) => updateState(prev => ({ ...prev, properties: { ...prev.properties, interpreterPresent: e.target.checked } }))}
-                      />
-                      <span className="text-xs font-semibold text-gray-700 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white">Tolk medverkar under provet</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={state.properties.interpreterLanguage || ''}
-                      onChange={(e) => updateState(prev => ({ ...prev, properties: { ...prev.properties, interpreterLanguage: e.target.value } }))}
-                      placeholder="Språk (frivilligt)"
-                      className="w-full text-xs border-b border-gray-200 dark:border-zinc-700 focus:border-red-600 dark:focus:border-red-500 focus:outline-none bg-transparent pb-0.5 dark:text-white" 
-                    />
-                  </div>
-                </div>
-              </div>
-
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Side Info Box: Active testing subclass details (license subclass specifications) */}
-        <div className="md:col-span-4 space-y-6">
-          
-          <Card className="border border-gray-200 dark:border-zinc-800 bg-gradient-to-br from-blue-50/20 to-indigo-50/10 dark:from-zinc-900 dark:to-zinc-900 rounded-2xl shadow-sm text-gray-800 dark:text-zinc-300 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-12 bg-blue-500/5 dark:bg-blue-400/5 rounded-full blur-xl pointer-events-none"></div>
-            <CardContent className="p-5 sm:p-6 space-y-4">
-              <div className="flex items-center justify-between text-[#002f6c] dark:text-blue-400">
-                <div className="flex items-center gap-2">
-                  <Award size={18} />
-                  <h4 className="font-extrabold text-xs uppercase tracking-wider">Klasspecifikation</h4>
-                </div>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300">
-                  {state.properties.licenseType || 'B'}
-                </span>
-              </div>
-
-              {/* License Class Picker Dropdown */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase text-gray-500 dark:text-zinc-400 tracking-wider">Välj behörighetsklass:</label>
-                <div className="relative">
-                  <select
-                    value={state.properties.licenseType || 'B'}
-                    onChange={(e) => updateField('licenseType', e.target.value)}
-                    className="w-full appearance-none bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 text-gray-800 dark:text-zinc-200 text-sm font-bold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50 shadow-sm cursor-pointer"
-                  >
-                    {licenseTypes.map((lic) => (
-                      <option key={lic} value={lic}>{lic}</option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-gray-500">
-                    ▼
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2.5 pt-3 border-t border-gray-100 dark:border-zinc-800 text-xs">
-                <div className="flex justify-between items-center text-gray-500">
-                  <span>Totalt inlagda moment:</span>
-                  <strong className="font-bold text-gray-800 dark:text-white">{totalMoments} st</strong>
-                </div>
-                <div className="flex justify-between items-center text-gray-500">
-                  <span>Valda för prövning:</span>
-                  <strong className="font-bold text-red-600 dark:text-red-400">{state.includedTestItems?.length || 0} st</strong>
-                </div>
-              </div>
-
-              <div className="p-3 bg-white dark:bg-zinc-850 rounded-xl border border-gray-150 dark:border-zinc-800 space-y-2 mt-4">
-                <div className="flex items-center gap-1 text-[11px] font-bold text-[#002f6c] dark:text-blue-400">
-                  <Info size={12} />
-                  <span>Automatisk profil</span>
-                </div>
-                <p className="text-[10px] text-gray-500 dark:text-zinc-400 leading-normal">
-                  När provet startas laddas automatiskt branschstandardiserade moment baserat på lagstiftningen för {state.properties.licenseType || 'B'}-behörighet. De underkända provdelarna markeras automatiskt vid körprovet.
+                <p className="text-[13px] text-ink-3 tabular-nums mt-0.5 truncate">
+                  {p.personalNumber || 'Personnummer saknas'}{p.email ? ` · ${p.email}` : ''}
                 </p>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Stepper info */}
-          <div className="p-5 border border-dashed border-gray-200 dark:border-zinc-850 rounded-2xl flex items-start gap-3">
-            <CheckCircle className="text-emerald-500 shrink-0 mt-0.5" size={16} />
-            <div>
-              <h5 className="font-bold text-xs text-gray-800 dark:text-zinc-300">Nästa Steg: Inledning</h5>
-              <p className="text-[11px] text-gray-500 dark:text-zinc-500 mt-1 leading-normal">
-                Efter att du sparat dessa grundläggande egenskaper fortsätter du till den lagstadgade inledande checklistan (identitetsverifiering & provinstruktioner) tillsammans med kandidaten.
-              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/korprov/start')}
+                className="shrink-0 h-9 px-3 rounded-control text-[13px] font-medium text-navy dark:text-blue-400 hover:bg-navy/5 dark:hover:bg-blue-500/10 flex items-center gap-1.5 cursor-pointer"
+              >
+                <Pencil size={14} /> Ändra
+              </button>
             </div>
-          </div>
+            <dl className="grid grid-cols-2 sm:grid-cols-3 border-t border-line bg-surface-2/60">
+              {summary.map(([k, v]) => (
+                <div key={k} className="px-4 sm:px-5 py-3 border-b border-line [&:nth-last-child(-n+2)]:border-b-0 sm:[&:nth-last-child(-n+3)]:border-b-0 min-w-0">
+                  <dt className="text-[12px] text-ink-3">{k}</dt>
+                  <dd className={`text-[14px] font-semibold truncate ${k === 'Färdskrivare' && v === 'Utan färdskrivare' ? 'text-[#c40000] dark:text-red-400' : 'text-ink'}`}>{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
 
+          {/* Identitetskontroll */}
+          <section className={`${cardCls} p-4 sm:p-5`}>
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="text-[15px] font-semibold text-ink flex items-center gap-2">
+                <IdCard size={16} className="text-ink-3" /> Identitetskontroll
+              </h2>
+              <div className="flex items-center gap-2 shrink-0">
+                {state.checklist.identityChecked && (
+                  <span className="text-[12px] font-semibold px-2 py-1 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300 flex items-center gap-1">
+                    <Check size={13} strokeWidth={3} /> Kontrollerad
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setScanOpen(true)}
+                  className="h-9 px-3 rounded-control bg-navy hover:bg-navy-deep dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-[13px] font-semibold flex items-center gap-1.5 cursor-pointer"
+                >
+                  <ScanLine size={15} /> Skanna körkortet
+                </button>
+              </div>
+            </div>
+            <LicenseScanModal
+              open={scanOpen}
+              onClose={() => setScanOpen(false)}
+              candidateName={p.studentName || ''}
+              personalNumber={p.personalNumber || ''}
+              license={license.split(' (')[0]}
+              onResult={({ idType, idNumber }) => updateState(prev => ({
+                ...prev,
+                properties: { ...prev.properties, idType, idNumber },
+                checklist: { ...prev.checklist, identityChecked: true },
+              }))}
+            />
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <span className="text-[13px] font-medium text-ink-2">Personnummer</span>
+                <div className="mt-1 h-11 px-3.5 rounded-control border border-line bg-surface-2 text-[15px] font-medium text-ink tabular-nums flex items-center truncate">
+                  {p.personalNumber || '–'}
+                </div>
+              </div>
+              <label className="block">
+                <span className="text-[13px] font-medium text-ink-2">Legitimation</span>
+                <select
+                  value={p.idType || ''}
+                  onChange={(e) => setProp('idType', e.target.value)}
+                  className="mt-1 w-full h-11 px-3 text-[15px] rounded-control border border-line bg-surface text-ink focus:outline-none focus:border-navy focus:ring-4 focus:ring-navy/10 cursor-pointer"
+                >
+                  <option value="">Välj…</option>
+                  {ID_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-[13px] font-medium text-ink-2">ID-nummer <span className="text-ink-3 font-normal">(valfritt)</span></span>
+                <input
+                  type="text"
+                  value={p.idNumber || ''}
+                  onChange={(e) => setProp('idNumber', e.target.value)}
+                  autoComplete="off"
+                  className="mt-1 w-full h-11 px-3.5 text-[15px] rounded-control border border-line bg-surface text-ink tabular-nums focus:outline-none focus:border-navy focus:ring-4 focus:ring-navy/10"
+                />
+              </label>
+            </div>
+            <label className="mt-3 flex items-center gap-3 min-h-12 px-3.5 rounded-control border border-line bg-surface hover:bg-surface-2 cursor-pointer transition-colors">
+              <input
+                type="checkbox"
+                className="w-5 h-5 accent-emerald-600 rounded shrink-0"
+                checked={state.checklist.identityChecked}
+                onChange={(e) => {
+                  triggerHaptic(e.target.checked ? 'success' : 'light');
+                  updateState(prev => ({ ...prev, checklist: { ...prev.checklist, identityChecked: e.target.checked } }));
+                }}
+              />
+              <span className="text-sm font-medium text-ink">Legitimationen stämmer med kandidaten</span>
+            </label>
+          </section>
+
+          {/* Föregående protokoll vid omprov */}
+          {previous && (
+            <section className={`border rounded-card overflow-hidden ${loadedFromHistory ? 'border-emerald-300 dark:border-emerald-800/60' : 'border-amber-300 dark:border-amber-800/60'}`}>
+              <div className={`p-4 sm:p-5 ${loadedFromHistory ? 'bg-emerald-50/70 dark:bg-emerald-950/20' : 'bg-amber-50/70 dark:bg-amber-950/20'}`}>
+                <div className="flex items-start gap-3">
+                  <ShieldAlert className={`shrink-0 mt-0.5 ${loadedFromHistory ? 'text-emerald-600' : 'text-amber-600'}`} size={20} />
+                  <div className="min-w-0 flex-1">
+                    <h2 className={`font-semibold text-[15px] ${loadedFromHistory ? 'text-emerald-900 dark:text-emerald-300' : 'text-amber-950 dark:text-amber-200'}`}>
+                      {loadedFromHistory ? 'Momenten från förra provet är tillagda' : 'Underkänd förra gången'}
+                    </h2>
+                    <p className="text-[13px] text-ink-2 leading-relaxed mt-0.5">
+                      {previous.properties.testType || 'Prov'} {previous.properties.licenseType}, {previous.properties.testDate}
+                      {previous.properties.examiner ? <> hos {previous.properties.examiner}</> : null}.{' '}
+                      {(() => {
+                        const r = previous.result;
+                        const causes = [r.drivingFailure?.primaryCause?.area, r.safetyCheckFailure?.primaryCause?.area].filter(Boolean);
+                        const situations = [...(r.drivingFailure?.situations || []), ...(r.safetyCheckFailure?.situations || [])];
+                        return (
+                          <>
+                            {r.testAborted && <strong className="font-semibold text-red-700 dark:text-red-400">Provet avbröts. </strong>}
+                            {causes.length > 0 && <>Grundorsak: <strong className="font-semibold text-red-700 dark:text-red-400">{causes.join(', ')}</strong>. </>}
+                            {situations.length > 0 && <>Brister i {situations.join(', ').toLowerCase()}.</>}
+                          </>
+                        );
+                      })()}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                  <button
+                    type="button"
+                    onClick={loadPreviousFailures}
+                    disabled={loadedFromHistory}
+                    className={`h-11 px-4 text-sm font-semibold rounded-control flex items-center justify-center gap-1.5 transition-colors ${loadedFromHistory
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 cursor-default'
+                      : 'bg-amber-600 text-white hover:bg-amber-700 cursor-pointer'}`}
+                  >
+                    {loadedFromHistory ? <><Check size={16} /> Tillagda</> : <><History size={16} /> Pröva samma moment igen</>}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPrevious(v => !v)}
+                    aria-expanded={showPrevious}
+                    className="h-11 px-4 text-sm font-semibold rounded-control border border-line bg-surface text-ink hover:bg-surface-2 flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <FileCheck2 size={16} />
+                    {showPrevious ? 'Dölj protokollet' : 'Visa protokollet'}
+                  </button>
+                </div>
+              </div>
+              {showPrevious && (
+                <div className="border-t border-line p-3 sm:p-4 bg-surface-2 animate-in fade-in duration-150">
+                  <div
+                    data-protocol
+                    className="max-h-[520px] overflow-auto custom-scrollbar bg-white text-black rounded-control border border-line shadow-lift p-4 sm:p-6"
+                    style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}
+                  >
+                    <div className="min-w-[560px]">
+                      <OfficialPrintLayout testState={previous} />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
+
+          {!previous && retest && pnrKey.length >= 10 && (
+            <div className="flex items-center gap-2.5 px-4 py-3 rounded-card border border-dashed border-line text-[13px] text-ink-2">
+              {lookingUp
+                ? <><span className="w-3.5 h-3.5 rounded-full border-2 border-ink-3 border-t-transparent animate-spin" aria-hidden="true" /> Letar efter förra protokollet…</>
+                : <><History size={15} className="text-ink-3" /> Hittar inget tidigare underkänt prov på {p.personalNumber}.</>}
+            </div>
+          )}
+
+          {/* Intygande: körkort i annat EU/EES-land */}
+          <section className={`${cardCls} p-4 sm:p-5`}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-[15px] font-semibold text-ink flex items-center gap-2">
+                  <PenLine size={16} className="text-ink-3" /> EES-intyg
+                </h2>
+                <p className="text-[13px] text-ink-3 mt-0.5">Frivilligt – kan hoppas över vid behov.</p>
+              </div>
+              {declaration?.status === 'signed' && (
+                <span className="shrink-0 text-[12px] font-semibold px-2 py-1 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300 flex items-center gap-1">
+                  <Check size={13} strokeWidth={3} /> Signerat
+                </span>
+              )}
+              {declaration?.status === 'skipped' && (
+                <span className="shrink-0 text-[12px] font-semibold px-2 py-1 rounded-md bg-surface-2 text-ink-2">Överhoppat</span>
+              )}
+            </div>
+
+            {!skipping ? (
+              <>
+                <blockquote className="mt-4 pl-3.5 border-l-[3px] border-navy/40 dark:border-blue-400/40 text-[15px] text-ink leading-relaxed">
+                  Jag, <strong>{p.studentName || 'kandidaten'}</strong>, intygar på heder och samvete att jag inte har ett körkort
+                  som är utfärdat i en annan EES-stat, och att jag inte har ett körkort där som är återkallat eller spärrat.
+                </blockquote>
+                <div className="mt-4">
+                  <SignaturePad
+                    value={declaration?.status === 'signed' ? declaration.signature : undefined}
+                    label="Kandidaten signerar här"
+                    onChange={(signature) => setDeclaration(signature
+                      ? { status: 'signed', signature, signedAt: new Date().toISOString() }
+                      : undefined)}
+                  />
+                </div>
+                <div className="mt-1 flex items-center justify-between gap-3 text-[12px] text-ink-3">
+                  <span className="flex items-center gap-1.5">
+                    {declaration?.status === 'signed' && declaration.signedAt && (
+                      <><Clock3 size={13} /> {new Date(declaration.signedAt).toLocaleString('sv-SE', { dateStyle: 'short', timeStyle: 'short' })}</>
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => { setSkipping(true); setDeclaration({ status: 'skipped', skipReason: SKIP_REASONS[0] }); }}
+                    className="text-[13px] font-medium text-ink-2 hover:text-ink underline underline-offset-2 cursor-pointer"
+                  >
+                    Hoppa över
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="mt-4 space-y-3 animate-in fade-in duration-150">
+                <label className="block">
+                  <span className="text-[13px] font-medium text-ink-2">Varför hoppas det över?</span>
+                  <select
+                    value={declaration?.skipReason || SKIP_REASONS[0]}
+                    onChange={(e) => setDeclaration({ status: 'skipped', skipReason: e.target.value })}
+                    className="mt-1 w-full h-11 px-3.5 text-[15px] rounded-control border border-line bg-surface text-ink focus:outline-none focus:border-navy focus:ring-4 focus:ring-navy/10 cursor-pointer"
+                  >
+                    {SKIP_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => { setSkipping(false); setDeclaration(undefined); }}
+                  className="text-[13px] font-medium text-navy dark:text-blue-400 hover:underline cursor-pointer"
+                >
+                  Låt kandidaten signera i stället
+                </button>
+              </div>
+            )}
+          </section>
+
+          {/* Testprov, villkor och tolk */}
+          <section className={`${cardCls} p-4 sm:p-5 space-y-3`}>
+            <h2 className="text-[15px] font-semibold text-ink">Villkor och tolk</h2>
+            <div className="space-y-2">
+              {['Medicinska villkor 69 (Alkolås)', 'Handikappanpassning (Klass 78+)'].map(condition => (
+                <label key={condition} className={rowCheck}>
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 accent-[#002f6c] rounded shrink-0"
+                    checked={(p.specialConditions || []).includes(condition)}
+                    onChange={(e) => {
+                      const current = p.specialConditions || [];
+                      setProp('specialConditions', e.target.checked ? [...current, condition] : current.filter(c => c !== condition));
+                    }}
+                  />
+                  <span className="text-sm font-medium text-ink">{condition}</span>
+                </label>
+              ))}
+              <label className={rowCheck}>
+                <input
+                  type="checkbox"
+                  className="w-5 h-5 accent-[#002f6c] rounded shrink-0"
+                  checked={Boolean(p.interpreterPresent)}
+                  onChange={(e) => setProp('interpreterPresent', e.target.checked)}
+                />
+                <Globe2 size={16} className="text-ink-3 shrink-0" />
+                <span className="text-sm font-medium text-ink">Tolk är med</span>
+              </label>
+              {p.interpreterPresent && (
+                <input
+                  type="text"
+                  value={p.interpreterLanguage || ''}
+                  onChange={(e) => setProp('interpreterLanguage', e.target.value)}
+                  placeholder="Språk, t.ex. arabiska"
+                  aria-label="Tolkens språk"
+                  className="w-full h-12 px-4 text-[15px] rounded-control border border-line bg-surface text-ink placeholder:text-ink-3 focus:outline-none focus:border-navy focus:ring-4 focus:ring-navy/10 animate-in fade-in duration-150"
+                />
+              )}
+              <label className={rowCheck}>
+                <input
+                  type="checkbox"
+                  className="w-5 h-5 accent-violet-600 rounded shrink-0"
+                  checked={isTestprov}
+                  onChange={(e) => toggleTestprov(e.target.checked)}
+                />
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-ink">Testprov</span>
+                  <span className="block text-[12px] text-ink-3">Bedöms som vanligt men ger ingen behörighet.</span>
+                </span>
+              </label>
+            </div>
+          </section>
         </div>
 
+        {/* Behörighetsfakta ur lathunden */}
+        <aside className="lg:col-span-5 space-y-4 lg:sticky lg:top-4">
+          <section className={`${cardCls} p-4 sm:p-6`}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold text-ink">Behörighet {license.split(' (')[0]}</h2>
+                {guide && <p className="text-[13px] text-ink-2 mt-0.5">{guide.name}</p>}
+              </div>
+              <Award size={20} className="text-ink-3 shrink-0 mt-1" />
+            </div>
+
+            <dl className="mt-4 grid grid-cols-2 gap-2">
+              <div className="rounded-control bg-surface-2 p-3">
+                <dt className="text-[13px] text-ink-3">Moment i katalogen</dt>
+                <dd className="text-xl font-semibold text-ink tabular-nums mt-0.5">{totalMoments}</dd>
+              </div>
+              <div className="rounded-control bg-surface-2 p-3">
+                <dt className="text-[13px] text-ink-3">Valda hittills</dt>
+                <dd className="text-xl font-semibold text-ink tabular-nums mt-0.5">{state.includedTestItems?.length || 0}</dd>
+              </div>
+            </dl>
+
+            {guide ? (
+              <div className="mt-4 space-y-4">
+                <div>
+                  <h3 className="text-[13px] font-medium font-sans text-ink-3 flex items-center gap-1.5 tracking-normal"><Calendar size={14} /> Körtid</h3>
+                  <p className="text-[14px] text-ink-2 leading-relaxed mt-1">{guide.driveTime}</p>
+                </div>
+                {guide.mandatoryHighlights.length > 0 && (
+                  <div>
+                    <h3 className="text-[13px] font-medium font-sans text-ink-3 flex items-center gap-1.5 tracking-normal"><Scale size={14} /> Måste ingå</h3>
+                    <ul className="mt-1.5 space-y-1.5">
+                      {guide.mandatoryHighlights.map(h => (
+                        <li key={h} className="flex gap-2.5 text-[14px] text-ink-2 leading-relaxed">
+                          <span className="mt-2 w-1.5 h-1.5 rounded-full bg-signal shrink-0" />
+                          <span>{h}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="mt-4 text-[13px] text-ink-3 flex items-start gap-2">
+                <Info size={15} className="shrink-0 mt-0.5" />
+                Ingen lathund för den här behörigheten än.
+              </p>
+            )}
+          </section>
+        </aside>
       </div>
 
-      {/* 4. Large Action Area Controls */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-10 mt-10 border-t border-gray-200 dark:border-zinc-800">
-        <button 
-          onClick={handleBack} 
-          className="w-full sm:w-auto h-12 px-6 font-bold text-xs text-gray-500 dark:text-zinc-400 hover:text-[#002f6c] dark:hover:text-blue-400 transition-colors bg-transparent border-0 flex items-center justify-center gap-1"
+      {/* Åtgärdsrad */}
+      <div className="sticky bottom-0 z-10 mt-8 -mx-4 sm:mx-0 px-4 py-3 sm:rounded-card bg-surface/95 backdrop-blur-xl border-t sm:border border-line flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => navigate('/korprov/start')}
+          className="h-12 px-3 sm:px-4 text-sm font-semibold text-ink-2 hover:text-ink rounded-control hover:bg-surface-2 flex items-center gap-1 cursor-pointer"
         >
-          <span>← Tillbaka till Mottagning</span>
+          <ChevronRight size={18} className="rotate-180" />
+          Tillbaka
         </button>
-        
-        <button 
+        <button
           id="btn-goto-inledning"
-          onClick={handleNext} 
-          className="w-full sm:w-auto h-12 px-8 bg-[#002f6c] hover:bg-[#00204a] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold text-sm tracking-wide transition-all shadow-md flex items-center justify-center gap-1.5 rounded-xl cursor-pointer select-none"
+          type="button"
+          onClick={() => navigate('/korprov/inledning')}
+          className="flex-1 sm:flex-none h-12 px-6 bg-navy hover:bg-navy-deep dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-semibold text-[15px] transition-colors flex items-center justify-center gap-1.5 rounded-control cursor-pointer active:scale-[0.98]"
         >
-          <span>Fortsätt till Inledning</span>
-          <ChevronRight size={16} />
+          Vidare till inledningen
+          <ChevronRight size={18} />
         </button>
       </div>
-
     </div>
   );
 }

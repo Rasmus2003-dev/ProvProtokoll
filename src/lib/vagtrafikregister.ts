@@ -1,4 +1,4 @@
-import { supabase, isSupabaseConfigured } from './supabase';
+import { supabase, isCloudDataEnabled } from './supabase';
 import type { VagtrafikregisterEntry } from '../types';
 
 const LOCAL_KEY = 'provprotokoll_vagtrafikregister';
@@ -61,7 +61,7 @@ function writeLocal(map: Record<string, VtrRow>) {
  * anmärkningar" i UI:t).
  */
 export async function fetchVtrEntry(personalNumber: string): Promise<VagtrafikregisterEntry | null> {
-  if (isSupabaseConfigured()) {
+  if (isCloudDataEnabled()) {
     try {
       const { data, error } = await supabase
         .from('vagtrafikregister')
@@ -79,7 +79,7 @@ export async function fetchVtrEntry(personalNumber: string): Promise<Vagtrafikre
 }
 
 export async function fetchAllVtrEntries(): Promise<VagtrafikregisterEntry[]> {
-  if (isSupabaseConfigured()) {
+  if (isCloudDataEnabled()) {
     try {
       const { data, error } = await supabase.from('vagtrafikregister').select('*');
       if (!error && data) {
@@ -99,7 +99,7 @@ export async function upsertVtrEntry(entry: VagtrafikregisterEntry): Promise<voi
   local[entry.personalNumber] = entryToRow(entry);
   writeLocal(local);
 
-  if (isSupabaseConfigured()) {
+  if (isCloudDataEnabled()) {
     try {
       await supabase.from('vagtrafikregister').upsert([entryToRow(entry)]);
     } catch (_) {}

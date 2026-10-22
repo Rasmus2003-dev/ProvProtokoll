@@ -126,12 +126,12 @@ export function TeoriprovScreen() {
   // Initial load
   useEffect(() => {
     const initialList: TheoryCandidate[] = [
-      { id: '1', name: 'Elsa Andersson', pnr: '20010115-1234', auth: 'B', status: 'waiting', bench: null, assignedTestId: 'B_STANDARD', result: '', score: 0, maxScore: 65, progress: 0, timeRemaining: 3000 },
-      { id: '2', name: 'Johan Svensson', pnr: '19980520-5678', auth: 'C', status: 'verified', bench: 4, assignedTestId: 'HEAVY_STANDARD', result: '', score: 0, maxScore: 55, progress: 0, timeRemaining: 2400 },
-      { id: '3', name: 'Maria Lindgren', pnr: '19901112-9012', auth: 'YKB', status: 'active', bench: 12, assignedTestId: 'YKB_STANDARD', result: '', score: 0, maxScore: 65, progress: 45, timeRemaining: 1800, liveAnswers: { 0: 1, 1: 0, 2: 2, 3: 1 } },
-      { id: '4', name: 'Ahmed Ali', pnr: '20050808-3456', auth: 'AM', status: 'active', bench: 1, assignedTestId: 'AM_STANDARD', result: '', score: 0, maxScore: 65, progress: 80, timeRemaining: 605 },
-      { id: '5', name: 'Sofia Karlsson', pnr: '19850228-7890', auth: 'B', status: 'completed', bench: 8, assignedTestId: 'B_STANDARD', result: 'Pass', score: 55, maxScore: 65, progress: 100, timeRemaining: 0, liveAnswers: {0:1,1:1,2:2,3:1,4:1,5:1,6:1,7:0,8:1,9:0,10:2,11:2,12:1,13:1,14:0,15:1,16:1,17:1,18:2,19:1} },
-      { id: '6', name: 'Lars Olofsson', pnr: '19751101-9900', auth: 'C', status: 'completed', bench: 5, assignedTestId: 'HEAVY_STANDARD', result: 'Fail', score: 28, maxScore: 55, progress: 100, timeRemaining: 0 },
+      { id: '1', name: 'Elsa Andersson', pnr: '20010175-1237', auth: 'B', status: 'waiting', bench: null, assignedTestId: 'B_STANDARD', result: '', score: 0, maxScore: 65, progress: 0, timeRemaining: 3000 },
+      { id: '2', name: 'Johan Svensson', pnr: '19980580-5674', auth: 'C', status: 'verified', bench: 4, assignedTestId: 'HEAVY_STANDARD', result: '', score: 0, maxScore: 55, progress: 0, timeRemaining: 2400 },
+      { id: '3', name: 'Maria Lindgren', pnr: '19901172-9018', auth: 'YKB', status: 'active', bench: 12, assignedTestId: 'YKB_STANDARD', result: '', score: 0, maxScore: 65, progress: 45, timeRemaining: 1800, liveAnswers: { 0: 1, 1: 0, 2: 2, 3: 1 } },
+      { id: '4', name: 'Ahmed Ali', pnr: '20050868-3453', auth: 'AM', status: 'active', bench: 1, assignedTestId: 'AM_STANDARD', result: '', score: 0, maxScore: 65, progress: 80, timeRemaining: 605 },
+      { id: '5', name: 'Sofia Karlsson', pnr: '19850288-7896', auth: 'B', status: 'completed', bench: 8, assignedTestId: 'B_STANDARD', result: 'Pass', score: 55, maxScore: 65, progress: 100, timeRemaining: 0, liveAnswers: {0:1,1:1,2:2,3:1,4:1,5:1,6:1,7:0,8:1,9:0,10:2,11:2,12:1,13:1,14:0,15:1,16:1,17:1,18:2,19:1} },
+      { id: '6', name: 'Lars Olofsson', pnr: '19751161-9905', auth: 'C', status: 'completed', bench: 5, assignedTestId: 'HEAVY_STANDARD', result: 'Fail', score: 28, maxScore: 55, progress: 100, timeRemaining: 0 },
     ];
 
     const saved = localStorage.getItem('theory_candidates_list');
@@ -419,7 +419,7 @@ export function TeoriprovScreen() {
     <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8 h-full flex flex-col relative font-sans">
 
       {/* Decorative Banner */}
-      <div className="absolute top-0 left-0 right-0 h-48 sm:h-64 rounded-b-3xl overflow-hidden z-0 shadow-sm opacity-100">
+      <div className="absolute top-0 left-0 right-0 h-48 sm:h-64 rounded-b-sheet overflow-hidden z-0 shadow-sm opacity-100">
         <img 
           src="https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&q=80&w=1600&h=400" 
           alt="Transportation" 
@@ -431,8 +431,8 @@ export function TeoriprovScreen() {
 
       <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4 relative z-10 pt-4 sm:pt-8">
         <div>
-          <h1 className="text-xl sm:text-3xl font-display font-black text-gray-950 dark:text-white uppercase tracking-tight flex flex-wrap items-center gap-2">
-            KUNSKAPSPROV <span className="text-xs py-1 px-2.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-mono rounded-full font-bold">PROVLEDARVY</span>
+          <h1 className="text-xl sm:text-3xl font-heading font-bold text-gray-950 dark:text-white tracking-tight flex flex-wrap items-center gap-2">
+            Kunskapsprov <span className="text-xs py-1 px-2.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 tabular-nums rounded-full font-bold">Provledarvy</span>
           </h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1 max-w-xl">
             Salsövervakning, legitimering och provadministration i realtid. Följ kandidaternas progression.
@@ -442,19 +442,19 @@ export function TeoriprovScreen() {
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
           <button
             onClick={() => setShowAddModal(true)}
-            className="w-full sm:w-auto min-h-11 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md hover:translate-y-[-1px]"
+            className="w-full sm:w-auto min-h-11 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-control text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md hover:translate-y-[-1px]"
           >
             <Plus className="w-4 h-4" /> Skapa Testkandidat
           </button>
           <button
             onClick={() => window.open('/elevprov', '_blank')}
-            className="w-full sm:w-auto min-h-11 px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md hover:translate-y-[-1px]"
+            className="w-full sm:w-auto min-h-11 px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-control text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md hover:translate-y-[-1px]"
           >
             <ExternalLink className="w-4 h-4" /> Öppna Elevvy
           </button>
           <button
             onClick={handleResetList}
-            className="w-full sm:w-auto min-h-11 px-4 py-3 bg-red-100 hover:bg-red-200 dark:bg-red-950/20 dark:hover:bg-red-900/40 text-red-700 dark:text-red-400 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+            className="w-full sm:w-auto min-h-11 px-4 py-3 bg-red-100 hover:bg-red-200 dark:bg-red-950/20 dark:hover:bg-red-900/40 text-red-700 dark:text-red-400 rounded-control text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
             title="Nollställ alla prov"
           >
             <RefreshCw className="w-3.5 h-3.5" /> Nollställ
@@ -464,41 +464,41 @@ export function TeoriprovScreen() {
 
       {/* Statistics board */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8 relative z-10">
-        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 p-3.5 sm:p-5 rounded-2xl shadow-sm flex flex-col justify-between">
-          <p className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-widest">I Väntrum</p>
-          <div className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mt-2 flex items-baseline gap-2">
+        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 p-3.5 sm:p-5 rounded-card shadow-sm flex flex-col justify-between">
+          <p className="text-[11px] sm:text-xs font-bold text-gray-500 ">I Väntrum</p>
+          <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-2 flex items-baseline gap-2">
             {stats.waiting} <span className="text-xs font-normal text-gray-400">kandidater</span>
           </div>
         </div>
-        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 p-3.5 sm:p-5 rounded-2xl shadow-sm flex flex-col justify-between">
-          <p className="text-[10px] sm:text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest">Skriver prov nu</p>
-          <div className="text-2xl sm:text-3xl font-black text-amber-700 dark:text-amber-300 mt-2 flex items-baseline gap-2">
+        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 p-3.5 sm:p-5 rounded-card shadow-sm flex flex-col justify-between">
+          <p className="text-[11px] sm:text-xs font-bold text-amber-700 dark:text-amber-400 ">Skriver prov nu</p>
+          <div className="text-2xl sm:text-3xl font-bold text-amber-700 dark:text-amber-300 mt-2 flex items-baseline gap-2">
             {stats.active} <span className="text-xs font-normal text-amber-500">aktiva</span>
           </div>
         </div>
-        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 p-3.5 sm:p-5 rounded-2xl shadow-sm flex flex-col justify-between">
-          <p className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-widest">Slutförda idag</p>
-          <div className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mt-2 flex items-baseline gap-2">
+        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 p-3.5 sm:p-5 rounded-card shadow-sm flex flex-col justify-between">
+          <p className="text-[11px] sm:text-xs font-bold text-gray-500 ">Slutförda idag</p>
+          <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-2 flex items-baseline gap-2">
             {stats.completed} <span className="text-xs font-normal text-gray-400">prov</span>
           </div>
         </div>
-        <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 p-3.5 sm:p-5 rounded-2xl shadow-sm flex flex-col justify-between">
-          <p className="text-[10px] sm:text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">Godkända prov</p>
-          <div className="text-2xl sm:text-3xl font-black text-emerald-700 dark:text-emerald-300 mt-2 flex items-baseline gap-2">
+        <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 p-3.5 sm:p-5 rounded-card shadow-sm flex flex-col justify-between">
+          <p className="text-[11px] sm:text-xs font-bold text-emerald-700 dark:text-emerald-400 ">Godkända prov</p>
+          <div className="text-2xl sm:text-3xl font-bold text-emerald-700 dark:text-emerald-300 mt-2 flex items-baseline gap-2">
             {stats.passed} <span className="text-xs font-normal text-emerald-500">({stats.completed > 0 ? Math.round((stats.passed / stats.completed) * 100) : 0}%)</span>
           </div>
         </div>
       </div>
 
       {/* PORTAL CONTROLS BANNER */}
-      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 p-5 rounded-2xl shadow-sm mb-8 relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 p-5 rounded-card shadow-sm mb-8 relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
         <div className="flex items-start gap-4">
-          <div className={`p-3.5 rounded-2xl ${allowLogin ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600' : 'bg-slate-100 dark:bg-slate-800 text-gray-400'} shrink-0`}>
+          <div className={`p-3.5 rounded-card ${allowLogin ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600' : 'bg-slate-100 dark:bg-slate-800 text-gray-400'} shrink-0`}>
             <Settings className={`w-6 h-6 ${allowLogin ? 'animate-spin [animation-duration:15s]' : ''}`} />
           </div>
           <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#d2232a] block font-mono">SÄKERHETSPORTAL (TSFS 2012:41)</span>
-            <h2 className="text-base font-bold dark:text-white uppercase tracking-tight mt-0.5">Öppna provsal & Startstyrning</h2>
+            <span className="text-[11px] font-bold text-[#d2232a] block tabular-nums">Säkerhetsportal (TSFS 2012:41)</span>
+            <h2 className="text-base font-bold dark:text-white tracking-tight mt-0.5">Öppna provsal & Startstyrning</h2>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
               Öppna eller stäng inloggningen till provet. När eleverna har loggat in och valt prov, godkänn och starta deras prov i realtid.
             </p>
@@ -509,7 +509,7 @@ export function TeoriprovScreen() {
           {/* Allow login toggle */}
           <button
             onClick={handleToggleAllowLogin}
-            className={`w-full sm:w-auto px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 border transition-all cursor-pointer shadow-sm ${
+            className={`w-full sm:w-auto px-5 py-3 rounded-control text-xs font-bold flex items-center justify-center gap-2 border transition-all cursor-pointer shadow-sm ${
               allowLogin 
                 ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/20 dark:border-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-100' 
                 : 'bg-red-50 border-red-200 text-red-700 dark:bg-red-950/20 dark:border-red-900/30 dark:text-red-400 hover:bg-red-100'
@@ -523,7 +523,7 @@ export function TeoriprovScreen() {
           <button
             onClick={handleStartAllWaiting}
             disabled={candidates.filter(c => c.status === 'waiting_to_start').length === 0}
-            className={`w-full sm:w-auto px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer ${
+            className={`w-full sm:w-auto px-5 py-3 rounded-control text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer ${
               candidates.filter(c => c.status === 'waiting_to_start').length > 0
                 ? 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white hover:translate-y-[-1px]'
                 : 'bg-gray-100 dark:bg-slate-800 text-gray-400 border border-gray-200 dark:border-white/5 cursor-not-allowed'
@@ -540,40 +540,40 @@ export function TeoriprovScreen() {
         <div className="flex gap-2 overflow-x-auto scrollbar-hide">
           <button
             onClick={() => setActiveTab('kandidater')}
-            className={`shrink-0 px-4 sm:px-5 py-2.5 min-h-10 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
+            className={`shrink-0 px-4 sm:px-5 py-2.5 min-h-10 rounded-full text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'kandidater' 
                 ? 'bg-blue-600 text-white shadow-md' 
                 : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800'
             }`}
           >
-            I VÄNTRUM ({waiting.length})
+            I väntrum ({waiting.length})
           </button>
           <button
             onClick={() => setActiveTab('paigaende')}
-            className={`shrink-0 px-4 sm:px-5 py-2.5 min-h-10 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
+            className={`shrink-0 px-4 sm:px-5 py-2.5 min-h-10 rounded-full text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'paigaende' 
                 ? 'bg-amber-500 text-white shadow-md' 
                 : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800'
             }`}
           >
-            PÅGÅENDE PROV ({active.length})
+            Pågående prov ({active.length})
           </button>
           <button
             onClick={() => {
               setActiveTab('avslutade');
               setSelectedCandidateForProtocol(null);
             }}
-            className={`shrink-0 px-4 sm:px-5 py-2.5 min-h-10 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
+            className={`shrink-0 px-4 sm:px-5 py-2.5 min-h-10 rounded-full text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'avslutade' 
                 ? 'bg-emerald-600 text-white shadow-md' 
                 : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800'
             }`}
           >
-            SLUTFÖRDA RESULTAT ({completed.length})
+            Slutförda resultat ({completed.length})
           </button>
           <button
             onClick={() => setActiveTab('fragebank')}
-            className={`shrink-0 px-4 sm:px-5 py-2.5 min-h-10 rounded-full text-xs font-bold tracking-wider uppercase transition-all cursor-pointer ${
+            className={`shrink-0 px-4 sm:px-5 py-2.5 min-h-10 rounded-full text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'fragebank' 
                 ? 'bg-[#002f6c] dark:bg-indigo-600 text-white shadow-md' 
                 : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800'
@@ -583,20 +583,20 @@ export function TeoriprovScreen() {
           </button>
         </div>
 
-        <div className="relative w-full sm:w-72 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+        <div className="relative w-full sm:w-72 bg-white dark:bg-slate-900 rounded-control shadow-sm border border-gray-200 dark:border-white/10">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input 
             type="text" 
             placeholder="Sök kandidat eller Pnr..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full bg-transparent border-0 rounded-xl pl-9 pr-3 py-2.5 min-h-11 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-transparent border-0 rounded-control pl-9 pr-3 py-2.5 min-h-11 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
       </div>
 
       {/* MAIN CONTAINER */}
-      <div className="flex-1 bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden flex flex-col relative z-10 min-h-[400px]">
+      <div className="flex-1 bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-card shadow-sm overflow-hidden flex flex-col relative z-10 min-h-[400px]">
         <div className="overflow-y-auto flex-1 p-4">
           
           {/* 1. WAITING LIST / VÄNTRUM */}
@@ -605,17 +605,17 @@ export function TeoriprovScreen() {
               {waiting.map(c => {
                 const assignedTest = THEORY_TESTS.find(t => t.id === c.assignedTestId);
                 return (
-                  <div key={c.id} className="p-4 rounded-xl border border-gray-150 dark:border-white/5 bg-gray-50/50 dark:bg-slate-900/40 flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition-all hover:bg-gray-100/40 dark:hover:bg-slate-900/80">
+                  <div key={c.id} className="p-4 rounded-control border border-gray-150 dark:border-white/5 bg-gray-50/50 dark:bg-slate-900/40 flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition-all hover:bg-gray-100/40 dark:hover:bg-slate-900/80">
                     <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-xl ${c.status === 'verified' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                      <div className={`p-3 rounded-control ${c.status === 'verified' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
                         <UserCheck className="w-5 h-5" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-bold text-gray-900 dark:text-white uppercase tracking-tight">{c.name}</h3>
-                          <span className="px-2 py-0.5 text-[10px] font-black bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 rounded uppercase font-mono">Behörighet {c.auth}</span>
+                          <h3 className="font-bold text-gray-900 dark:text-white tracking-tight">{c.name}</h3>
+                          <span className="px-2 py-0.5 text-[11px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 rounded tabular-nums">Behörighet {c.auth}</span>
                         </div>
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-gray-500 font-mono">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-gray-500 tabular-nums">
                           <span>{c.pnr}</span>
                           <span className="hidden sm:inline">•</span>
                           <span className="flex items-center gap-1">
@@ -643,20 +643,20 @@ export function TeoriprovScreen() {
                       {c.status === 'waiting' ? (
                         <button 
                           onClick={() => handleLegitimera(c.id)}
-                          className="w-full sm:w-auto min-h-10 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                          className="w-full sm:w-auto min-h-10 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
                         >
                           <ShieldCheck className="w-4 h-4" /> Legitimera
                         </button>
                       ) : c.status === 'waiting_to_start' ? (
                         <div className="flex items-center gap-2 w-full sm:w-auto">
-                          <div className="flex items-center gap-2 px-3 py-2 text-amber-700 bg-amber-50 dark:bg-amber-950/20 rounded-lg justify-center flex-1 border border-amber-200 dark:border-amber-800/30 text-xs font-bold uppercase tracking-widest animate-pulse">
+                          <div className="flex items-center gap-2 px-3 py-2 text-amber-700 bg-amber-50 dark:bg-amber-950/20 rounded-lg justify-center flex-1 border border-amber-200 dark:border-amber-800/30 text-xs font-bold animate-pulse">
                             <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping mr-1" />
                             <span>Väntar på start</span>
                           </div>
                           <button 
                             type="button"
                             onClick={() => handleStartTestForCandidate(c)}
-                            className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-lg text-xs font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer animate-pulse shrink-0"
+                            className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer animate-pulse shrink-0"
                             title="Godkänn och starta provet nu"
                           >
                             <Play className="w-3.5 h-3.5" /> Godkänn & Starta
@@ -664,14 +664,14 @@ export function TeoriprovScreen() {
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 w-full sm:w-auto">
-                          <div className="flex items-center gap-2 px-3 py-2 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg justify-center flex-1 border border-emerald-200 dark:border-emerald-800/30 text-xs font-bold uppercase tracking-widest">
+                          <div className="flex items-center gap-2 px-3 py-2 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg justify-center flex-1 border border-emerald-200 dark:border-emerald-800/30 text-xs font-bold ">
                             <CheckCircle2 className="w-4 h-4" />
                             <span>Bänk {c.bench}</span>
                           </div>
                           <button 
                             type="button"
                             onClick={() => handleStartTestForCandidate(c)}
-                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer shrink-0"
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer shrink-0"
                             title="Starta & Öppna provet för eleven"
                           >
                             <ExternalLink className="w-4 h-4" /> Starta prov
@@ -727,23 +727,23 @@ export function TeoriprovScreen() {
                 }
 
                 return (
-                  <div key={c.id} className={`p-5 rounded-2xl border ${isPaused ? 'border-amber-300 dark:border-amber-900/50 bg-amber-50/20 dark:bg-amber-950/10' : 'border-gray-200 dark:border-white/5 bg-white dark:bg-slate-900'} shadow-sm flex flex-col gap-4 relative transition-all`}>
+                  <div key={c.id} className={`p-5 rounded-card border ${isPaused ? 'border-amber-300 dark:border-amber-900/50 bg-amber-50/20 dark:bg-amber-950/10' : 'border-gray-200 dark:border-white/5 bg-white dark:bg-slate-900'} shadow-sm flex flex-col gap-4 relative transition-all`}>
                     
                     {/* Pause Badge Overlay */}
                     {isPaused && (
-                      <div className="absolute top-3 right-3 bg-amber-500 text-white px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                      <div className="absolute top-3 right-3 bg-amber-500 text-white px-2 py-0.5 rounded text-[11px] font-bold flex items-center gap-1">
                         <Pause className="w-2.5 h-2.5" /> Pausat
                       </div>
                     )}
 
                     <div className="flex justify-between items-start">
                       <div>
-                        <span className="text-xs font-black text-blue-600 dark:text-blue-400 tracking-wider uppercase mb-0.5 block">BÄNK {c.bench || "?"}</span>
+                        <span className="text-xs font-bold text-blue-600 dark:text-blue-400 mb-0.5 block">BÄNK {c.bench || "?"}</span>
                         <h3 className="font-bold text-gray-900 dark:text-white leading-tight">{c.name}</h3>
-                        <span className="text-xs text-gray-400 font-mono font-bold uppercase">{c.pnr}</span>
+                        <span className="text-xs text-gray-400 tabular-nums font-bold ">{c.pnr}</span>
                       </div>
                       
-                      <div className={`px-3 py-1.5 rounded-lg text-sm font-bold font-mono flex items-center gap-1.5 border ${
+                      <div className={`px-3 py-1.5 rounded-lg text-sm font-bold tabular-nums flex items-center gap-1.5 border ${
                         isPaused 
                           ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border-amber-300' 
                           : 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-200/50'
@@ -774,14 +774,14 @@ export function TeoriprovScreen() {
                     </div>
 
                     {/* LIVE SCORE PREVIEW (Examiner-only feature) */}
-                    <div className="bg-slate-50 dark:bg-slate-950/40 p-2.5 rounded-xl text-xs font-mono text-gray-500 border border-slate-100 dark:border-white/5 flex flex-col gap-1">
+                    <div className="bg-slate-50 dark:bg-slate-950/40 p-2.5 rounded-control text-xs tabular-nums text-gray-500 border border-slate-100 dark:border-white/5 flex flex-col gap-1">
                       <div className="flex items-center justify-between">
                         <span>Aktuell ställning (realtid):</span>
                         <span className="font-bold text-emerald-600 dark:text-emerald-400">
                           {answeredCount > 0 ? `${realScore} rätt av ${answeredCount} besvarade` : "Inga svar än"}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between text-[10px] text-gray-400">
+                      <div className="flex items-center justify-between text-[11px] text-gray-400">
                         <span>Frågor kvar att besvara:</span>
                         <span>{c.maxScore - answeredCount} st</span>
                       </div>
@@ -791,7 +791,7 @@ export function TeoriprovScreen() {
                     <div className="pt-3 border-t border-gray-100 dark:border-white/5 flex flex-wrap gap-2">
                       <button 
                         onClick={() => handleTogglePause(c)}
-                        className={`flex-1 min-w-[70px] py-2 px-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                        className={`flex-1 min-w-[70px] py-2 px-2 text-[11px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
                           isPaused 
                             ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400' 
                             : 'bg-amber-100 hover:bg-amber-200 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400'
@@ -802,7 +802,7 @@ export function TeoriprovScreen() {
                       </button>
                       <button 
                         onClick={() => handleAddTime(c, 600)}
-                        className="flex-1 min-w-[70px] py-2 px-2 text-[10px] font-black uppercase tracking-wider bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer"
+                        className="flex-1 min-w-[70px] py-2 px-2 text-[11px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer"
                       >
                         +10 Min
                       </button>
@@ -811,7 +811,7 @@ export function TeoriprovScreen() {
                           const action = window.confirm(`Vill du underkänna ${c.name} direkt och avbryta provet?`);
                           if (action) handleForceSubmit(c, 'Fail');
                         }}
-                        className="py-2 px-2.5 text-[10px] font-black uppercase tracking-wider bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400 rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer"
+                        className="py-2 px-2.5 text-[11px] font-bold bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400 rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer"
                         title="Underkänn prov"
                       >
                         Avbryt
@@ -836,21 +836,21 @@ export function TeoriprovScreen() {
                 const assignedTest = THEORY_TESTS.find(t => t.id === c.assignedTestId);
                 const isPass = c.result === 'Pass';
                 return (
-                  <div key={c.id} className="p-4 rounded-xl border border-gray-150 dark:border-white/5 bg-gray-50/50 dark:bg-slate-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:bg-gray-100/40 dark:hover:bg-slate-900/80">
+                  <div key={c.id} className="p-4 rounded-control border border-gray-150 dark:border-white/5 bg-gray-50/50 dark:bg-slate-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:bg-gray-100/40 dark:hover:bg-slate-900/80">
                     <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-xl ${isPass ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400'}`}>
+                      <div className={`p-3 rounded-control ${isPass ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400'}`}>
                         {isPass ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-bold text-gray-900 dark:text-white uppercase tracking-tight">{c.name}</h3>
-                          <span className={`px-2 py-0.5 text-[9px] font-black rounded uppercase ${
+                          <h3 className="font-bold text-gray-900 dark:text-white tracking-tight">{c.name}</h3>
+                          <span className={`px-2 py-0.5 text-[11px] font-bold rounded ${
                             isPass ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
                           }`}>
                             {isPass ? "Godkänd" : "Underkänd"}
                           </span>
                         </div>
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-gray-500 font-mono">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-gray-500 tabular-nums">
                           <span>{c.pnr}</span>
                           <span className="hidden sm:inline">•</span>
                           <span>Bänk {c.bench || "N/A"}</span>
@@ -862,10 +862,10 @@ export function TeoriprovScreen() {
                     
                     <div className="flex items-center gap-4 justify-between sm:justify-end w-full sm:w-auto">
                       <div className="text-right">
-                        <div className="text-sm font-black font-mono text-gray-800 dark:text-gray-200">
+                        <div className="text-sm font-bold tabular-nums text-gray-800 dark:text-gray-200">
                           {c.score} / {c.maxScore} poäng
                         </div>
-                        <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">
+                        <div className="text-[11px] text-gray-400 font-bold ">
                           Gräns: {Math.ceil(c.maxScore * 0.8)} poäng ({Math.round((c.score / c.maxScore) * 100)}%)
                         </div>
                       </div>
@@ -875,7 +875,7 @@ export function TeoriprovScreen() {
                           setSelectedCandidateForProtocol(c);
                           setShowProtocolModal(true);
                         }}
-                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow transition-all hover:translate-y-[-1px]"
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow transition-all hover:translate-y-[-1px]"
                       >
                         <FileText className="w-3.5 h-3.5" /> Se Protokoll
                       </button>
@@ -898,34 +898,34 @@ export function TeoriprovScreen() {
               
               {/* Question Bank Stats & Presets */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-5 bg-slate-50 dark:bg-slate-900 border border-slate-150 dark:border-white/5 rounded-2xl">
-                  <h3 className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-white mb-3">Svenska Prov-Presets</h3>
+                <div className="p-5 bg-slate-50 dark:bg-slate-900 border border-slate-150 dark:border-white/5 rounded-card">
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-3">Svenska Prov-Presets</h3>
                   <div className="space-y-2">
                     {THEORY_TESTS.map(t => (
-                      <div key={t.id} className="flex justify-between items-center text-xs p-2.5 bg-white dark:bg-slate-950 rounded-lg border border-slate-100 dark:border-white/5 font-mono">
+                      <div key={t.id} className="flex justify-between items-center text-xs p-2.5 bg-white dark:bg-slate-950 rounded-lg border border-slate-100 dark:border-white/5 tabular-nums">
                         <div>
                           <span className="font-bold text-gray-900 dark:text-white block">{t.title}</span>
-                          <span className="text-[10px] text-gray-400">{t.category} • Behörighet {t.auth}</span>
+                          <span className="text-[11px] text-gray-400">{t.category} • Behörighet {t.auth}</span>
                         </div>
                         <div className="text-right shrink-0">
                           <span className="font-bold text-blue-600 dark:text-blue-400 block">{t.questionsCount} frågor</span>
-                          <span className="text-[10px] text-gray-400">{Math.round(t.duration / 60)} minuter</span>
+                          <span className="text-[11px] text-gray-400">{Math.round(t.duration / 60)} minuter</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="p-5 bg-slate-50 dark:bg-slate-900 border border-slate-150 dark:border-white/5 rounded-2xl flex flex-col justify-between">
+                <div className="p-5 bg-slate-50 dark:bg-slate-900 border border-slate-150 dark:border-white/5 rounded-card flex flex-col justify-between">
                   <div>
-                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-white mb-2">Hantering av Frågebanken</h3>
+                    <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-2">Hantering av Frågebanken</h3>
                     <p className="text-xs text-gray-500 mb-4 leading-relaxed">
                       Säkerställ att provfrågorna uppfyller kraven i <strong>TSFS 2012:41</strong>. Du kan utforska alla tillgängliga frågor eller lägga till egna skräddarsydda provfrågor som integreras i proven i realtid.
                     </p>
                   </div>
                   <button
                     onClick={() => setShowAddQuestionModal(true)}
-                    className="w-full py-3 min-h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-widest text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow transition-all hover:translate-y-[-1px]"
+                    className="w-full py-3 min-h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-control flex items-center justify-center gap-2 cursor-pointer shadow transition-all hover:translate-y-[-1px]"
                   >
                     <PlusCircle className="w-4 h-4" /> Lägg till ny provfråga
                   </button>
@@ -933,22 +933,22 @@ export function TeoriprovScreen() {
               </div>
 
               {/* Questions Explorer */}
-              <div className="border border-slate-150 dark:border-white/5 rounded-2xl overflow-hidden bg-white dark:bg-slate-950">
+              <div className="border border-slate-150 dark:border-white/5 rounded-card overflow-hidden bg-white dark:bg-slate-950">
                 <div className="p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-150 dark:border-white/5 flex justify-between items-center">
-                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-700 dark:text-gray-300">Alla frågor i systemet ({getFullQuestionsList().length})</h3>
+                  <h3 className="text-xs font-bold text-slate-700 dark:text-gray-300">Alla frågor i systemet ({getFullQuestionsList().length})</h3>
                 </div>
                 <div className="divide-y divide-slate-150 dark:divide-white/5 max-h-[500px] overflow-y-auto">
                   {getFullQuestionsList().map((q, idx) => (
                     <div key={q.id} className="p-4 flex gap-4 items-start hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
-                      <div className="text-xs font-mono font-bold text-gray-400">#{q.id}</div>
+                      <div className="text-xs tabular-nums font-bold text-gray-400">#{q.id}</div>
                       <div className="flex-1 flex flex-col sm:flex-row gap-4 justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="px-2 py-0.5 text-[9px] font-black bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 rounded uppercase">
+                            <span className="px-2 py-0.5 text-[11px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 rounded ">
                               Cat {q.categoryId}: {getCategoryName(q.categoryId)}
                             </span>
                             {q.id >= 20000 && (
-                              <span className="px-2 py-0.5 text-[9px] font-black bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400 rounded uppercase">Custom</span>
+                              <span className="px-2 py-0.5 text-[11px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400 rounded ">Custom</span>
                             )}
                           </div>
                           <p className="text-sm font-bold text-gray-900 dark:text-white leading-snug mb-2">{q.question}</p>
@@ -971,7 +971,7 @@ export function TeoriprovScreen() {
                         </div>
 
                         {(q.sign || q.scene) && (
-                          <div className="w-20 h-20 shrink-0 bg-slate-50 dark:bg-slate-900 border border-slate-150 dark:border-white/10 rounded-xl p-1.5 flex items-center justify-center self-start overflow-hidden">
+                          <div className="w-20 h-20 shrink-0 bg-slate-50 dark:bg-slate-900 border border-slate-150 dark:border-white/10 rounded-control p-1.5 flex items-center justify-center self-start overflow-hidden">
                             {q.sign ? (
                               <div className="scale-[0.4] origin-center">
                                 <RoadSign {...q.sign} />
@@ -1006,16 +1006,16 @@ export function TeoriprovScreen() {
       {/* MODAL 1: ADD CANDIDATE */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 max-w-md w-full h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-2xl shadow-2xl overflow-hidden border-0 sm:border border-gray-100 dark:border-white/10 animate-scale-up flex flex-col">
+          <div className="bg-white dark:bg-slate-900 max-w-md w-full h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-card shadow-2xl overflow-hidden border-0 sm:border border-gray-100 dark:border-white/10 animate-scale-up flex flex-col">
             <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-slate-900/50 shrink-0 pt-safe">
-              <h2 className="text-base sm:text-lg font-bold dark:text-white uppercase tracking-tight">Skapa Testkandidat</h2>
+              <h2 className="text-base sm:text-lg font-bold dark:text-white tracking-tight">Skapa Testkandidat</h2>
               <button onClick={() => setShowAddModal(false)} className="flex items-center justify-center min-w-10 min-h-10 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleAddSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
               <div>
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Kandidatens Namn</label>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">Kandidatens Namn</label>
                 <input 
                   type="text" 
                   value={newCandidate.name}
@@ -1026,7 +1026,7 @@ export function TeoriprovScreen() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Personnummer (YYYYMMDD-XXXX)</label>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">Personnummer (YYYYMMDD-XXXX)</label>
                 <input 
                   type="text" 
                   value={newCandidate.pnr}
@@ -1039,7 +1039,7 @@ export function TeoriprovScreen() {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Behörighetsklass</label>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">Behörighetsklass</label>
                   <select 
                     value={newCandidate.auth}
                     onChange={e => {
@@ -1063,7 +1063,7 @@ export function TeoriprovScreen() {
                 </div>
                 
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Tilldela startprov</label>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">Tilldela startprov</label>
                   <select 
                     value={newCandidate.assignedTestId}
                     onChange={e => setNewCandidate({...newCandidate, assignedTestId: e.target.value})}
@@ -1077,10 +1077,10 @@ export function TeoriprovScreen() {
               </div>
 
               <div className="pt-4 flex gap-3">
-                <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 py-3 min-h-11 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-gray-200 dark:hover:bg-slate-700 transition-all cursor-pointer">
+                <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 py-3 min-h-11 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-control text-xs font-bold hover:bg-gray-200 dark:hover:bg-slate-700 transition-all cursor-pointer">
                   Avbryt
                 </button>
-                <button type="submit" className="flex-1 py-3 min-h-11 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-blue-700 transition-all cursor-pointer">
+                <button type="submit" className="flex-1 py-3 min-h-11 bg-blue-600 text-white rounded-control text-xs font-bold hover:bg-blue-700 transition-all cursor-pointer">
                   Registrera
                 </button>
               </div>
@@ -1092,13 +1092,13 @@ export function TeoriprovScreen() {
       {/* MODAL 2: DIAGNOSTIC PROTOCOL DETAIL REPORT */}
       {showProtocolModal && selectedCandidateForProtocol && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 max-w-4xl w-full h-full sm:h-auto rounded-none sm:rounded-2xl shadow-2xl overflow-hidden border-0 sm:border border-gray-150 dark:border-white/10 flex flex-col sm:max-h-[90vh] animate-scale-up">
+          <div className="bg-white dark:bg-slate-900 max-w-4xl w-full h-full sm:h-auto rounded-none sm:rounded-card shadow-2xl overflow-hidden border-0 sm:border border-gray-150 dark:border-white/10 flex flex-col sm:max-h-[90vh] animate-scale-up">
 
             {/* Header */}
             <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-150 dark:border-white/5 bg-slate-50 dark:bg-slate-900/50 shrink-0 pt-safe">
               <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#d2232a] block">Officiellt Resultatbesked</span>
-                <h2 className="text-base sm:text-xl font-bold dark:text-white uppercase tracking-tight">KUNSKAPSPROV DETALJRAPPORT</h2>
+                <span className="text-[11px] font-bold text-[#d2232a] block">Officiellt Resultatbesked</span>
+                <h2 className="text-base sm:text-xl font-bold dark:text-white tracking-tight">Kunskapsprov, detaljrapport</h2>
               </div>
               <button onClick={() => setShowProtocolModal(false)} className="flex items-center justify-center min-w-10 min-h-10 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors cursor-pointer shrink-0">
                 <X className="w-5 h-5" />
@@ -1109,24 +1109,24 @@ export function TeoriprovScreen() {
             <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1 text-slate-800 dark:text-slate-200">
               
               {/* Candidate Info Card */}
-              <div className="p-5 bg-slate-50 dark:bg-slate-900 border border-slate-150 dark:border-white/5 rounded-2xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
+              <div className="p-5 bg-slate-50 dark:bg-slate-900 border border-slate-150 dark:border-white/5 rounded-card grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs tabular-nums">
                 <div>
-                  <span className="text-gray-400 block mb-0.5">KANDIDAT</span>
-                  <strong className="text-slate-800 dark:text-white text-sm uppercase">{selectedCandidateForProtocol.name}</strong>
+                  <span className="text-gray-400 block mb-0.5">Kandidat</span>
+                  <strong className="text-slate-800 dark:text-white text-sm ">{selectedCandidateForProtocol.name}</strong>
                 </div>
                 <div>
-                  <span className="text-gray-400 block mb-0.5">PERSONNUMMER</span>
+                  <span className="text-gray-400 block mb-0.5">Personnummer</span>
                   <strong className="text-slate-800 dark:text-white text-sm">{selectedCandidateForProtocol.pnr}</strong>
                 </div>
                 <div>
-                  <span className="text-gray-400 block mb-0.5">PROVTYP</span>
+                  <span className="text-gray-400 block mb-0.5">Provtyp</span>
                   <strong className="text-slate-800 dark:text-white text-sm">
                     {THEORY_TESTS.find(t => t.id === selectedCandidateForProtocol.assignedTestId)?.title || "Kunskapsprov"}
                   </strong>
                 </div>
                 <div>
-                  <span className="text-gray-400 block mb-0.5">RESULTAT</span>
-                  <span className={`text-sm font-black uppercase tracking-wider ${selectedCandidateForProtocol.result === 'Pass' ? 'text-emerald-600' : 'text-red-500'}`}>
+                  <span className="text-gray-400 block mb-0.5">Resultat</span>
+                  <span className={`text-sm font-bold ${selectedCandidateForProtocol.result === 'Pass' ? 'text-emerald-600' : 'text-red-500'}`}>
                     {selectedCandidateForProtocol.result === 'Pass' ? 'GODKÄND ●' : 'UNDERKÄND ●'}
                   </span>
                 </div>
@@ -1134,16 +1134,16 @@ export function TeoriprovScreen() {
 
               {/* Score breakdown metrics */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="p-5 border border-slate-100 dark:border-white/5 rounded-2xl flex flex-col items-center justify-center text-center">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Totalt Resultat</span>
-                  <div className={`text-4xl font-black font-mono ${selectedCandidateForProtocol.result === 'Pass' ? 'text-emerald-600' : 'text-red-500'}`}>
+                <div className="p-5 border border-slate-100 dark:border-white/5 rounded-card flex flex-col items-center justify-center text-center">
+                  <span className="text-xs font-bold text-gray-400 mb-2">Totalt Resultat</span>
+                  <div className={`text-4xl font-bold tabular-nums ${selectedCandidateForProtocol.result === 'Pass' ? 'text-emerald-600' : 'text-red-500'}`}>
                     {selectedCandidateForProtocol.score} / {selectedCandidateForProtocol.maxScore}
                   </div>
-                  <span className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Kravgräns: {Math.ceil(selectedCandidateForProtocol.maxScore * 0.8)} poäng (80%)</span>
+                  <span className="text-[11px] text-gray-400 mt-1 font-bold">Kravgräns: {Math.ceil(selectedCandidateForProtocol.maxScore * 0.8)} poäng (80%)</span>
                 </div>
 
-                <div className="md:col-span-2 p-5 border border-slate-100 dark:border-white/5 rounded-2xl">
-                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Ämnesområden (SFS Krav)</h3>
+                <div className="md:col-span-2 p-5 border border-slate-100 dark:border-white/5 rounded-card">
+                  <h3 className="text-xs font-bold text-gray-500 mb-3">Ämnesområden (SFS Krav)</h3>
                   
                   {/* Category bars */}
                   <div className="space-y-3">
@@ -1160,7 +1160,7 @@ export function TeoriprovScreen() {
                         <div key={catId} className="space-y-1">
                           <div className="flex justify-between text-xs font-bold">
                             <span className="text-gray-700 dark:text-gray-300">{getCategoryName(catId)}</span>
-                            <span className="font-mono text-gray-500">{correctScore} / {totalQuestions} ({percent}%)</span>
+                            <span className="tabular-nums text-gray-500">{correctScore} / {totalQuestions} ({percent}%)</span>
                           </div>
                           <div className="h-2 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
                             <div 
@@ -1177,7 +1177,7 @@ export function TeoriprovScreen() {
 
               {/* Question breakdown / review */}
               <div className="space-y-3">
-                <h3 className="text-xs font-black uppercase tracking-widest text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-white/5 pb-2">
+                <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-white/5 pb-2">
                   Frågeanalys & Svarsgranskning (Mottagningskontroll)
                 </h3>
                 <div className="space-y-3.5 max-h-[300px] overflow-y-auto pr-2 divide-y divide-slate-100 dark:divide-white/5">
@@ -1193,13 +1193,13 @@ export function TeoriprovScreen() {
                       <div key={q.id} className="pt-3 text-xs">
                         <div className="flex justify-between items-start gap-2">
                           <span className="font-bold text-gray-900 dark:text-white">Fråga {idx + 1}: {q.question}</span>
-                          <span className={`shrink-0 px-2 py-0.5 font-bold rounded text-[9px] uppercase ${isCorrect ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
+                          <span className={`shrink-0 px-2 py-0.5 font-bold rounded text-[11px] ${isCorrect ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
                             {isCorrect ? 'Korrekt' : 'Felaktigt'}
                           </span>
                         </div>
                         
                         <div className="flex flex-col sm:flex-row gap-4 justify-between mt-1.5">
-                          <div className="space-y-1 pl-3 font-mono text-[10px] flex-1">
+                          <div className="space-y-1 pl-3 tabular-nums text-[11px] flex-1">
                             <div>Elevens svar: <span className={isCorrect ? 'text-emerald-600 font-bold' : 'text-red-500 font-bold'}>"{q.options[studentAnsIndex]}"</span></div>
                             {!isCorrect && <div>Rätt svar: <span className="text-emerald-600 font-bold">"{q.options[q.correct]}"</span></div>}
                           </div>
@@ -1227,13 +1227,13 @@ export function TeoriprovScreen() {
             <div className="p-4 sm:p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-gray-150 dark:border-white/5 flex flex-col sm:flex-row gap-3 shrink-0">
               <button
                 onClick={() => window.print()}
-                className="flex-1 py-3 min-h-11 bg-white hover:bg-gray-100 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white border border-slate-300 dark:border-white/10 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
+                className="flex-1 py-3 min-h-11 bg-white hover:bg-gray-100 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white border border-slate-300 dark:border-white/10 rounded-control text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Printer className="w-4 h-4" /> Skriv ut beslut / PDF
               </button>
               <button
                 onClick={() => setShowProtocolModal(false)}
-                className="flex-1 py-3 min-h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center"
+                className="flex-1 py-3 min-h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-control text-xs font-bold transition-all cursor-pointer flex items-center justify-center"
               >
                 Stäng Rapport
               </button>
@@ -1246,9 +1246,9 @@ export function TeoriprovScreen() {
       {/* MODAL 3: ADD CUSTOM QUESTION */}
       {showAddQuestionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 max-w-lg w-full h-full sm:h-auto rounded-none sm:rounded-2xl shadow-2xl overflow-hidden border-0 sm:border border-gray-100 dark:border-white/10 animate-scale-up flex flex-col">
+          <div className="bg-white dark:bg-slate-900 max-w-lg w-full h-full sm:h-auto rounded-none sm:rounded-card shadow-2xl overflow-hidden border-0 sm:border border-gray-100 dark:border-white/10 animate-scale-up flex flex-col">
             <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-slate-900/50 shrink-0 pt-safe">
-              <h2 className="text-base sm:text-lg font-bold dark:text-white uppercase tracking-tight">Skapa ny provfråga</h2>
+              <h2 className="text-base sm:text-lg font-bold dark:text-white tracking-tight">Skapa ny provfråga</h2>
               <button onClick={() => setShowAddQuestionModal(false)} className="flex items-center justify-center min-w-10 min-h-10 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
@@ -1257,7 +1257,7 @@ export function TeoriprovScreen() {
               
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Ämnesområde (TSFS 2012:41)</label>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 ">Ämnesområde (TSFS 2012:41)</label>
                   <button
                     type="button"
                     onClick={() => {
@@ -1283,7 +1283,7 @@ export function TeoriprovScreen() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Fråga (Text)</label>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">Fråga (Text)</label>
                 <textarea 
                   value={newQuestion.question}
                   onChange={e => {
@@ -1299,10 +1299,10 @@ export function TeoriprovScreen() {
 
               {/* Options */}
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Svarsalternativ</label>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 ">Svarsalternativ</label>
                 {newQuestion.options.map((opt, oIdx) => (
                   <div key={oIdx} className="flex gap-2 items-center">
-                    <span className="text-xs font-mono font-bold text-gray-400 w-5">{(oIdx + 1)}:</span>
+                    <span className="text-xs tabular-nums font-bold text-gray-400 w-5">{(oIdx + 1)}:</span>
                     <input 
                       type="text" 
                       value={opt}
@@ -1321,7 +1321,7 @@ export function TeoriprovScreen() {
 
               {/* Correct answer indicator */}
               <div>
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Rätt Svarsalternativ</label>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">Rätt Svarsalternativ</label>
                 <select 
                   value={newQuestion.correct}
                   onChange={e => setNewQuestion({...newQuestion, correct: Number(e.target.value)})}
@@ -1335,7 +1335,7 @@ export function TeoriprovScreen() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Pedagogisk förklaring (Valfritt)</label>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">Pedagogisk förklaring (Valfritt)</label>
                 <textarea 
                   value={newQuestion.explanation}
                   onChange={e => setNewQuestion({...newQuestion, explanation: e.target.value})}
@@ -1345,10 +1345,10 @@ export function TeoriprovScreen() {
               </div>
 
               <div className="pt-4 flex gap-3">
-                <button type="button" onClick={() => setShowAddQuestionModal(false)} className="flex-1 py-3 min-h-11 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-gray-200 dark:hover:bg-slate-700 transition-all cursor-pointer">
+                <button type="button" onClick={() => setShowAddQuestionModal(false)} className="flex-1 py-3 min-h-11 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-control text-xs font-bold hover:bg-gray-200 dark:hover:bg-slate-700 transition-all cursor-pointer">
                   Avbryt
                 </button>
-                <button type="submit" className="flex-1 py-3 min-h-11 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-blue-700 transition-all cursor-pointer">
+                <button type="submit" className="flex-1 py-3 min-h-11 bg-blue-600 text-white rounded-control text-xs font-bold hover:bg-blue-700 transition-all cursor-pointer">
                   Spara Fråga
                 </button>
               </div>

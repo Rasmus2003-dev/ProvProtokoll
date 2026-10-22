@@ -1,20 +1,23 @@
 import { NavLink } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Car, Laptop, History, User, BookOpen, GraduationCap } from 'lucide-react';
+import { Car, Laptop, History, Users, GraduationCap } from 'lucide-react';
 import { triggerHaptic } from '../../lib/utils';
 
 export function BottomNavBar() {
   const navItems = [
-    { name: 'PROTOKOLL', path: '/korprov', icon: Car },
-    { name: 'REGISTER', path: '/elevregister', icon: User },
-    { name: 'TRAFIKSKOLA', path: '/trafikskola', icon: GraduationCap },
-    { name: 'TEORIPROV', path: '/teoriprov', icon: Laptop },
-    { name: 'HISTORIK', path: '/historik', icon: History },
+    { name: 'Körprov', path: '/korprov', icon: Car },
+    { name: 'Register', path: '/elevregister', icon: Users },
+    { name: 'Trafikskola', path: '/trafikskola', icon: GraduationCap },
+    { name: 'Teoriprov', path: '/teoriprov', icon: Laptop },
+    { name: 'Historik', path: '/historik', icon: History },
   ];
 
   return (
-    <nav className="w-full bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-t border-gray-200/80 dark:border-slate-800 pb-safe z-50">
-      <div className="flex items-center justify-around h-[60px] sm:h-[64px] px-0.5 sm:px-1 max-w-lg mx-auto">
+    <nav
+      aria-label="Huvudmeny"
+      className="w-full bg-surface/95 backdrop-blur-xl border-t border-line pb-safe z-50"
+    >
+      <div className="grid grid-cols-5 h-[64px] px-1 max-w-lg mx-auto">
         {navItems.map(item => {
           const Icon = item.icon;
           return (
@@ -22,29 +25,27 @@ export function BottomNavBar() {
               key={item.name}
               to={item.path}
               onClick={() => triggerHaptic('light')}
-              className={({ isActive }) => 
-                `relative flex flex-col items-center justify-center w-full h-full transition-all duration-200 ${
-                  isActive ? 'text-[#002f6c] dark:text-blue-400 font-bold' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium'
+              className={({ isActive }) =>
+                `relative flex flex-col items-center justify-center gap-1 min-w-0 transition-colors ${
+                  isActive ? 'text-navy dark:text-blue-300' : 'text-ink-3 hover:text-ink'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <div className="relative py-1.5 w-full min-h-10 flex flex-col items-center justify-center gap-0.5">
-                    <div className={`p-1 rounded-xl transition-all ${isActive ? 'bg-blue-50 dark:bg-blue-950/50' : ''}`}>
-                      <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5px] text-[#002f6c] dark:text-blue-400 scale-110' : 'stroke-2'}`} />
-                    </div>
-                    <span className={`text-[8.5px] sm:text-[9.5px] tracking-[0.02em] sm:tracking-[0.06em] uppercase transition-all whitespace-nowrap ${isActive ? 'font-black text-[#002f6c] dark:text-blue-400' : 'font-semibold'}`}>
-                      {item.name}
-                    </span>
+                  <span className="relative flex items-center justify-center w-14 h-8">
                     {isActive && (
-                      <motion.div 
-                        layoutId="nav-indicator-mobile"
-                        className="absolute bottom-0 inset-x-3 h-0.5 bg-[#002f6c] dark:bg-blue-400 rounded-full"
-                        transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                      <motion.span
+                        layoutId="bottom-nav-pill"
+                        className="absolute inset-0 rounded-full bg-navy/10 dark:bg-blue-400/15"
+                        transition={{ type: 'spring', bounce: 0.18, duration: 0.45 }}
                       />
                     )}
-                  </div>
+                    <Icon className="relative w-[22px] h-[22px]" strokeWidth={isActive ? 2.4 : 1.9} />
+                  </span>
+                  <span className={`text-[11px] leading-none truncate max-w-full px-0.5 ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                    {item.name}
+                  </span>
                 </>
               )}
             </NavLink>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { protocolTestTypeLabel } from '../lib/protocolLayout';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { 
   CheckCircle, 
@@ -105,6 +106,7 @@ export function KandidatProtokollScreen() {
     studentName,
     licenseType,
     transmission,
+    tachograph,
     testType,
     testDate,
     examiner,
@@ -120,7 +122,7 @@ export function KandidatProtokollScreen() {
   } = protocol;
 
   return (
-    <div className="min-h-screen bg-[#f8f9fc] dark:bg-[#0b1120] text-gray-900 dark:text-slate-100 py-6 sm:py-10 px-3 sm:px-6 font-sans">
+    <div data-protocol className="min-h-screen bg-[#f8f9fc] dark:bg-[#0b1120] text-gray-900 dark:text-slate-100 py-6 sm:py-10 px-3 sm:px-6 font-sans">
       <div className="max-w-3xl mx-auto space-y-6">
 
         {/* Top Branding & Navigation */}
@@ -224,7 +226,7 @@ export function KandidatProtokollScreen() {
                 <span>Fordon & Växel</span>
               </div>
               <p className="text-sm font-black text-gray-900 dark:text-white">
-                {licenseType} ({transmission})
+                {licenseType} ({transmission}){tachograph === 'Utan färdskrivare' && ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'].includes(licenseType) ? ' · Utan färdskrivare' : ''}
               </p>
             </div>
 
@@ -234,7 +236,7 @@ export function KandidatProtokollScreen() {
                 <span>Datum & Provtyp</span>
               </div>
               <p className="text-sm font-black text-gray-900 dark:text-white">
-                {testType}
+                {protocolTestTypeLabel(licenseType, testType)}
               </p>
             </div>
 

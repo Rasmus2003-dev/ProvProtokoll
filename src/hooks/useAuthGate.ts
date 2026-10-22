@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { getSessionInspector, signOut } from '../lib/inspectors';
 import { useAppStore } from '../store/ProvContext';
+import { DEMO_INSPECTOR, isDemoMode } from '../lib/demoMode';
 
 export type AuthStatus = 'checking' | 'signed-in' | 'signed-out';
 
@@ -31,11 +32,13 @@ export function useAuthGate() {
         setStatus('signed-out');
         return;
       }
+      // I demoläge arbetar man som demoinspektören, men med sitt eget konto
+      const demo = isDemoMode();
       updateProfile({
-        name: inspector.name,
+        name: demo ? DEMO_INSPECTOR.name : inspector.name,
         inspectorId: inspector.id,
         email: inspector.email,
-        depot: inspector.depots.join(', ') || 'Ej tilldelat kontor',
+        depot: demo ? DEMO_INSPECTOR.depot : (inspector.depots.join(', ') || 'Ej tilldelat kontor'),
         vehicleCategories: inspector.vehicleCategories,
         role: inspector.role,
       });

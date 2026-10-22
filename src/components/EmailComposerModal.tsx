@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useBackToClose } from '../hooks/useBackToClose';
 import { 
   X, 
   Send, 
@@ -44,6 +45,8 @@ interface EmailComposerModalProps {
 }
 
 export function EmailComposerModal({ isOpen, onClose, initialData }: EmailComposerModalProps) {
+  // Androids bakåtknapp stänger dialogen
+  useBackToClose(isOpen, onClose);
   const { showToast } = useToast();
 
   const [to, setTo] = useState('');
@@ -131,27 +134,27 @@ export function EmailComposerModal({ isOpen, onClose, initialData }: EmailCompos
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-150 flex flex-col max-h-[92vh] overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-sheet max-w-2xl w-full p-5 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-150 flex flex-col max-h-[92vh] overflow-hidden">
         
         {/* Header */}
         <div className="flex items-center justify-between pb-3.5 border-b border-gray-100 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="p-2.5 bg-blue-50 dark:bg-blue-950/40 text-[#002f6c] dark:text-blue-400 rounded-2xl border border-blue-200 dark:border-blue-900/50 shadow-2xs">
+            <div className="p-2.5 bg-blue-50 dark:bg-blue-950/40 text-[#002f6c] dark:text-blue-400 rounded-card border border-blue-200 dark:border-blue-900/50 shadow-2xs">
               <Mail size={20} />
             </div>
             <div>
-              <h3 className="text-base font-black text-gray-900 dark:text-white leading-tight">
-                Skicka e-post från ProvProtokoll
+              <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
+                Skriv ett mejl
               </h3>
               <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                Kallelser, påminnelser, intyg eller anpassat meddelande
+                Kallelse, påminnelse, intyg eller eget meddelande
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer shrink-0"
+            className="w-8 h-8 flex items-center justify-center rounded-control bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer shrink-0"
           >
             <X size={16} />
           </button>
@@ -167,7 +170,7 @@ export function EmailComposerModal({ isOpen, onClose, initialData }: EmailCompos
                 triggerHaptic('light');
                 setTemplateType(tmpl.id);
               }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 border ${
+              className={`px-3 py-1.5 rounded-control text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 border ${
                 templateType === tmpl.id
                   ? 'bg-[#002f6c] dark:bg-blue-600 text-white border-[#002f6c] shadow-xs'
                   : 'bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:bg-gray-100'
@@ -182,7 +185,7 @@ export function EmailComposerModal({ isOpen, onClose, initialData }: EmailCompos
         <div className="py-3.5 overflow-y-auto space-y-4 flex-1 pr-1 custom-scrollbar">
           
           {sendError && (
-            <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 rounded-2xl text-xs text-red-800 dark:text-red-300 flex items-center gap-2">
+            <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 rounded-card text-xs text-red-800 dark:text-red-300 flex items-center gap-2">
               <AlertCircle size={16} className="shrink-0" />
               <span>{sendError}</span>
             </div>
@@ -191,7 +194,7 @@ export function EmailComposerModal({ isOpen, onClose, initialData }: EmailCompos
           {/* Form fields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
+              <label className="text-[11px] font-bold text-gray-500 dark:text-slate-400">
                 Mottagarens namn
               </label>
               <div className="relative">
@@ -200,14 +203,14 @@ export function EmailComposerModal({ isOpen, onClose, initialData }: EmailCompos
                   type="text"
                   value={toName}
                   onChange={(e) => setToName(e.target.value)}
-                  placeholder="Kandidatens namn..."
-                  className="w-full h-10 pl-9 pr-3 text-xs rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white outline-none focus:border-blue-500"
+                  placeholder="Kandidatens namn"
+                  className="w-full h-10 pl-9 pr-3 text-xs rounded-control border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white outline-none focus:border-blue-500"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
+              <label className="text-[11px] font-bold text-gray-500 dark:text-slate-400">
                 Mottagarens e-postadress *
               </label>
               <div className="relative">
@@ -218,7 +221,7 @@ export function EmailComposerModal({ isOpen, onClose, initialData }: EmailCompos
                   value={to}
                   onChange={(e) => setTo(e.target.value)}
                   placeholder="elev@exempel.se"
-                  className="w-full h-10 pl-9 pr-3 text-xs rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white outline-none focus:border-blue-500 font-mono"
+                  className="w-full h-10 pl-9 pr-3 text-xs rounded-control border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white outline-none focus:border-blue-500 tabular-nums"
                 />
               </div>
             </div>
@@ -226,9 +229,9 @@ export function EmailComposerModal({ isOpen, onClose, initialData }: EmailCompos
 
           {/* Template-specific details (Kallelse / Påminnelse / Intyg) */}
           {(templateType === 'kallelse' || templateType === 'paminnelse' || templateType === 'intyg') && (
-            <div className="p-3.5 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-150 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div className="p-3.5 bg-gray-50 dark:bg-slate-800/40 rounded-card border border-gray-150 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Behörighet</label>
+                <label className="text-[11px] font-bold text-gray-400">Behörighet</label>
                 <input
                   type="text"
                   value={licenseType}
@@ -238,27 +241,27 @@ export function EmailComposerModal({ isOpen, onClose, initialData }: EmailCompos
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Datum</label>
+                <label className="text-[11px] font-bold text-gray-400">Datum</label>
                 <input
                   type="date"
                   value={testDate}
                   onChange={(e) => setTestDate(e.target.value)}
-                  className="w-full h-9 px-2 text-xs rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white font-mono"
+                  className="w-full h-9 px-2 text-xs rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white tabular-nums"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Klockslag</label>
+                <label className="text-[11px] font-bold text-gray-400">Klockslag</label>
                 <input
                   type="time"
                   value={bookingTime}
                   onChange={(e) => setBookingTime(e.target.value)}
-                  className="w-full h-9 px-2 text-xs rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white font-mono"
+                  className="w-full h-9 px-2 text-xs rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white tabular-nums"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Plats</label>
+                <label className="text-[11px] font-bold text-gray-400">Plats</label>
                 <input
                   type="text"
                   value={location}
@@ -273,7 +276,7 @@ export function EmailComposerModal({ isOpen, onClose, initialData }: EmailCompos
           {/* Custom Subject & Message */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
+              <label className="text-[11px] font-bold text-gray-500 dark:text-slate-400">
                 {templateType === 'custom' ? 'Ämne (Subject)' : 'Valfri kommentar / extra notering'}
               </label>
 
@@ -294,12 +297,12 @@ export function EmailComposerModal({ isOpen, onClose, initialData }: EmailCompos
                   value={customSubject}
                   onChange={(e) => setCustomSubject(e.target.value)}
                   placeholder={currentTemplate.defaultSubject}
-                  className="w-full h-10 px-3 text-xs rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white outline-none focus:border-blue-500 font-bold"
+                  className="w-full h-10 px-3 text-xs rounded-control border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white outline-none focus:border-blue-500 font-bold"
                 />
 
                 {/* Snabbmallar / Snabbknappar för fritext */}
                 <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar py-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 shrink-0">Förslag:</span>
+                  <span className="text-[11px] font-bold text-gray-400 shrink-0">Förslag:</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -353,12 +356,12 @@ export function EmailComposerModal({ isOpen, onClose, initialData }: EmailCompos
               value={customMessage}
               onChange={(e) => setCustomMessage(e.target.value)}
               placeholder={templateType === 'custom' ? 'Skriv ditt meddelande här... Du kan skriva flera stycken med blankrader emellan.' : 'Lägg till eventuellt särskilt meddelande...'}
-              className="w-full p-3 text-xs rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white outline-none focus:border-blue-500 leading-relaxed resize-none"
+              className="w-full p-3 text-xs rounded-control border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white outline-none focus:border-blue-500 leading-relaxed resize-none"
             />
 
             {templateType === 'custom' && (
               <div className="flex items-center gap-2 pt-1">
-                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider shrink-0">Avsändare undertecknas som:</span>
+                <span className="text-[11px] font-bold text-gray-400 shrink-0">Avsändare undertecknas som:</span>
                 <input
                   type="text"
                   value={examiner}
@@ -372,14 +375,17 @@ export function EmailComposerModal({ isOpen, onClose, initialData }: EmailCompos
 
           {/* Live Preview Drawer */}
           {showPreview && (
-            <div className="p-3 bg-gray-100 dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 space-y-2 animate-in fade-in duration-150">
+            <div className="p-3 bg-gray-100 dark:bg-slate-800 rounded-card border border-gray-200 dark:border-slate-700 space-y-2 animate-in fade-in duration-150">
               <div className="flex items-center justify-between text-[11px] font-bold text-gray-500 dark:text-slate-400">
                 <span>Ämne: <strong className="text-gray-900 dark:text-white">{generated.subject}</strong></span>
                 <span>Avsändare: info@rasmusl.se</span>
               </div>
-              <div 
-                className="bg-white rounded-xl p-4 shadow-inner max-h-60 overflow-y-auto border border-gray-200 text-black"
-                dangerouslySetInnerHTML={{ __html: generated.html }}
+              {/* Egen ram så att mejlets stilar inte påverkar appen och förhandsvisningen blir exakt */}
+              <iframe
+                title="Förhandsvisning av mejlet"
+                srcDoc={generated.html}
+                sandbox=""
+                className="w-full h-[420px] rounded-control border border-gray-200 bg-white"
               />
             </div>
           )}
@@ -392,7 +398,7 @@ export function EmailComposerModal({ isOpen, onClose, initialData }: EmailCompos
             type="button"
             onClick={onClose}
             disabled={isSending}
-            className="px-4 py-2.5 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 text-gray-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+            className="px-4 py-2.5 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 text-gray-700 dark:text-slate-300 rounded-control text-xs font-bold transition-all cursor-pointer"
           >
             Avbryt
           </button>
@@ -401,7 +407,7 @@ export function EmailComposerModal({ isOpen, onClose, initialData }: EmailCompos
             type="button"
             onClick={handleSend}
             disabled={isSending || !to.trim()}
-            className="flex-1 py-2.5 px-5 bg-gradient-to-r from-[#002f6c] to-blue-700 hover:from-[#00204a] hover:to-blue-800 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+            className="flex-1 py-2.5 px-5 bg-gradient-to-r from-[#002f6c] to-blue-700 hover:from-[#00204a] hover:to-blue-800 text-white rounded-control text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
           >
             {isSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={15} />}
             <span>{isSending ? 'Skickar mejl...' : `Skicka ${currentTemplate.label.split('/')[0].trim()}`}</span>

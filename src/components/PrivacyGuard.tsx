@@ -36,7 +36,7 @@ export function PrivacyGuard({ children, className = '' }: PrivacyGuardProps) {
       {hidden && (
         <div className="absolute inset-0 z-[999] bg-black flex flex-col items-center justify-center gap-3 select-none print:hidden">
           <ShieldAlert size={28} className="text-white/40" />
-          <span className="text-white/40 text-xs font-bold uppercase tracking-widest">
+          <span className="text-white/40 text-xs font-bold ">
             Innehåll dolt av integritetsskäl
           </span>
         </div>

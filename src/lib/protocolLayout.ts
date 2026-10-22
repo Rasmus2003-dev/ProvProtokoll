@@ -46,12 +46,14 @@ export function resultHeadings(state: AppState): ResultHeading[] {
   const safetyRequired = HEAVY_WITH_SAFETY.includes(state.properties.licenseType || '');
   const headings: ResultHeading[] = [];
 
+  const drivingFailed = !isOmprovSakerhet && state.result.drivingResult === 'Underkänt';
   if (!isOmprovSakerhet) {
     // Avbruten körning kan inte kallas godkänd
     if (state.result.drivingResult === 'Godkänt' && !state.result.testAborted) headings.push({ text: 'Din körning är godkänd.', passed: true });
     if (state.result.drivingResult === 'Underkänt') headings.push({ text: 'Din körning är underkänd.', passed: false });
   }
-  if (safetyRequired && !isOmprovKorning) {
+  // Är körningen underkänd står bara det – säkerhetskontrollen redovisas som "-"
+  if (safetyRequired && !isOmprovKorning && !drivingFailed) {
     if (state.result.safetyCheckResult === 'Godkänt') headings.push({ text: 'Din säkerhetskontroll är godkänd.', passed: true });
     if (state.result.safetyCheckResult === 'Underkänt') headings.push({ text: 'Din säkerhetskontroll är underkänd.', passed: false });
   }
@@ -79,10 +81,18 @@ export function formatResultHeadingHtml(text: string): string {
 export function relevantParts(state: AppState) {
   const testType = state.properties.testType;
   const safetyRequired = HEAVY_WITH_SAFETY.includes(state.properties.licenseType || '');
+  const driving = testType !== 'Omprov säkerhetskontroll';
   return {
-    driving: testType !== 'Omprov säkerhetskontroll',
-    safety: safetyRequired && testType !== 'Omprov körning',
+    driving,
+    // Underkänd körning: säkerhetskontrollen redovisas inte i protokollet
+    safety: safetyRequired && testType !== 'Omprov körning' && !(driving && state.result.drivingResult === 'Underkänt'),
   };
+}
+
+/** Säkerhetskontrollens cell i resultattabellen: "-" när körningen är underkänd */
+export function safetyCellText(state: AppState): string {
+  const drivingFailed = state.properties.testType !== 'Omprov säkerhetskontroll' && state.result.drivingResult === 'Underkänt';
+  return drivingFailed ? '-' : (state.result.safetyCheckResult || '-');
 }
 
 // Situationer där brister visats – bara från delprov som ingår och är underkända
@@ -94,9 +104,18 @@ export function failedSituations(state: AppState): string[] {
   ]));
 }
 
+// Provtypen som kandidaten ser i protokollet. Omprov visas bara som
+// "Körprov <behörighet>" – att det är ett omprov är inspektörens uppgift.
+export function protocolTestTypeLabel(licenseType: string | undefined, testType: string | undefined): string {
+  const license = licenseType || 'B';
+  const assessment = Boolean(testType?.includes('Bedömningsprov') || testType?.includes('Testprov'));
+  if (license === 'B96') return assessment ? 'Bedömningsprov Släpvagn' : 'Släpvagn';
+  return assessment ? `Bedömningsprov (${license})` : `Körprov ${license}`;
+}
+
 // Avbrutet prov – samma text i utskrift, mejl, förhandsvisning och översättning
 export const ABORTED_TITLE = 'Provet avbröts i förtid.';
-export const ABORTED_TEXT = 'Provet har avbrutits innan det kunde genomföras i sin helhet.';
+export const ABORTED_TEXT = 'Provet avbröts innan alla delar hann genomföras.';
 
 // Tabellcellen för körningen när provet avbrutits
 export function abortedDrivingText(drivingResult: string | null): string {
@@ -142,6 +161,8 @@ export function resultTranslationLines(state: AppState, intro: string[], closing
 export interface ImprovementArea {
   area: string;
   deficiencies: string[];
+  // Området valdes som grundorsak (inte bara som konsekvens)
+  isPrimary: boolean;
 }
 
 // Samlar grundorsak och konsekvensområden (körning och säkerhetskontroll)
@@ -150,10 +171,12 @@ export interface ImprovementArea {
 export function collectImprovementAreas(state: AppState): ImprovementArea[] {
   const parts = relevantParts(state);
   const byArea = new Map<string, Set<string>>();
+  const primaryAreas = new Set<string>();
 
-  const add = (area: string | undefined, deficiencies: string[] | undefined) => {
+  const add = (area: string | undefined, deficiencies: string[] | undefined, isPrimary = false) => {
     if (!area) return;
     if (!byArea.has(area)) byArea.set(area, new Set());
+    if (isPrimary) primaryAreas.add(area);
     (deficiencies || []).forEach(d => byArea.get(area)!.add(d));
   };
 
@@ -162,8 +185,12 @@ export function collectImprovementAreas(state: AppState): ImprovementArea[] {
     parts.safety && state.result.safetyCheckResult === 'Underkänt' ? state.result.safetyCheckFailure : null,
   ];
   // Grundorsaker först, därefter konsekvensområden
-  failures.forEach(f => add(f?.primaryCause?.area, f?.primaryCause?.deficiencies));
+  failures.forEach(f => add(f?.primaryCause?.area, f?.primaryCause?.deficiencies, true));
   failures.forEach(f => (f?.consequences || []).forEach(c => add(c.area, c.deficiencies)));
 
-  return Array.from(byArea.entries()).map(([area, defs]) => ({ area, deficiencies: sortByCatalog(area, Array.from(defs)) }));
+  return Array.from(byArea.entries()).map(([area, defs]) => ({
+    area,
+    deficiencies: sortByCatalog(area, Array.from(defs)),
+    isPrimary: primaryAreas.has(area),
+  }));
 }

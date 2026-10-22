@@ -1,6 +1,6 @@
 import { AppState } from '../types';
-import provprotokollLogoImg from '../assets/images/provprotokoll_logo.png';
-import { ABORTED_TEXT, ABORTED_TITLE, abortedDrivingText, collectImprovementAreas, failedSituations, formatResultHeadingHtml, isNewLayout, resultHeadings, resultTranslationLines, translationUrl } from './protocolLayout';
+import provprotokollLogoImg from '../assets/images/provprotokoll_logo_trim.png';
+import { ABORTED_TEXT, ABORTED_TITLE, abortedDrivingText, protocolTestTypeLabel, safetyCellText, collectImprovementAreas, failedSituations, formatResultHeadingHtml, isNewLayout, resultHeadings, resultTranslationLines, translationUrl } from './protocolLayout';
 
 export function generateOfficialProtocolHtml(state: AppState, inspectorName?: string): string {
   const licenseType = state.properties.licenseType || 'B';
@@ -64,33 +64,16 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
   const allSituations = failedSituations(state);
   const interventionSituations = state.result.interventionSituations || [];
 
-  let testTypeLabel = state.properties.licenseType === 'B96' ? 'Släpvagn' : `Körprov ${state.properties.licenseType || 'B'}`;
-  if (state.properties.licenseType === 'B96') {
-    if (state.properties.testType?.includes('Omprov säkerhetskontroll och körning')) {
-      testTypeLabel = 'Omprov säkerhetskontroll och körning Släpvagn';
-    } else if (state.properties.testType?.includes('Omprov säkerhetskontroll')) {
-      testTypeLabel = 'Säkerhetskontroll Släpvagn';
-    } else if (state.properties.testType?.includes('Omprov körning')) {
-      testTypeLabel = 'Omprov körning Släpvagn';
-    } else if (state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov')) {
-      testTypeLabel = 'Bedömningsprov Släpvagn';
-    } else {
-      testTypeLabel = 'Släpvagn';
-    }
-  } else if (state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov')) {
-    testTypeLabel = `Bedömningsprov (${state.properties.licenseType || 'B'})`;
-  } else if (state.properties.testType?.includes('Omprov säkerhetskontroll och körning')) {
-    testTypeLabel = `Omprov säkerhetskontroll och körning ${state.properties.licenseType || 'B'}`;
-  } else if (state.properties.testType?.includes('Omprov säkerhetskontroll')) {
-    testTypeLabel = `Säkerhetskontroll ${state.properties.licenseType || 'B'}`;
-  } else if (state.properties.testType?.includes('Omprov körning')) {
-    testTypeLabel = `Omprov körning ${state.properties.licenseType || 'B'}`;
-  }
+  const testTypeLabel = protocolTestTypeLabel(state.properties.licenseType, state.properties.testType);
+
+  // Tunga prov utan färdskrivare markeras i uppgiftsrutan
+  const withoutTachograph = HEAVY_LICENSES.includes(licenseType) && state.properties.tachograph === 'Utan färdskrivare';
 
   const studentName = state.properties.studentName || 'Kandidat';
   const pnr = state.properties.personalNumber || '19820209-4937';
   const testDate = state.properties.testDate || new Date().toISOString().split('T')[0];
-  const examiner = inspectorName || state.properties.examiner || 'Hans Eriksson';
+  // Namnet i formuläret går före inloggad profil, så provförrättaren kan ändras per prov
+  const examiner = state.properties.examiner?.trim() || inspectorName || 'Hans Eriksson';
 
   // Grundorsaker (körning + säkerhetskontroll) slås ihop till EN enda
   // sammanhängande text under en gemensam rubrik, utan att särskilja vilket
@@ -105,7 +88,8 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
   if (drivingFail?.primaryCause?.area && state.result.drivingResult === 'Underkänt') {
     addPrimaryCause(drivingFail.primaryCause.area, drivingFail.primaryCause.deficiencies);
   }
-  if (isSafetyCheckRequired && safetyFail?.primaryCause?.area && state.result.safetyCheckResult === 'Underkänt') {
+  const safetyCounts = isSafetyCheckRequired && (isOmprovSakerhet || state.result.drivingResult !== 'Underkänt');
+  if (safetyCounts && safetyFail?.primaryCause?.area && state.result.safetyCheckResult === 'Underkänt') {
     addPrimaryCause(safetyFail.primaryCause.area, safetyFail.primaryCause.deficiencies);
   }
   const primaryCauseEntries = Array.from(primaryCauseAreas.entries()).map(([area, deficiencies]) => ({
@@ -115,7 +99,7 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
 
   const allConsequences = [
     ...(state.result.drivingResult === 'Underkänt' ? (drivingFail?.consequences || []) : []),
-    ...(isSafetyCheckRequired && state.result.safetyCheckResult === 'Underkänt' ? (safetyFail?.consequences || []) : [])
+    ...(safetyCounts && state.result.safetyCheckResult === 'Underkänt' ? (safetyFail?.consequences || []) : [])
   ];
 
   const newLayout = isNewLayout(state);
@@ -128,14 +112,16 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
   // "Du måste bli bättre på:" med bristerna som underpunkter
   const improvementAreas = collectImprovementAreas(state);
   const newFailureRowsHtml = `
-      ${resultHeadings(state).map(h => `<h2 style="color: ${h.passed ? 'green' : 'red'}; font-size: 13.5pt; line-height: 1.35; margin: 0 0 12px 0; word-break: normal;">${formatResultHeadingHtml(h.text)}</h2>`).join('')}
+      ${resultHeadings(state).map(h => `<h2 style="color: ${h.passed ? 'green' : 'red'}; font-size: 14pt; line-height: 1.35; margin: 0 0 12px 0; word-break: normal;">${formatResultHeadingHtml(h.text)}</h2>`).join('')}
       ${improvementAreas.length > 0 ? `
         <b>Orsaker till underkännandet:</b>
         <div style="border: 3px solid #000; padding: 8px 14px 4px; margin: 6px 0 18px;">
           <b>Du måste bli bättre på:</b>
           <ul style="margin: 4px 0 10px; padding-left: 28px; list-style-type: disc;">
             ${improvementAreas.map(entry => `
-              <li style="margin-bottom: 4px;">${entry.area}
+              <li style="margin-bottom: 4px;">${entry.isPrimary
+                ? `<b>${entry.area}</b>`
+                : entry.area}
                 ${entry.deficiencies.map(d => `<div style="padding-left: 48px;">- ${d}</div>`).join('')}
               </li>
             `).join('')}
@@ -160,9 +146,9 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
     ? newFailureRowsHtml
     : isFailed
     ? `
-      ${!isOmprovSakerhet && !isAborted && state.result.drivingResult === 'Godkänt' ? `<h2 style="color: green; font-size: 13.5pt; line-height: 1.35; margin: 0 0 12px 0; word-break: normal;">${formatResultHeadingHtml('Din körning är godkänd.')}</h2>` : ''}
-      ${!isOmprovSakerhet && state.result.drivingResult === 'Underkänt' ? `<h2 style="color: red; font-size: 13.5pt; line-height: 1.35; margin: 0 0 12px 0; word-break: normal;">${formatResultHeadingHtml('Din körning är underkänd.')}</h2>` : ''}
-      ${isSafetyCheckRequired && !isOmprovKorning && state.result.drivingResult !== 'Underkänt' && state.result.safetyCheckResult === 'Underkänt' ? `<h2 style="color: red; font-size: 13.5pt; line-height: 1.35; margin: 0 0 12px 0; word-break: normal;">${formatResultHeadingHtml('Din säkerhetskontroll är underkänd.')}</h2>` : ''}
+      ${!isOmprovSakerhet && !isAborted && state.result.drivingResult === 'Godkänt' ? `<h2 style="color: green; font-size: 14pt; line-height: 1.35; margin: 0 0 12px 0; word-break: normal;">${formatResultHeadingHtml('Din körning är godkänd.')}</h2>` : ''}
+      ${!isOmprovSakerhet && state.result.drivingResult === 'Underkänt' ? `<h2 style="color: red; font-size: 14pt; line-height: 1.35; margin: 0 0 12px 0; word-break: normal;">${formatResultHeadingHtml('Din körning är underkänd.')}</h2>` : ''}
+      ${isSafetyCheckRequired && !isOmprovKorning && state.result.drivingResult !== 'Underkänt' && state.result.safetyCheckResult === 'Underkänt' ? `<h2 style="color: red; font-size: 14pt; line-height: 1.35; margin: 0 0 12px 0; word-break: normal;">${formatResultHeadingHtml('Din säkerhetskontroll är underkänd.')}</h2>` : ''}
       ${primaryCauseEntries.length > 0 ? `
         <b>Grundorsak till underkännandet är:</b><br />
         <div style="border: 3px #C0504D solid; margin-bottom: 10px; padding: 5px 10px; margin-top: 5px;">
@@ -193,7 +179,7 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
         <div>
           <span><b>Brister har visat sig i följande situationer:</b></span>
           <ul style="margin-top: 4px; padding-left: 18px; list-style-type: disc;">
-            ${allSituations.map(s => `<li style="margin-bottom: 2px; font-size: 13px;">${s}</li>`).join('')}
+            ${allSituations.map(s => `<li style="margin-bottom: 2px;">${s}</li>`).join('')}
           </ul>
         </div>
       ` : ''}
@@ -201,23 +187,23 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
         <div style="margin-top: 10px;">
           <span><b>Ingripande har skett i följande situationer:</b></span>
           <ul style="margin-top: 4px; padding-left: 18px; list-style-type: disc;">
-            ${interventionSituations.map(s => `<li style="margin-bottom: 2px; font-size: 13px;">${s}</li>`).join('')}
+            ${interventionSituations.map(s => `<li style="margin-bottom: 2px;">${s}</li>`).join('')}
           </ul>
         </div>
       ` : `<div style="margin-top: 10px; margin-bottom: 10px;">Ingripande har förekommit.</div>`) : ''}
     `
     : `
-      ${!isOmprovSakerhet && state.result.drivingResult === 'Godkänt' ? `<h2 style="color: green; font-size: 13.5pt; line-height: 1.35; margin: 0 0 12px 0; word-break: normal;">${formatResultHeadingHtml('Din körning är godkänd.')}</h2>` : ''}
-      ${isSafetyCheckRequired && state.result.safetyCheckResult === 'Godkänt' ? `<h2 style="color: green; font-size: 13.5pt; line-height: 1.35; margin: 0 0 12px 0; word-break: normal;">${formatResultHeadingHtml('Din säkerhetskontroll är godkänd.')}</h2>` : ''}
+      ${!isOmprovSakerhet && state.result.drivingResult === 'Godkänt' ? `<h2 style="color: green; font-size: 14pt; line-height: 1.35; margin: 0 0 12px 0; word-break: normal;">${formatResultHeadingHtml('Din körning är godkänd.')}</h2>` : ''}
+      ${isSafetyCheckRequired && state.result.safetyCheckResult === 'Godkänt' ? `<h2 style="color: green; font-size: 14pt; line-height: 1.35; margin: 0 0 12px 0; word-break: normal;">${formatResultHeadingHtml('Din säkerhetskontroll är godkänd.')}</h2>` : ''}
     `;
 
   const includedItemsHtml = state.includedTestItems && state.includedTestItems.length > 0
     ? `
       <ul style="margin-top: 4px; padding-left: 18px; list-style-type: disc;">
-        ${state.includedTestItems.map(i => `<li style="margin-bottom: 2px; font-size: 13px;">${i}</li>`).join('')}
+        ${state.includedTestItems.map(i => `<li style="margin-bottom: 2px;">${i}</li>`).join('')}
       </ul>
     `
-    : `<p style="margin-top: 0; font-style: italic;">Inga specifika moment registrerade.</p>`;
+    : `<p style="margin-top: 0; font-style: italic;">Inga provmoment har registrerats.</p>`;
 
   const taxiLegislationText = 'Detta beslut grundas på taxitrafiklagen (2012:211) och taxitrafikförordningen (2012:238).';
   const standardLegislationText = 'Detta beslut får enligt 8 kap. 2 § körkortslagen (1998:488) inte överklagas.';
@@ -225,18 +211,16 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
 
   const closingHtml = isFailed
     ? (isTaxi 
-        ? `<p style="margin-top: 50px;">Du uppfyllde inte kraven för godkänt taxiförarprov enligt taxitrafiklagen (2012:211). Det är viktigt att du tränar mer innan du genomför ditt nästa prov.<br />Välkommen åter!</p>`
+        ? `<p style="margin-top: 50px;">Du uppfyllde inte kraven för godkänt taxiförarprov enligt taxitrafiklagen (2012:211). Det är viktigt att du tränar mer innan du gör nästa prov.<br />Välkommen åter!</p>`
         : `<p style="margin-top: 50px;">Det är viktigt att du tränar mer innan du genomför ditt nästa körprov.<br />Välkommen åter!</p>`)
-    : `
+    : (isTaxi || isAssessmentOnly) ? `
       <br />
       <span><b>Vad händer nu?</b></span>
       ${isTaxi
-        ? `<p style="margin-top: 5px; line-height: 1.5;">Grattis till godkänt taxiförarprov! Du kan nu ansöka om <strong>taxiförarlegitimation</strong> hos Transportstyrelsen enligt taxitrafiklagen (2012:211). Legitimationen utfärdas efter prövning av övriga krav.</p>`
-        : isAssessmentOnly 
-          ? `<p style="margin-top: 5px; line-height: 1.5;">Grattis till ett godkänt bedömningsprov! Du uppfyller de formella kompetenskraven för körbedömning. Du kan nu bifoga detta intyg för ansökan och behörighetsprövning till <strong>trafiklärarutbildning</strong> samt vidare prövning för <strong>förarprövar- / inspektörsbehörighet</strong>.</p>`
-          : `<p style="margin-top: 5px; line-height: 1.5;">Grattis till ditt körkort! Du kan nu köra med en giltig legitimation i Sverige tills du har fått ditt körkort, dock i max två månader.</p>`
+        ? `<p style="margin-top: 5px; line-height: 1.5;">Du är godkänd på taxiförarprovet och kan nu ansöka om <strong>taxiförarlegitimation</strong> hos Transportstyrelsen. Legitimationen utfärdas när övriga krav har prövats.</p>`
+        : `<p style="margin-top: 5px; line-height: 1.5;">Du är godkänd på bedömningsprovet och uppfyller kompetenskraven för körbedömning. Intyget kan bifogas en ansökan till <strong>trafiklärarutbildning</strong> eller vid prövning för <strong>förarprövar- eller inspektörsbehörighet</strong>.</p>`
       }
-    `;
+    ` : '';
 
   // Ny layout: hela resultatet, inklusive alla orsaker, kan översättas (som hos Trafikverket)
   const htmlToLines = (html: string) => html
@@ -247,6 +231,10 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
     [legislationText, 'Här ser du ditt resultat inom provets olika ämnesområden.'],
     htmlToLines(closingHtml),
   )).replace(/&/g, '&amp;');
+  const legislationTranslateHref = translationUrl([
+    legislationText,
+    'Här ser du ditt resultat inom provets olika ämnesområden.',
+  ]).replace(/&/g, '&amp;');
 
   return `<!DOCTYPE html>
 <html lang="sv">
@@ -257,7 +245,7 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
         body { font-family: Arial, Sans-Serif; }
         .resultContainer { font-family: Arial, sans-serif; font-size: 11pt; max-width: 730px; color: #000; }
         .resultContainer h1 { font-size: 18pt; margin: 0; }
-        .resultContainer h2 { font-size: 13.5pt; line-height: 1.35; margin: 0 0 12px 0; word-break: normal; overflow-wrap: normal; }
+        .resultContainer h2 { font-size: 14pt; line-height: 1.35; margin: 0 0 12px 0; word-break: normal; overflow-wrap: normal; }
         .resultContainer h3 { font-size: 12pt; margin: 0; }
         .resultContainer .resultHeaderLabel { font-size: 8pt; font-weight: bold; }
         .resultContainer .infoTable td { padding-right: 20px; padding-bottom: 10px; vertical-align: top; }
@@ -276,7 +264,7 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
         <table style="width:100%">
             <tr>
                 <td width="195" style="vertical-align: top; width: 195px">
-                    <img class="logo" src="${provprotokollLogoImg}" alt="ProvProtokoll" style="max-width: 195px; max-height: 52px; object-fit: contain;" />
+                    <img class="logo" src="${provprotokollLogoImg}" alt="ProvProtokoll" style="max-width: 200px; max-height: 92px; object-fit: contain;" />
                 </td>
                 <td></td>
                 <td style="vertical-align: top; text-align: right;">
@@ -315,14 +303,16 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
                                     <div class="resultHeaderLabel">Provförrättare:</div>
                                     ${examiner}
                                 </td>
-                                <td></td>
+                                <td>${withoutTachograph ? `
+                                    <div class="resultHeaderLabel">Färdskrivare:</div>
+                                    <b>Utan färdskrivare</b>` : ''}
+                                </td>
                             </tr>
                         </table>
                     </div>
                 </td>
             </tr>
         </table>
-    </div>
     <br />
     <div>
         <b>Behörighetsinformation</b><br />
@@ -355,7 +345,7 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
                     Säkerhetskontroll
                 </td>
                 <td>
-                    ${!newLayout && !isOmprovSakerhet && state.result.drivingResult === 'Underkänt' ? '-' : (state.result.safetyCheckResult || '-')}
+                    ${safetyCellText(state)}
                 </td>
             </tr>` : ''}
         </table>
@@ -363,6 +353,11 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
         <div>
             ${legislationText}<br />
             Här ser du ditt resultat inom provets olika ämnesområden.
+            ${!newLayout ? `
+            <div class="translate">
+                <br />
+                <a href="${legislationTranslateHref}" target="_blank" rel="noopener" style="color: #0066cc; text-decoration: underline;">Translation</a>
+            </div>` : ''}
         </div>
         <br />
 
@@ -388,16 +383,16 @@ export function generateOfficialProtocolHtml(state: AppState, inspectorName?: st
             <a href="${translateHref}" target="_blank" rel="noopener" style="color: #0066cc; text-decoration: underline;">Translation</a>
         </div>` : ''}
     </div>
+    </div>
 </body>
 </html>`;
 }
 
 // Mejlklienter kan inte läsa Vites internt bundlade bild-URL:er, så logotypen
 // måste peka på en absolut, publikt nåbar adress i mejlversionen.
-const EMAIL_LOGO_URL = 'https://protokoll.rasmusl.se/provprotokoll_logo.png';
+const EMAIL_LOGO_URL = 'https://protokoll.rasmusl.se/provprotokoll_logo_trim.png';
 
 export function generateEmailProtocolHtml(state: AppState, inspectorName?: string): string {
-  const studentName = state.properties.studentName || 'Förnamn Efternamn';
   const protocolHtml = generateOfficialProtocolHtml(state, inspectorName);
   const styleMatch = protocolHtml.match(/<style>[\s\S]*?<\/style>/);
   const styleTag = styleMatch ? styleMatch[0] : '';
@@ -405,101 +400,122 @@ export function generateEmailProtocolHtml(state: AppState, inspectorName?: strin
     .replace(/^[\s\S]*<body>/, '')
     .replace(/<\/body>[\s\S]*$/, '')
     .replace(/src="[^"]*"(\s+alt="ProvProtokoll")/, `src="${EMAIL_LOGO_URL}"$1`)
-    .replace(/max-width:\s*195px;\s*max-height:\s*52px;/, 'max-width: 210px; max-height: 62px;');
-
-  const licenseType = state.properties.licenseType || 'B';
-  const HEAVY_LICENSES = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'];
-  const isSafetyCheckRequired = [...HEAVY_LICENSES, 'BE'].includes(licenseType);
-  const isOmprovSakerhet = state.properties.testType === 'Omprov säkerhetskontroll';
-  const isOmprovKorning = state.properties.testType === 'Omprov körning';
-
-  let isPassed = false;
-  if (isOmprovSakerhet) {
-    isPassed = state.result.safetyCheckResult === 'Godkänt';
-  } else if (isOmprovKorning) {
-    isPassed = state.result.drivingResult === 'Godkänt';
-  } else {
-    const safetyPassed = !isSafetyCheckRequired || state.result.safetyCheckResult === 'Godkänt';
-    const drivingPassed = state.result.drivingResult === 'Godkänt';
-    isPassed = drivingPassed && safetyPassed;
-  }
-  if (state.result.testAborted) isPassed = false;
-
-  const firstName = (studentName || 'Kandidat').trim().split(/\s+/)[0];
-
-  const priorityBadge = `
-    <div style="margin-bottom: 8px;">
-      <span style="display: inline-block; background: #fee2e2; border: 1px solid #fecaca; color: #b91c1c; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.06em;">
-        ! Hög prioritet – Officiellt provbesked
-      </span>
-    </div>`;
-
-  const statusBanner = `
-    <div style="background: ${isPassed ? '#ecfdf5' : '#fef2f2'}; border: 1px solid ${isPassed ? '#a7f3d0' : '#fecaca'}; border-left: 6px solid ${isPassed ? '#10b981' : '#dc2626'}; border-radius: 10px; padding: 16px 20px; margin-bottom: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-      ${priorityBadge}
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td>
-            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: ${isPassed ? '#047857' : '#991b1b'}; margin-bottom: 3px;">
-              Officiellt förarprovsbeslut
-            </div>
-            <div style="font-size: 20px; font-weight: 900; color: ${isPassed ? '#065f46' : '#991b1b'}; line-height: 1.25; letter-spacing: -0.01em;">
-              ${isPassed ? '✓ KÖRPROVET ÄR GODKÄNT' : '✕ KÖRPROVET ÄR UNDERKÄNT'}
-            </div>
-          </td>
-          <td align="right" style="vertical-align: middle;">
-            <div style="display: inline-block; background: ${isPassed ? '#059669' : '#dc2626'}; color: #ffffff; font-weight: 800; font-size: 12px; padding: 6px 14px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
-              Behörighet ${licenseType}
-            </div>
-          </td>
-        </tr>
-      </table>
-    </div>`;
+    .replace(/max-width:\s*200px;\s*max-height:\s*92px;/, 'max-width: 210px; max-height: 96px;')
+    // "Skriv ut" (javascript:-länk) fungerar inte i mejlklienter och finns inte i Trafikverkets mejl
+    .replace(/<div class="print-btn">[\s\S]*?<\/div>/, '');
 
   return `<!DOCTYPE html>
 <html lang="sv">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Resultat från ditt körprov (Behörighet ${licenseType}) - ${studentName}</title>
+  <meta name="color-scheme" content="light">
+  <title>Resultat från ditt körprov</title>
   ${styleTag}
   <style>
-    body { line-height: 1.6; background-color: #f7f9fa; margin: 0; padding: 16px 8px; font-family: Arial, Helvetica, sans-serif; }
-    .email-container { max-width: 720px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; }
-    .email-card { padding: 24px 22px 28px 22px; }
-    .resultContainer { max-width: 100% !important; }
-    .resultContainer table.infoTable td { padding-bottom: 12px; }
-    .resultContainer table.resultTable { margin-top: 4px; }
-    .resultContainer h2 { font-size: 13.5pt; line-height: 1.35; margin: 0 0 12px 0; word-break: normal; }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f8;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #000000;
+      -webkit-text-size-adjust: 100%;
+      line-height: 1.5;
+    }
+    .email-outer {
+      width: 100%;
+      background-color: #f4f6f8;
+      padding: 24px 12px 36px;
+    }
+    .email-card {
+      max-width: 740px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+    .email-greeting {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11pt;
+      color: #000000;
+      line-height: 1.5;
+      margin: 0 0 16px 0;
+    }
+    .email-divider {
+      border: 0;
+      border-top: 1px solid #000000;
+      margin: 0 0 24px 0;
+      height: 1px;
+    }
+    .resultContainer {
+      max-width: 100% !important;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #000000;
+    }
+    .resultContainer table.infoTable td {
+      padding-bottom: 10px;
+    }
+    .resultContainer table.resultTable {
+      margin-top: 4px;
+    }
+    .email-footer {
+      margin-top: 36px;
+      padding-top: 16px;
+      border-top: 1px solid #e2e8f0;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9.5pt;
+      color: #64748b;
+      line-height: 1.5;
+    }
+    .email-footer a {
+      color: #0066cc;
+      text-decoration: underline;
+    }
     @media only screen and (max-width: 600px) {
-      .email-card { padding: 16px 12px 20px 12px !important; }
-      .resultContainer h2 { font-size: 12.5pt !important; }
+      .email-outer { padding: 10px 4px 20px !important; }
+      .email-card { padding: 20px 16px 24px !important; border-radius: 4px !important; }
+      .resultContainer h1 { font-size: 16pt !important; }
+      .resultContainer h2 { font-size: 13pt !important; }
     }
   </style>
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td, p, div { font-family: Arial, Helvetica, sans-serif !important; }
+  </style>
+  <![endif]-->
 </head>
-<body style="font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 16px 8px; background-color: #f7f9fa; color: #1e293b; -webkit-text-size-adjust: 100%;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="email-container" style="max-width: 720px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden;">
+<body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: Arial, Helvetica, sans-serif; color: #000000; -webkit-text-size-adjust: 100%;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="email-outer" style="background-color: #f4f6f8; padding: 24px 12px 36px;">
     <tr>
-      <td class="email-card" style="padding: 24px 22px 28px 22px;">
-        ${statusBanner}
-        <div style="font-size: 12pt; line-height: 1.6; color: #1e293b; margin-bottom: 18px;">
-          Hej <strong>${firstName}</strong>! Här kommer ditt provresultat!<br />
-          <span style="font-size: 10pt; color: #64748b;">Nedan finner du ditt fullständiga provprotokoll med sammanställning och bedömning.</span>
-        </div>
-        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 18px 0;" />
-        ${bodyContent}
-        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 14px;" />
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; text-align: center;">
-          <div style="font-size: 10.5pt; font-weight: bold; color: #1e293b; margin-bottom: 4px;">
-            Digitalt Provprotokoll Online
-          </div>
-          <p style="font-size: 9pt; color: #64748b; margin: 0; line-height: 1.4;">
-            Detta protokoll har genererats och arkiverats digitalt via ProvProtokoll Sverige.
-          </p>
-        </div>
-        <p style="font-size: 8.5pt; color: #94a3b8; margin: 0; line-height: 1.5; text-align: center;">
-          ProvProtokoll Förarprov Sverige • protokoll.rasmusl.se
-        </p>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="email-card" style="max-width: 740px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);">
+          <tr>
+            <td style="padding: 32px 32px 36px;" class="card-inner">
+              
+              <!-- Autentisk Trafikverket-hälsning före protokollet -->
+              <div class="email-greeting" style="font-family: Arial, Helvetica, sans-serif; font-size: 11pt; color: #000000; line-height: 1.5; margin: 0 0 16px 0;">
+                Hej!<br /><br />
+                Du har nyligen gjort körprov hos oss. Resultatet kan du läsa nedan.<br /><br />
+                Vänliga hälsningar,<br />
+                Trafikverket Förarprov
+              </div>
+
+              <!-- Skiljelinje precis som i Trafikverkets riktiga utskick -->
+              <hr class="email-divider" style="border: 0; border-top: 1px solid #000000; margin: 0 0 24px 0; height: 1px;" />
+
+              <!-- Officiellt protokoll (100% orörd Trafikverket-design) -->
+              ${bodyContent}
+
+              <!-- Diskret sidfot -->
+              <div class="email-footer" style="margin-top: 36px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-family: Arial, Helvetica, sans-serif; font-size: 9.5pt; color: #64748b; line-height: 1.5;">
+                <p style="margin: 0 0 4px 0;">Har du frågor? Läs mer på <a href="https://www.trafikverket.se" target="_blank" rel="noopener" style="color: #0066cc; text-decoration: underline;">www.trafikverket.se</a> eller ring Trafikverkets kundtjänst på 0771-17 18 19.</p>
+                <p style="margin: 0; color: #94a3b8; font-size: 8.5pt;">Detta är ett automatiskt genererat meddelande med anledning av genomfört förarprov.</p>
+              </div>
+
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
   </table>

@@ -39,8 +39,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         Accept: 'application/json',
       },
       body: JSON.stringify({
-        sender: { name: 'Provresultat', email: 'info@rasmusl.se' },
-        replyTo: { name: 'ProvProtokoll', email: 'noreply@rasmusl.se' },
+        sender: { name: 'Trafikverket Förarprov', email: 'info@rasmusl.se' },
+        replyTo: { name: 'Trafikverket Förarprov', email: 'noreply@rasmusl.se' },
         to: [{ email: to, name: toName || undefined }],
         subject,
         htmlContent: html,

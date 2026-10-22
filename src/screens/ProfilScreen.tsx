@@ -9,6 +9,7 @@ import {
 import { AppLogo } from '../components/icons/AppLogo';
 import { isSupabaseConfigured, updateUserPassword } from '../lib/supabase';
 import { signOut } from '../lib/inspectors';
+import { DemoModeCard } from '../components/DemoModeSwitch';
 
 export function ProfilScreen() {
   const { profile, updateProfile, syncQueue, testHistory, syncTests, isSyncing } = useAppStore();
@@ -81,24 +82,24 @@ export function ProfilScreen() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/korprov')}
-            className="p-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors shadow-xs cursor-pointer"
+            className="p-2.5 rounded-card bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors shadow-xs cursor-pointer"
             title="Tillbaka till prov"
           >
             <ArrowLeft size={18} />
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-black uppercase tracking-widest text-[#002f6c] dark:text-blue-400">
-                Auktoriserad Profil
+              <span className="text-[11px] font-bold text-[#002f6c] dark:text-blue-400">
+                Inspektör
               </span>
               {isSupabaseConfigured() && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
                   <Cloud size={10} /> Supabase Online
                 </span>
               )}
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-gray-950 dark:text-white uppercase">
-              Min Inspektörsprofil
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-950 dark:text-white ">
+              Min profil
             </h1>
           </div>
         </div>
@@ -107,7 +108,7 @@ export function ProfilScreen() {
           {!isEditing ? (
             <button 
               onClick={() => setIsEditing(true)}
-              className="px-5 py-2.5 bg-[#002f6c] hover:bg-[#00204a] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+              className="px-5 py-2.5 bg-[#002f6c] hover:bg-[#00204a] text-white text-xs font-bold rounded-control transition-all shadow-sm flex items-center gap-2 cursor-pointer"
             >
               <Edit3 size={14} />
               <span>Redigera profil</span>
@@ -116,13 +117,13 @@ export function ProfilScreen() {
             <div className="flex items-center gap-2">
               <button 
                 onClick={handleCancel}
-                className="px-4 py-2.5 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-slate-700 text-xs font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer"
+                className="px-4 py-2.5 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-slate-700 text-xs font-bold rounded-control transition-colors cursor-pointer"
               >
                 Avbryt
               </button>
               <button 
                 onClick={handleSave}
-                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-control transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
               >
                 <Save size={14} />
                 <span>Spara ändringar</span>
@@ -133,12 +134,12 @@ export function ProfilScreen() {
       </div>
 
       {showNotification && (
-        <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 rounded-2xl text-emerald-900 dark:text-emerald-300 text-sm font-semibold flex items-center justify-between shadow-sm animate-in fade-in">
+        <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 rounded-card text-emerald-900 dark:text-emerald-300 text-sm font-semibold flex items-center justify-between shadow-sm animate-in fade-in">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-            <span>Profilen och signaturinställningarna har sparats och synkroniserats.</span>
+            <span>Sparat.</span>
           </div>
-          <button onClick={() => setShowNotification(false)} className="text-emerald-700 dark:text-emerald-400 font-bold text-xs uppercase hover:underline">
+          <button onClick={() => setShowNotification(false)} className="text-emerald-700 dark:text-emerald-400 font-bold text-xs hover:underline">
             Stäng
           </button>
         </div>
@@ -151,14 +152,14 @@ export function ProfilScreen() {
         <div className="lg:col-span-4 space-y-6">
           
           {/* Identity Card with App Logo */}
-          <div className="bg-gradient-to-br from-[#002f6c] via-[#001f3f] to-slate-900 rounded-3xl p-6 sm:p-7 text-white shadow-xl border border-white/10 relative overflow-hidden">
+          <div className="bg-gradient-to-br from-[#002f6c] via-[#001f3f] to-slate-900 rounded-sheet p-6 sm:p-7 text-white shadow-xl border border-white/10 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
 
             {/* Badge Top Header */}
             <div className="flex items-center justify-between mb-6 relative z-10">
               <div className="flex items-center gap-2.5">
                 <AppLogo variant="icon" size="sm" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-blue-300">
+                <span className="text-[11px] font-bold text-blue-300">
                   ProvProtokoll Förarprov
                 </span>
               </div>
@@ -167,12 +168,12 @@ export function ProfilScreen() {
 
             {/* Inspector Avatar & Name */}
             <div className="flex items-center gap-4 mb-6 relative z-10">
-              <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-2xl font-black text-white shadow-inner">
+              <div className="w-16 h-16 rounded-card bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-2xl font-bold text-white shadow-inner">
                 {profile.name ? profile.name[0].toUpperCase() : 'R'}
               </div>
               <div className="min-w-0">
-                <div className="text-xl font-black text-white truncate">{profile.name}</div>
-                <div className="text-xs font-mono text-blue-300 font-bold tracking-wider">{profile.inspectorId}</div>
+                <div className="text-xl font-bold text-white truncate">{profile.name}</div>
+                <div className="text-xs tabular-nums text-blue-300 font-bold ">{profile.inspectorId}</div>
                 <div className="text-[11px] text-slate-300 flex items-center gap-1 mt-0.5">
                   <MapPin size={11} className="text-sky-300" />
                   <span>{profile.depot}</span>
@@ -182,33 +183,33 @@ export function ProfilScreen() {
 
             {/* Live Stats */}
             <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/10 relative z-10 text-center">
-              <div className="bg-white/5 rounded-xl p-2.5 border border-white/5">
-                <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400 block">Körprov Idag</span>
-                <span className="text-lg font-black text-white">4 Prov</span>
+              <div className="bg-white/5 rounded-control p-2.5 border border-white/5">
+                <span className="text-[11px] font-bold text-slate-400 block">Körprov Idag</span>
+                <span className="text-lg font-bold text-white">4 Prov</span>
               </div>
-              <div className="bg-white/5 rounded-xl p-2.5 border border-white/5">
-                <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400 block">Protokoll i Kö</span>
-                <span className="text-lg font-black text-sky-300">{syncQueue.length} st</span>
+              <div className="bg-white/5 rounded-control p-2.5 border border-white/5">
+                <span className="text-[11px] font-bold text-slate-400 block">Protokoll i Kö</span>
+                <span className="text-lg font-bold text-sky-300">{syncQueue.length} st</span>
               </div>
             </div>
 
             {/* Digital Signature Preview */}
-            <div className="mt-5 p-3.5 bg-black/30 rounded-2xl border border-white/5 relative z-10">
-              <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block mb-1">
-                Aktiv protokollsignatur:
+            <div className="mt-5 p-3.5 bg-black/30 rounded-card border border-white/5 relative z-10">
+              <span className="text-[11px] font-bold text-slate-400 block mb-1">
+                Så här signeras dina protokoll:
               </span>
-              <p className="font-mono text-xs text-amber-300 font-bold tracking-wide truncate">
+              <p className="tabular-nums text-xs text-amber-300 font-bold truncate">
                 {profile.signatureText || `${profile.name} / ProvProtokoll`}
               </p>
             </div>
           </div>
 
           {/* Quick Actions Card */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-gray-200/80 dark:border-white/5 shadow-sm space-y-3">
+          <div className="bg-white dark:bg-slate-900 rounded-sheet p-6 border border-gray-200/80 dark:border-white/5 shadow-sm space-y-3">
             {(profile.role === 'admin' || profile.inspectorId === 'insp-rasmus') && (
               <button
                 onClick={() => navigate('/inspektorer')}
-                className="w-full py-3 px-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-xs font-bold text-amber-800 dark:text-amber-300 transition-colors flex items-center justify-between cursor-pointer border border-amber-200/60 dark:border-amber-900/40"
+                className="w-full py-3 px-4 rounded-control bg-amber-50 dark:bg-amber-950/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-xs font-bold text-amber-800 dark:text-amber-300 transition-colors flex items-center justify-between cursor-pointer border border-amber-200/60 dark:border-amber-900/40"
               >
                 <div className="flex items-center gap-2">
                   <Shield size={15} className="text-amber-600 dark:text-amber-400" />
@@ -218,50 +219,52 @@ export function ProfilScreen() {
             )}
             <button
               onClick={() => navigate('/historik')}
-              className="w-full py-3 px-4 rounded-xl bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-gray-800 dark:text-gray-200 transition-colors flex items-center justify-between cursor-pointer border border-gray-200/60 dark:border-slate-700/60"
+              className="w-full py-3 px-4 rounded-control bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-gray-800 dark:text-gray-200 transition-colors flex items-center justify-between cursor-pointer border border-gray-200/60 dark:border-slate-700/60"
             >
               <div className="flex items-center gap-2">
                 <Database size={15} className="text-blue-600 dark:text-blue-400" />
-                <span>Arkiv & Historik</span>
+                <span>Mina protokoll</span>
               </div>
-              <span className="text-[11px] font-mono text-gray-400 font-bold">{testHistory.length} sparade</span>
+              <span className="text-[11px] tabular-nums text-gray-400 font-bold">{testHistory.length} sparade</span>
             </button>
 
             {syncQueue.length > 0 && (
               <button
                 onClick={syncTests}
                 disabled={isSyncing}
-                className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-50"
+                className="w-full py-3 px-4 rounded-control bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-50"
               >
                 <Cloud size={15} />
-                <span>{isSyncing ? 'Synkroniserar...' : 'Synka osynkade prov'}</span>
+                <span>{isSyncing ? 'Skickar…' : `Skicka ${syncQueue.length} prov som väntar`}</span>
               </button>
             )}
 
+            <DemoModeCard />
+
             <button
               onClick={handleLogout}
-              className="w-full py-3 px-4 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer border border-red-200/80 dark:border-red-900/30"
+              className="w-full py-3 px-4 rounded-control bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer border border-red-200/80 dark:border-red-900/30"
             >
               <LogOut size={15} />
-              <span>Logga ut från terminalen</span>
+              <span>Logga ut</span>
             </button>
           </div>
 
         </div>
 
         {/* Right Column: Settings & Authorizations (8 cols) */}
-        <div className="lg:col-span-8 bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-gray-200/80 dark:border-white/5 shadow-sm space-y-8">
+        <div className="lg:col-span-8 bg-white dark:bg-slate-900 rounded-sheet p-6 sm:p-8 border border-gray-200/80 dark:border-white/5 shadow-sm space-y-8">
           
           {/* Section 1: Personal Details */}
           <div>
-            <h2 className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white flex items-center gap-2 pb-4 border-b border-gray-100 dark:border-white/5">
+            <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2 pb-4 border-b border-gray-100 dark:border-white/5">
               <User size={16} className="text-[#002f6c] dark:text-blue-400" />
-              Grunduppgifter
+              Om mig
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-6">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider block">
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 block">
                   Fullständigt namn
                 </label>
                 {isEditing ? (
@@ -269,18 +272,18 @@ export function ProfilScreen() {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full h-11 px-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
+                    className="w-full h-11 px-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
                     required
                   />
                 ) : (
-                  <div className="h-11 px-3.5 bg-gray-50/70 dark:bg-slate-850 border border-gray-200/80 dark:border-slate-800 rounded-xl text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center">
+                  <div className="h-11 px-3.5 bg-gray-50/70 dark:bg-slate-850 border border-gray-200/80 dark:border-slate-800 rounded-control text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center">
                     {profile.name}
                   </div>
                 )}
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider block">
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 block">
                   Inspektörs-ID
                 </label>
                 {isEditing ? (
@@ -288,62 +291,62 @@ export function ProfilScreen() {
                     type="text"
                     value={inspectorId}
                     onChange={(e) => setInspectorId(e.target.value)}
-                    className="w-full h-11 px-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-sm font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
+                    className="w-full h-11 px-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-sm tabular-nums font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
                     required
                   />
                 ) : (
-                  <div className="h-11 px-3.5 bg-gray-50/70 dark:bg-slate-850 border border-gray-200/80 dark:border-slate-800 rounded-xl text-sm font-mono font-bold text-gray-800 dark:text-gray-200 flex items-center">
+                  <div className="h-11 px-3.5 bg-gray-50/70 dark:bg-slate-850 border border-gray-200/80 dark:border-slate-800 rounded-control text-sm tabular-nums font-bold text-gray-800 dark:text-gray-200 flex items-center">
                     {profile.inspectorId}
                   </div>
                 )}
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider block">
-                  Tjänste-e-post
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 block">
+                  E-post
                 </label>
                 {isEditing ? (
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full h-11 px-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
+                    className="w-full h-11 px-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
                     required
                   />
                 ) : (
-                  <div className="h-11 px-3.5 bg-gray-50/70 dark:bg-slate-850 border border-gray-200/80 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-800 dark:text-gray-200 flex items-center">
+                  <div className="h-11 px-3.5 bg-gray-50/70 dark:bg-slate-850 border border-gray-200/80 dark:border-slate-800 rounded-control text-sm font-medium text-gray-800 dark:text-gray-200 flex items-center">
                     {profile.email}
                   </div>
                 )}
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider block">
-                  Tjänstetelefon
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 block">
+                  Telefon
                 </label>
                 {isEditing ? (
                   <input
                     type="text"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full h-11 px-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
+                    className="w-full h-11 px-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
                   />
                 ) : (
-                  <div className="h-11 px-3.5 bg-gray-50/70 dark:bg-slate-850 border border-gray-200/80 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-800 dark:text-gray-200 flex items-center">
+                  <div className="h-11 px-3.5 bg-gray-50/70 dark:bg-slate-850 border border-gray-200/80 dark:border-slate-800 rounded-control text-sm font-medium text-gray-800 dark:text-gray-200 flex items-center">
                     {profile.phone || '–'}
                   </div>
                 )}
               </div>
 
               <div className="space-y-1.5 sm:col-span-2">
-                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider block">
-                  Stationering / Förarprovskontor
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 block">
+                  Förarprovskontor
                 </label>
                 {isEditing ? (
                   <select
                     value={depot}
                     onChange={(e) => setDepot(e.target.value)}
-                    className="w-full h-11 px-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
+                    className="w-full h-11 px-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
                   >
                     <option value="Samtliga orter / Hela Sverige">Samtliga orter / Hela Sverige</option>
                     <option value="Göteborg Hisingen">Göteborg Hisingen</option>
@@ -355,7 +358,7 @@ export function ProfilScreen() {
                     <option value="Jönköping">Jönköping</option>
                   </select>
                 ) : (
-                  <div className="h-11 px-3.5 bg-gray-50/70 dark:bg-slate-850 border border-gray-200/80 dark:border-slate-800 rounded-xl text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center">
+                  <div className="h-11 px-3.5 bg-gray-50/70 dark:bg-slate-850 border border-gray-200/80 dark:border-slate-800 rounded-control text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center">
                     {profile.depot}
                   </div>
                 )}
@@ -365,26 +368,26 @@ export function ProfilScreen() {
 
           {/* Section 2: Signature Settings */}
           <div>
-            <h2 className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white flex items-center gap-2 pb-4 border-b border-gray-100 dark:border-white/5">
+            <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2 pb-4 border-b border-gray-100 dark:border-white/5">
               <FileSignature size={16} className="text-[#002f6c] dark:text-blue-400" />
-              Digital Protokollsignatur
+              Signatur
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mt-6 items-end">
               <div className="sm:col-span-2 space-y-1.5">
-                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider block">
-                  Signaturtext på utskrift & PDF
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-400 block">
+                  Text under protokollet
                 </label>
                 {isEditing ? (
                   <input
                     type="text"
                     value={signatureText}
                     onChange={(e) => setSignatureText(e.target.value)}
-                    className="w-full h-11 px-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
+                    className="w-full h-11 px-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-sm tabular-nums font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
                     required
                   />
                 ) : (
-                  <div className="h-11 px-3.5 bg-gray-50/70 dark:bg-slate-850 border border-gray-200/80 dark:border-slate-800 rounded-xl text-sm font-mono font-bold text-gray-800 dark:text-gray-200 flex items-center">
+                  <div className="h-11 px-3.5 bg-gray-50/70 dark:bg-slate-850 border border-gray-200/80 dark:border-slate-800 rounded-control text-sm tabular-nums font-bold text-gray-800 dark:text-gray-200 flex items-center">
                     {profile.signatureText}
                   </div>
                 )}
@@ -399,13 +402,13 @@ export function ProfilScreen() {
                       onChange={(e) => setAutoSign(e.target.checked)}
                       className="w-5 h-5 rounded-md accent-[#002f6c]"
                     />
-                    <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">
-                      Automatisk signatur
+                    <span className="text-xs font-bold text-gray-700 dark:text-gray-300 ">
+                      Signera automatiskt
                     </span>
                   </label>
                 ) : (
-                  <div className="h-11 px-3.5 bg-gray-50/70 dark:bg-slate-850 border border-gray-200/80 dark:border-slate-800 rounded-xl text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300 flex items-center">
-                    Status: {profile.autoSign ? 'Aktiv' : 'Manuell'}
+                  <div className="h-11 px-3.5 bg-gray-50/70 dark:bg-slate-850 border border-gray-200/80 dark:border-slate-800 rounded-control text-xs font-bold text-gray-600 dark:text-gray-300 flex items-center">
+                    {profile.autoSign ? 'Signeras automatiskt' : 'Signeras för hand'}
                   </div>
                 )}
               </div>
@@ -415,9 +418,9 @@ export function ProfilScreen() {
           {/* Section 3: Authorized Vehicle Categories */}
           <div>
             <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-white/5">
-              <h2 className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white flex items-center gap-2">
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <Award size={16} className="text-[#002f6c] dark:text-blue-400" />
-                Certifierade Behörigheter
+                Behörigheter jag prövar
               </h2>
               <span className="text-xs text-gray-400 font-medium">
                 {selectedCategories.length} behörigheter aktiverade
@@ -425,7 +428,7 @@ export function ProfilScreen() {
             </div>
 
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 mb-4">
-              Klicka på respektive behörighet under redigeringsläge för att ändra vilka fordonsslag du är behörig att pröva.
+              Tryck på Redigera profil för att ändra vilka behörigheter du prövar.
             </p>
 
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
@@ -437,7 +440,7 @@ export function ProfilScreen() {
                     type="button"
                     disabled={!isEditing}
                     onClick={() => handleCategoryToggle(cat)}
-                    className={`py-3 px-4 rounded-xl font-black text-sm tracking-wider transition-all select-none flex items-center justify-center border ${
+                    className={`py-3 px-4 rounded-control font-bold text-sm transition-all select-none flex items-center justify-center border ${
                       isSelected
                         ? 'bg-[#002f6c] dark:bg-blue-600 text-white border-transparent shadow-sm'
                         : 'bg-gray-50 dark:bg-slate-800/60 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-slate-800'
@@ -453,15 +456,15 @@ export function ProfilScreen() {
           {/* Section 4: Security & Change Password */}
           <div>
             <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-white/5">
-              <h2 className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white flex items-center gap-2">
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <Key size={16} className="text-[#002f6c] dark:text-blue-400" />
-                Säkerhet & Lösenord
+                Lösenord
               </h2>
             </div>
 
-            <div className="mt-5 p-5 bg-gray-50/70 dark:bg-slate-850 border border-gray-200/80 dark:border-slate-800 rounded-2xl max-w-xl space-y-4">
+            <div className="mt-5 p-5 bg-gray-50/70 dark:bg-slate-850 border border-gray-200/80 dark:border-slate-800 rounded-card max-w-xl space-y-4">
               <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
-                Här kan du när som helst uppdatera ditt personliga inloggningslösenord för inspektörskontot.
+                Byt lösenord när du vill. Det nya gäller nästa gång du loggar in.
               </p>
 
               <form 
@@ -487,35 +490,35 @@ export function ProfilScreen() {
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider block">
+                    <label className="text-[11px] font-bold text-gray-600 dark:text-gray-400 block">
                       Nytt lösenord
                     </label>
                     <input 
                       name="newPass"
                       type="password"
-                      placeholder="Minst 4 tecken"
-                      className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#002f6c] dark:text-white"
+                      placeholder="Minst 8 tecken"
+                      className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs font-semibold focus:outline-none focus:border-[#002f6c] dark:text-white"
                       required
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider block">
+                    <label className="text-[11px] font-bold text-gray-600 dark:text-gray-400 block">
                       Bekräfta lösenord
                     </label>
                     <input 
                       name="confPass"
                       type="password"
                       placeholder="Upprepa lösenord"
-                      className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#002f6c] dark:text-white"
+                      className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs font-semibold focus:outline-none focus:border-[#002f6c] dark:text-white"
                       required
                     />
                   </div>
                 </div>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-[#002f6c] hover:bg-[#00204a] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm cursor-pointer"
+                  className="px-4 py-2 bg-[#002f6c] hover:bg-[#00204a] text-white text-xs font-bold rounded-control transition-all shadow-sm cursor-pointer"
                 >
-                  Uppdatera lösenord
+                  Byt lösenord
                 </button>
               </form>
             </div>

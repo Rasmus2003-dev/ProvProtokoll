@@ -1,4 +1,4 @@
-import { supabase, isSupabaseConfigured } from './supabase';
+import { supabase, isCloudDataEnabled } from './supabase';
 import type { ElevRecord } from '../types';
 
 const LOCAL_KEY = 'provprotokoll_elevregister';
@@ -77,7 +77,7 @@ function recordToRow(record: ElevRecord): ElevRow {
  * inte svarar.
  */
 export async function fetchElever(): Promise<ElevRecord[]> {
-  if (isSupabaseConfigured()) {
+  if (isCloudDataEnabled()) {
     try {
       const { data, error } = await supabase
         .from('elever')
@@ -98,7 +98,7 @@ export async function addElev(record: ElevRecord): Promise<{ success: boolean; e
   const existing = readLocal();
   writeLocal([record, ...existing]);
 
-  if (isSupabaseConfigured()) {
+  if (isCloudDataEnabled()) {
     try {
       const { error } = await supabase.from('elever').insert([recordToRow(record)]);
       if (error) return { success: false, error: error.message };
@@ -114,7 +114,7 @@ export async function deleteElev(id: string): Promise<{ success: boolean; error?
   const existing = readLocal();
   writeLocal(existing.filter(e => e.id !== id));
 
-  if (isSupabaseConfigured()) {
+  if (isCloudDataEnabled()) {
     try {
       const { error } = await supabase.from('elever').delete().eq('id', id);
       if (error) return { success: false, error: error.message };
@@ -132,7 +132,7 @@ export async function deleteElev(id: string): Promise<{ success: boolean; error?
  * listan varje gång något ändras. Returnerar en unsubscribe-funktion.
  */
 export function subscribeToElever(onChange: (records: ElevRecord[]) => void): () => void {
-  if (!isSupabaseConfigured()) {
+  if (!isCloudDataEnabled()) {
     return () => {};
   }
 

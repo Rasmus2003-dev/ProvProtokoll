@@ -38,7 +38,7 @@ const requireInspector: express.RequestHandler = async (req, res, next) => {
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 8377;
 
   app.use(express.json({ limit: "5mb" }));
 
@@ -85,8 +85,8 @@ async function startServer() {
           Accept: "application/json",
         },
         body: JSON.stringify({
-          sender: { name: "Provresultat", email: "info@rasmusl.se" },
-          replyTo: { name: "ProvProtokoll", email: "noreply@rasmusl.se" },
+          sender: { name: "Trafikverket Förarprov", email: "info@rasmusl.se" },
+          replyTo: { name: "Trafikverket Förarprov", email: "noreply@rasmusl.se" },
           to: [{ email: to, name: toName || undefined }],
           subject,
           htmlContent: html,

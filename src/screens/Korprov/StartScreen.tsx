@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { AppLogo } from '../../components/icons/AppLogo';
+import { enterDemoMode, isDemoMode } from '../../lib/demoMode';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/ProvContext';
 import { TEST_CONTENT } from '../../data/testContentCatalog';
@@ -17,11 +19,13 @@ import {
   History,
   AlertTriangle,
   Cpu,
-  Bookmark
+  Bookmark,
+  Dice5
 } from 'lucide-react';
 import { triggerHaptic } from '../../lib/utils';
 import { isTestStepPath, TEST_STEP_NAMES } from '../../lib/activeTest';
 import { getLayoutPreference, setLayoutPreference, type ProtocolLayout } from '../../lib/protocolLayout';
+import { generateFictitiousPnr } from '../../lib/fictitiousPnr';
 
 interface LicenseInfo {
   id: string;
@@ -71,6 +75,10 @@ interface ScheduleItem {
   testType: string;
   transmission: 'Manuell' | 'Automat';
   status: string;
+  place?: string;
+  city?: string;
+  vehicle?: string;
+  hasConditions?: boolean;
 }
 
 const getStoredSchedule = (): ScheduleItem[] => {
@@ -87,12 +95,21 @@ const getStoredSchedule = (): ScheduleItem[] => {
         licenseType: item.licenseType || 'B',
         testType: item.testType || 'Förstaprov',
         transmission: item.transmission || 'Manuell',
-        status: item.status || 'Klar för start'
+        status: item.status || 'Klar för start',
+        place: item.place,
+        city: item.city,
+        vehicle: item.vehicle,
+        hasConditions: item.hasConditions,
       }));
     }
   } catch (_) {}
   return [];
 };
+
+// Dagens datum i lokal tid, ÅÅÅÅ-MM-DD (toISOString ger UTC och kan visa gårdagen strax efter midnatt)
+function localToday(): string {
+  return new Date().toLocaleDateString('sv-SE');
+}
 
 export function StartScreen() {
   const navigate = useNavigate();
@@ -118,13 +135,22 @@ export function StartScreen() {
         properties: {
           ...prev.properties,
           examiner: prev.properties.examiner || profile.name,
-          testDate: prev.properties.testDate || new Date().toISOString().split('T')[0],
+          testDate: prev.properties.testDate || localToday(),
           testType: prev.properties.testType || 'Förstaprov',
           transmission: prev.properties.transmission || 'Manuell'
         }
       }));
     }
   }, [studentName, personalNumber, updateState, profile.name]);
+
+  // Provdatum följer dagens datum automatiskt. Ett gammalt datum från ett
+  // tidigare formulär byts ut – men aldrig mitt i ett pågående prov.
+  const hasActiveTest = Boolean(state.activeStep && isTestStepPath(state.activeStep));
+  useEffect(() => {
+    const today = localToday();
+    if (hasActiveTest || !testDate || testDate >= today) return;
+    updateState(prev => ({ ...prev, properties: { ...prev.properties, testDate: today } }));
+  }, [hasActiveTest, testDate, updateState]);
 
   // Ny provlayout (testperiod): gäller pågående formulär och kommande prov
   const protocolLayout: ProtocolLayout = state.protocolLayout ?? getLayoutPreference();
@@ -175,7 +201,7 @@ export function StartScreen() {
       examiner: candidate.examiner || profile.name,
       testType: candidate.testType || 'Förstaprov',
       transmission: candidate.transmission || 'Manuell',
-      testDate: new Date().toISOString().split('T')[0]
+      testDate: localToday()
     });
   };
 
@@ -201,7 +227,7 @@ export function StartScreen() {
     const mockState = {
       properties: {
         studentName: 'Elvira Strömqvist',
-        personalNumber: '19950613-1234',
+        personalNumber: '19950673-2391',
         email: 'elvira@exempel.se',
         examiner: examiner || 'Rasmus Lundin',
         testDate: '2026-05-20',
@@ -244,7 +270,7 @@ export function StartScreen() {
     // Fill out current candidate as well, set as omprov
     setPresetCandidate({
       studentName: 'Elvira Strömqvist',
-      personalNumber: '19950613-1234',
+      personalNumber: '19950673-2391',
       email: 'elvira@exempel.se',
       licenseType: 'B',
       testType: 'Omprov körning',
@@ -268,6 +294,16 @@ export function StartScreen() {
   });
 
   const completedCount = scheduleList.filter(item => item.status === 'Genomförd').length;
+  // Kandidaten som är vald i schemat (matchas på personnummer, annars namn)
+  const selectedBooking = scheduleList.find(item =>
+    item.licenseType === licenseType && (
+      (personalNumber && item.personalNumber.replace(/\D/g, '').slice(-10) === personalNumber.replace(/\D/g, '').slice(-10)) ||
+      (!personalNumber && item.studentName === studentName)
+    )
+  );
+  const [showForm, setShowForm] = useState(false);
+  // Första kandidaten som inte är klar markeras som "Nästa"
+  const nextScheduleId = scheduleList.find(item => item.status !== 'Genomförd')?.id;
   const todayLabel = new Date().toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' });
   const hour = new Date().getHours();
   const greeting = hour < 10 ? 'God morgon' : hour < 18 ? 'Hej' : 'God kväll';
@@ -283,22 +319,167 @@ export function StartScreen() {
     item.licenseType.toLowerCase().includes(activeSearch.toLowerCase())
   );
 
+  const labelCls = 'text-[13px] font-medium text-ink-2 flex items-center gap-1';
+  const inputCls = 'w-full h-12 px-4 text-[15px] rounded-control border border-line bg-surface text-ink placeholder:text-ink-3 focus:outline-none focus:border-navy focus:ring-4 focus:ring-navy/10 dark:focus:border-blue-500 dark:focus:ring-blue-500/20 transition-shadow';
+  const choiceCls = (selected: boolean, tone: 'navy' | 'red' = 'navy') =>
+    `min-h-11 px-3 text-sm rounded-control border transition-colors cursor-pointer select-none active:scale-[0.98] ${
+      selected
+        ? tone === 'red'
+          ? 'bg-[#c40000] text-white border-[#c40000] font-semibold'
+          : 'bg-navy text-white border-navy dark:bg-blue-600 dark:border-blue-600 font-semibold'
+        : 'bg-surface text-ink border-line hover:bg-surface-2 font-medium'
+    }`;
+  const sectionTitle = (n: number, title: string, extra?: React.ReactNode) => (
+    <div className="flex items-center justify-between gap-3">
+      <h2 className="text-lg font-semibold text-ink flex items-center gap-2.5">
+        <span className="w-6 h-6 rounded-full bg-navy/10 text-navy dark:bg-blue-500/20 dark:text-blue-300 flex items-center justify-center text-xs font-bold font-sans tabular-nums">{n}</span>
+        {title}
+      </h2>
+      {extra}
+    </div>
+  );
+  const categories = ['Personbil', 'Tung bil/Buss', 'Tvåhjuling', 'Yrke/Special', 'Spårtrafik'] as const;
+  const selectedLicense = LICENSE_CONFIG.find(l => l.id === licenseType);
+  const readyCount = readinessChecks.filter(c => c.done).length;
+
+  const scheduleCard = (
+    <section className="bg-surface border border-line rounded-card p-4 sm:p-6 flex flex-col lg:max-h-[640px]">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-lg font-semibold text-ink flex items-center gap-2">
+          <Calendar size={18} className="text-ink-3" /> Dagens schema
+        </h2>
+        {scheduleList.length > 0 && (
+          <span className="text-[13px] text-ink-2 tabular-nums">
+            <span className="font-semibold text-emerald-700 dark:text-emerald-400">{completedCount}</span> av {scheduleList.length} klara
+          </span>
+        )}
+      </div>
+
+      {scheduleList.length > 0 && (
+        <div className="h-1.5 rounded-full bg-surface-2 overflow-hidden mb-4" role="progressbar" aria-valuemin={0} aria-valuemax={scheduleList.length} aria-valuenow={completedCount} aria-label="Genomförda prov idag">
+          <div
+            className="h-full rounded-full bg-emerald-500 transition-[width] duration-500"
+            style={{ width: `${Math.round((completedCount / scheduleList.length) * 100)}%` }}
+          />
+        </div>
+      )}
+
+      {scheduleList.length > 3 && (
+        <input
+          type="search"
+          placeholder="Sök inbokad kandidat"
+          value={activeSearch}
+          onChange={(e) => setActiveSearch(e.target.value)}
+          className={`${inputCls} h-11 mb-3 bg-surface-2`}
+        />
+      )}
+
+      <div className="-mx-1 px-1 space-y-2 overflow-y-auto custom-scrollbar flex-1">
+        {filteredSchedule.length === 0 ? (
+          <div className="text-center py-8 px-4 border border-dashed border-line rounded-control">
+            <p className="text-sm text-ink-2 mb-3">
+              {scheduleList.length === 0 ? 'Inga kandidater är inbokade idag.' : 'Ingen kandidat matchar sökningen.'}
+            </p>
+            {scheduleList.length === 0 && (
+              <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                <button
+                  onClick={() => navigate('/elevregister')}
+                  className="h-10 px-4 bg-navy/5 dark:bg-blue-500/10 hover:bg-navy/10 text-navy dark:text-blue-300 rounded-control text-sm font-semibold transition-colors cursor-pointer"
+                >
+                  Öppna elevregistret
+                </button>
+                {!isDemoMode() && (
+                  <button
+                    onClick={enterDemoMode}
+                    className="h-10 px-4 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/30 rounded-control text-sm font-semibold transition-colors cursor-pointer"
+                  >
+                    Prova en demodag
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          filteredSchedule.map(item => {
+            const isSelected = studentName === item.studentName && licenseType === item.licenseType;
+            const done = item.status === 'Genomförd';
+            const isNext = item.id === nextScheduleId;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  triggerHaptic('medium');
+                  setPresetCandidate({
+                    studentName: item.studentName,
+                    personalNumber: item.personalNumber,
+                    email: item.email,
+                    licenseType: item.licenseType,
+                    testType: item.testType,
+                    transmission: item.transmission
+                  });
+                }}
+                aria-pressed={isSelected}
+                className={`w-full p-3 pr-3.5 rounded-control border text-left transition-colors flex items-center gap-3 cursor-pointer ${
+                  isSelected
+                    ? 'bg-navy/[0.04] dark:bg-blue-500/10 border-navy/40 dark:border-blue-500/50 ring-1 ring-navy/20 dark:ring-blue-500/30'
+                    : isNext
+                      ? 'bg-surface border-navy/25 dark:border-blue-500/30 hover:bg-surface-2 shadow-lift'
+                      : 'bg-surface border-line hover:bg-surface-2'
+                } ${done ? 'opacity-60' : ''}`}
+              >
+                <div className="w-14 shrink-0 text-center">
+                  <div className="text-[15px] font-semibold text-ink tabular-nums leading-none">{item.time}</div>
+                  <div className="mt-1.5 inline-flex items-center justify-center min-w-8 h-6 px-1.5 rounded-md bg-navy text-white dark:bg-blue-600 text-xs font-bold">
+                    {item.licenseType}
+                  </div>
+                </div>
+                <div className="min-w-0 flex-1 border-l border-line pl-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-[15px] font-semibold text-ink truncate">{item.studentName}</span>
+                    {isNext && !isSelected && (
+                      <span className="text-[11px] font-semibold text-navy dark:text-blue-300 bg-navy/10 dark:bg-blue-500/20 px-1.5 py-0.5 rounded-md shrink-0">Nästa</span>
+                    )}
+                    {(item.status === 'Underkänd historik' || item.testType?.includes('Omprov')) && (
+                      <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 rounded-md shrink-0" title={item.testType}>
+                        {item.testType === 'Omprov körning' ? 'Omprov körning' : item.testType === 'Omprov säkerhetskontroll' ? 'Omprov säk.' : 'Omprov'}
+                      </span>
+                    )}
+                    {item.testType === 'Bedömningsprov' && (
+                      <span className="text-[11px] font-semibold text-violet-800 dark:text-violet-300 bg-violet-100 dark:bg-violet-900/40 px-1.5 py-0.5 rounded-md shrink-0">Bedömning</span>
+                    )}
+                    {done && <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />}
+                  </div>
+                  <div className="text-[13px] text-ink-3 tabular-nums mt-0.5 flex items-center gap-2 min-w-0">
+                    <span className="truncate">{item.personalNumber}</span>
+                    <span className="shrink-0">{item.transmission}</span>
+                    <VtrStatusBadge personalNumber={item.personalNumber} compact />
+                  </div>
+                </div>
+                <ChevronRight size={18} className={`shrink-0 ${isSelected ? 'text-navy dark:text-blue-400' : 'text-ink-3'}`} />
+              </button>
+            );
+          })
+        )}
+      </div>
+    </section>
+  );
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full pt-2 pb-24 font-sans text-gray-900 dark:text-gray-100 antialiased">
-      
+    <div className="max-w-7xl mx-auto sm:px-2 w-full text-ink">
+
       {/* Återuppta pågående prov (efter att appen stängts, laddats om eller kraschat) */}
       {state.activeStep && isTestStepPath(state.activeStep) && (
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border-2 border-amber-300 dark:border-amber-800/70 bg-amber-50 dark:bg-amber-950/30 shadow-sm animate-in fade-in duration-200">
+        <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-card border border-amber-300 dark:border-amber-800/70 bg-amber-50 dark:bg-amber-950/30 animate-in fade-in duration-200">
           <div className="flex items-start gap-3">
-            <span className="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 shrink-0">
-              <History size={20} />
+            <span className="w-9 h-9 rounded-full bg-amber-200/70 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 shrink-0 flex items-center justify-center">
+              <History size={18} />
             </span>
             <div>
-              <div className="font-black text-sm text-amber-950 dark:text-amber-100">
+              <div className="font-semibold text-[15px] text-amber-950 dark:text-amber-100">
                 Pågående prov: {studentName || 'Namnlös kandidat'} ({licenseType})
               </div>
-              <div className="text-xs text-amber-800 dark:text-amber-300/80 mt-0.5">
-                Provet avslutades inte. Allt du fyllt i är sparat – senast på steget <strong>{TEST_STEP_NAMES[state.activeStep]}</strong>.
+              <div className="text-[13px] text-amber-900/80 dark:text-amber-300/80 mt-0.5">
+                Allt du fyllt i är sparat. Du var senast på steget <strong>{TEST_STEP_NAMES[state.activeStep]}</strong>.
               </div>
             </div>
           </div>
@@ -308,112 +489,180 @@ export function StartScreen() {
               triggerHaptic('success');
               navigate(state.activeStep!);
             }}
-            className="w-full sm:w-auto px-6 h-12 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-black text-xs uppercase tracking-widest shadow-md shadow-amber-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
+            className="w-full sm:w-auto px-5 h-12 rounded-control bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-white font-semibold text-[15px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0"
           >
-            <span>Fortsätt provet</span>
-            <ChevronRight size={16} />
+            Fortsätt provet
+            <ChevronRight size={18} />
           </button>
         </div>
       )}
 
-      {/* Header Panel with Stats Badge */}
-      <div className="mb-6 flex flex-col lg:flex-row lg:items-end justify-between gap-5">
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 capitalize">{todayLabel}</p>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white mt-1">
-            Mottagning & provstart
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 max-w-xl">
-            {profile.name && <span className="font-medium text-slate-700 dark:text-slate-300">{greeting}, {profile.name.split(' ')[0]}. </span>}
-            Registrera kandidaten för att påbörja provet.
-          </p>
-        </div>
-
-        <div className="flex items-stretch gap-3 shrink-0">
-          <button
-            id="btn-clear-test"
-            type="button"
-            onClick={() => {
-              if (!confirmDiscardActiveTest()) return;
-              triggerHaptic('heavy');
-              resetCurrentTest();
-            }}
-            className="self-end h-9 px-3 rounded-lg text-sm font-medium text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
-          >
-            Nollställ formulär
-          </button>
-        {/* Dagens schema – visas bara när det finns inbokade prov */}
-        {scheduleList.length > 0 && (
-        <div className="flex gap-3 shrink-0">
-          <div className="bg-white dark:bg-slate-900 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 min-w-[120px]">
-            <span className="block text-xs font-medium text-slate-500 dark:text-slate-400">Planerat idag</span>
-            <span className="text-xl font-bold text-slate-900 dark:text-white">{scheduleList.length} prov</span>
+      {/* Rubrik: logotyp, dag och läget just nu */}
+      <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="rounded-control bg-white px-2 py-1 border border-line shadow-xs shrink-0">
+            <AppLogo variant="provprotokoll" size="sm" />
           </div>
-          <div className="bg-white dark:bg-slate-900 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 min-w-[120px]">
-            <span className="block text-xs font-medium text-slate-500 dark:text-slate-400">Genomförda</span>
-            <span className="text-xl font-bold text-emerald-700 dark:text-emerald-400">
-              {completedCount}<span className="text-sm font-medium text-slate-400"> / {scheduleList.length}</span>
-            </span>
-            <div className="w-full h-1 mt-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-              <div
-                className="h-full bg-emerald-500 rounded-full transition-all duration-300"
-                style={{ width: `${Math.round((completedCount / scheduleList.length) * 100)}%` }}
-              />
-            </div>
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-ink leading-tight">Dagens prov</h1>
+            <p className="text-[13px] text-ink-3">
+              {todayLabel.charAt(0).toUpperCase() + todayLabel.slice(1)}
+              {scheduleList.length > 0 && <> · <span className="tabular-nums">{completedCount} av {scheduleList.length} klara</span></>}
+              {profile.name && <> · {profile.name}</>}
+            </p>
           </div>
         </div>
-        )}
-        </div>
-      </div>
+        <button
+          id="btn-clear-test"
+          type="button"
+          onClick={() => {
+            if (!confirmDiscardActiveTest()) return;
+            triggerHaptic('heavy');
+            resetCurrentTest();
+            setShowForm(true);
+          }}
+          className="h-9 px-3 rounded-control text-[13px] font-medium text-ink-2 hover:text-ink border border-line hover:bg-surface-2 transition-colors cursor-pointer"
+        >
+          Ny kandidat
+        </button>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-        
-        {/* Left Side: Candidates intake Form */}
-        <div className="lg:col-span-7 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/5 rounded-[2rem] shadow-sm overflow-hidden flex flex-col">
-          
-          <div className="p-6 sm:p-8 space-y-8 flex-1">
-            {/* Section 1: Kandidatinformation */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/5 pb-3">
-                <h2 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg bg-[#002f6c]/10 dark:bg-blue-500/20 text-[#002f6c] dark:text-blue-400 flex items-center justify-center font-bold">1</span>
-                  Kandidatinformation
-                </h2>
-                {scheduleList.length > 0 && (
-                  <span className="text-[11px] font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-md">
-                    {scheduleList.length} elever i registret
-                  </span>
-                )}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8 items-start">
+
+        {/* Schemat först på mobil: mottagningen börjar med att välja kandidat */}
+        <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-4">
+          {scheduleCard}
+
+          {/* Simuleringsverktyg – bara i utvecklingsläge, aldrig i den publicerade appen */}
+          {import.meta.env.DEV && (
+            <div className="hidden lg:block border border-dashed border-line rounded-card p-5 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-ink-2">
+                <Cpu size={16} /> Simuleringsverktyg (utveckling)
               </div>
-              
+              <p className="text-[13px] text-ink-3 leading-relaxed">
+                Skapar ett underkänt prov i historiken för att testa hämtning av omprovsuppgifter.
+              </p>
+              <button
+                onClick={() => {
+                  triggerHaptic('heavy');
+                  loadMockFailedTest();
+                }}
+                className="w-full h-11 text-sm font-semibold bg-surface-2 hover:bg-line text-ink transition-colors rounded-control cursor-pointer flex items-center justify-center gap-2 border border-line"
+              >
+                <History size={16} />
+                Simulera underkänt prov
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="lg:col-span-8 space-y-4">
+        {selectedBooking && (() => {
+          const b = selectedBooking;
+          const retest = b.testType.includes('Omprov');
+          const conditions = b.hasConditions || (state.properties.specialConditions || []).length > 0;
+          const statusText = b.status === 'Genomförd' ? 'Genomförd' : state.activeStep && isTestStepPath(state.activeStep) ? 'Pågår' : 'Inbokad';
+          const title = b.testType.includes('Bedömningsprov') ? `Bedömningsprov ${b.licenseType}` : `Körprov ${b.licenseType}`;
+          const rows: [string, string][] = [
+            ['Plats', b.place || profile.depot || 'Förarprov'],
+            ['Ort', b.city || '–'],
+            ['Omprov', retest ? `JA${b.testType !== 'Omprov' ? ` (${b.testType.replace('Omprov ', '')})` : ''}` : 'NEJ'],
+            ['Fordon', b.vehicle || '–'],
+            ['Automatväxlad', b.transmission === 'Automat' ? 'JA' : 'NEJ'],
+            ['Har villkor', conditions ? 'JA' : 'NEJ'],
+          ];
+          return (
+            <section className="bg-surface border border-line rounded-card shadow-lift overflow-hidden animate-in fade-in duration-150" aria-label="Vald bokning">
+              <div className="p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_200px] gap-5 sm:gap-6">
+                <div className="min-w-0">
+                  <span className={`inline-block text-[12px] font-semibold px-2 py-0.5 rounded-md ${
+                    statusText === 'Genomförd' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
+                      : statusText === 'Pågår' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
+                      : 'bg-navy/10 text-navy dark:bg-blue-500/20 dark:text-blue-300'}`}>
+                    {b.time} · {statusText}
+                  </span>
+                  <h2 className="mt-2 text-[28px] sm:text-[32px] font-bold text-navy dark:text-blue-400 leading-tight">{title}</h2>
+                  <p className="text-[17px] text-ink tabular-nums mt-0.5">{b.personalNumber || 'Personnummer saknas'}</p>
+                  <p className="text-[19px] font-semibold text-ink">{b.studentName}</p>
+                  <dl className="mt-4 grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-1.5 text-[14px]">
+                    {rows.map(([k, v]) => (
+                      <div key={k} className="contents">
+                        <dt className="font-semibold text-ink">{k}:</dt>
+                        <dd className={`min-w-0 truncate ${v.startsWith('JA') && k !== 'Automatväxlad' ? 'text-amber-700 dark:text-amber-400 font-semibold' : 'text-ink-2'}`}>{v}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+                <div className="flex flex-col gap-3">
+                  {/* Här har Trafikverket kandidatens foto – vi visar initialer */}
+                  <div className="aspect-[4/5] rounded-control bg-gradient-to-br from-navy/10 to-navy/[0.03] dark:from-blue-500/15 dark:to-blue-500/5 border border-line flex items-center justify-center">
+                    <span className="text-5xl font-bold text-navy/70 dark:text-blue-300/80 select-none">
+                      {b.studentName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+                    </span>
+                  </div>
+                  <button
+                    id="btn-open-booking"
+                    type="button"
+                    onClick={() => { triggerHaptic('success'); handleStartTest(); }}
+                    disabled={b.status === 'Genomförd'}
+                    className="h-12 rounded-control bg-navy hover:bg-navy-deep dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-semibold text-[15px] flex items-center justify-center gap-1.5 cursor-pointer transition-colors active:scale-[0.98] disabled:opacity-50 disabled:cursor-default"
+                  >
+                    {b.status === 'Genomförd' ? 'Provet är klart' : 'Öppna prov'}
+                    {b.status !== 'Genomförd' && <ChevronRight size={18} />}
+                  </button>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowForm(v => !v)}
+                aria-expanded={showForm}
+                className="w-full px-5 sm:px-6 py-3 border-t border-line bg-surface-2/60 text-left text-[13px] font-medium text-ink-2 hover:text-ink flex items-center justify-between cursor-pointer"
+              >
+                {showForm ? 'Dölj uppgifterna' : 'Ändra uppgifter'}
+                <ChevronRight size={16} className={`transition-transform ${showForm ? '-rotate-90' : 'rotate-90'}`} />
+              </button>
+            </section>
+          );
+        })()}
+
+        {/* Kandidatformulär – alltid synligt utan bokning, annars via "Ändra uppgifter" */}
+        {(!selectedBooking || showForm) && (
+        <div className="bg-surface border border-line rounded-card flex flex-col animate-in fade-in duration-150">
+
+          <div className="p-4 sm:p-6 lg:p-8 space-y-8 flex-1">
+            {/* Section 1: Kandidatinformation */}
+            <section className="space-y-4">
+              {sectionTitle(1, 'Kandidat')}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Namn med sökförslag */}
-                <div className="space-y-1.5 relative sm:col-span-1">
-                  <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 tracking-wide uppercase flex items-center gap-1">
-                    <span>Kandidatens fullständiga namn</span>
-                    <span className="text-red-500">*</span>
+                <div className="space-y-1.5 relative">
+                  <label htmlFor="input-student-name" className={labelCls}>
+                    Fullständigt namn <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <input
                       type="text"
                       value={studentName || ''}
                       id="input-student-name"
+                      autoComplete="off"
                       onFocus={() => setShowCandidateSuggestions(true)}
                       onChange={(e) => {
                         handleUpdateProp('studentName', e.target.value);
                         setShowCandidateSuggestions(true);
                       }}
                       placeholder="t.ex. Anna Andersson"
-                      className="w-full h-12 px-4 text-sm font-semibold rounded-xl border-2 border-gray-200 dark:border-slate-700 focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white shadow-xs transition-all placeholder:text-gray-400 placeholder:font-normal"
+                      className={`${inputCls} font-medium`}
                     />
                     {showCandidateSuggestions && matchingCandidates.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-slate-900 border-2 border-blue-200 dark:border-blue-900 rounded-xl shadow-2xl z-50 overflow-hidden divide-y divide-gray-100 dark:divide-slate-800 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
-                        <div className="px-3.5 py-2 bg-blue-50/80 dark:bg-slate-800 text-[10px] font-bold uppercase tracking-wider text-blue-900 dark:text-blue-300 flex items-center justify-between">
-                          <span>Klicka för att välja & autofylla</span>
+                      <div className="absolute top-full left-0 right-0 mt-1.5 bg-surface border border-line rounded-control shadow-float z-50 overflow-hidden max-h-72 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+                        <div className="px-3.5 py-2 bg-surface-2 text-xs font-medium text-ink-2 flex items-center justify-between border-b border-line">
+                          <span>Välj för att fylla i</span>
                           <button
                             type="button"
                             onClick={() => setShowCandidateSuggestions(false)}
-                            className="hover:text-red-500 text-xs px-1 cursor-pointer font-black"
+                            aria-label="Stäng förslag"
+                            className="w-8 h-8 -mr-2 flex items-center justify-center rounded-full hover:bg-line text-ink-3 cursor-pointer"
                           >
                             ✕
                           </button>
@@ -433,22 +682,20 @@ export function StartScreen() {
                               });
                               setShowCandidateSuggestions(false);
                             }}
-                            className="w-full text-left px-3.5 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center justify-between transition-colors cursor-pointer"
+                            className="w-full text-left px-3.5 py-3 hover:bg-surface-2 flex items-center justify-between gap-3 transition-colors cursor-pointer border-b border-line last:border-b-0"
                           >
-                            <div>
-                              <div className="text-sm font-bold text-gray-900 dark:text-white">{c.studentName}</div>
+                            <div className="min-w-0">
+                              <div className="text-[15px] font-semibold text-ink truncate">{c.studentName}</div>
                               <div className="flex items-center gap-1.5">
-                                <div className="text-xs font-mono text-gray-500 dark:text-slate-400">{c.personalNumber || 'Saknar personnummer'}</div>
+                                <div className="text-[13px] tabular-nums text-ink-3">{c.personalNumber || 'Saknar personnummer'}</div>
                                 {c.personalNumber && <VtrStatusBadge personalNumber={c.personalNumber} compact />}
                               </div>
                             </div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] font-black px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200">
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-navy/10 dark:bg-blue-500/20 text-navy dark:text-blue-200">
                                 {c.licenseType}
                               </span>
-                              <span className="text-[11px] text-gray-500 dark:text-slate-400">
-                                {c.transmission}
-                              </span>
+                              <span className="text-[13px] text-ink-3">{c.transmission}</span>
                             </div>
                           </button>
                         ))}
@@ -456,194 +703,213 @@ export function StartScreen() {
                     )}
                   </div>
                 </div>
-                
+
                 {/* Personnummer */}
-                <div className="space-y-1.5 sm:col-span-1">
-                  <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 tracking-wide uppercase flex items-center gap-1">
-                    <span>Personnummer</span>
-                    <span className="text-gray-400 font-normal text-[10px] lowercase">(10 eller 12 siffror)</span>
-                  </label>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="input-personal-number" className={labelCls}>
+                      Personnummer <span className="text-ink-3 font-normal">(10 eller 12 siffror)</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        triggerHaptic('light');
+                        handleUpdateProp('personalNumber', generateFictitiousPnr());
+                      }}
+                      className="text-xs font-semibold text-navy dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                      title="Skapa ett fiktivt testpersonnummer (Skatteverket testformat med giltig Luhn-kontrollsiffra)"
+                    >
+                      <Dice5 size={13} />
+                      Slumpa fiktivt nr
+                    </button>
+                  </div>
                   <input
                     type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
                     value={personalNumber || ''}
                     id="input-personal-number"
                     onChange={(e) => handleUpdateProp('personalNumber', e.target.value)}
                     placeholder="ÅÅÅÅMMDD-XXXX"
-                    className="w-full h-12 px-4 text-sm font-mono font-semibold rounded-xl border-2 border-gray-200 dark:border-slate-700 focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white shadow-xs transition-all placeholder:text-gray-400 placeholder:font-mono"
+                    className={`${inputCls} font-medium tabular-nums`}
                   />
                 </div>
-                
+
                 {/* E-postadress */}
                 <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 tracking-wide uppercase flex items-center justify-between">
-                    <span>E-postadress för protokollkopia</span>
-                    <span className="text-gray-400 text-[10px] font-normal lowercase">skickas automatiskt vid godkännande</span>
+                  <label htmlFor="input-email" className={labelCls}>
+                    E-post för protokollkopia
                   </label>
                   <input
                     type="email"
+                    inputMode="email"
+                    autoComplete="off"
                     value={email || ''}
                     id="input-email"
                     onChange={(e) => handleUpdateProp('email', e.target.value)}
-                    placeholder="elevens.namn@exempel.se"
-                    className="w-full h-12 px-4 text-sm font-medium rounded-xl border-2 border-gray-200 dark:border-slate-700 focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white shadow-xs transition-all placeholder:text-gray-400 placeholder:font-normal"
+                    placeholder="namn@exempel.se"
+                    className={inputCls}
                   />
+                  <p className="text-xs text-ink-3">Protokollet skickas hit när provet är klart.</p>
                 </div>
               </div>
-            </div>
+            </section>
 
             {/* Section 2: Provdetaljer */}
-            <div className="space-y-4 pt-2">
-              <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/5 pb-3">
-                <h2 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">2</span>
-                  Provdetaljer & Inställningar
-                </h2>
-              </div>
+            <section className="space-y-4 pt-8 border-t border-line">
+              {sectionTitle(2, 'Prov')}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 tracking-wide uppercase">Provförrättare</label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                  <label htmlFor="input-examiner" className={`${labelCls} justify-between`}>
+                    Provförrättare
+                    {profile.name && examiner?.trim() !== profile.name && (
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateProp('examiner', profile.name)}
+                        className="text-[12px] font-medium text-navy dark:text-blue-400 hover:underline cursor-pointer"
+                      >
+                        Använd mitt namn
+                      </button>
+                    )}
+                  </label>
                   <input
                     type="text"
                     value={examiner || ''}
                     id="input-examiner"
+                    autoComplete="name"
                     onChange={(e) => handleUpdateProp('examiner', e.target.value)}
-                    className="w-full h-12 px-4 text-sm font-semibold rounded-xl border-2 border-gray-200 dark:border-slate-800 bg-gray-100 dark:bg-slate-800/80 text-gray-600 dark:text-slate-300 cursor-not-allowed"
-                    disabled
+                    placeholder={profile.name || 'Förnamn Efternamn'}
+                    className={`${inputCls} font-medium`}
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 tracking-wide uppercase">Provdatum</label>
+                <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                  <label htmlFor="input-test-date" className={labelCls}>Provdatum</label>
                   <input
                     type="date"
                     value={testDate || ''}
                     id="input-test-date"
                     onChange={(e) => handleUpdateProp('testDate', e.target.value)}
-                    className="w-full h-12 px-4 text-sm font-semibold rounded-xl border-2 border-gray-200 dark:border-slate-700 focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white shadow-xs transition-all"
+                    className={`${inputCls} font-medium tabular-nums`}
                   />
                 </div>
 
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 tracking-wide uppercase block">Provtyp</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                <div className="space-y-1.5 col-span-2">
+                  <span className={labelCls}>Provtyp</span>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2" role="radiogroup" aria-label="Provtyp">
                     {[
                       { id: 'Förstaprov', label: 'Förstaprov' },
                       { id: 'Omprov', label: 'Omprov' },
                       { id: 'Omprov säkerhetskontroll', label: 'Omprov säkerhet' },
                       { id: 'Omprov körning', label: 'Omprov körning' },
                       { id: 'Bedömningsprov', label: 'Bedömningsprov' }
-                    ].map(pt => (
-                      <button
-                        key={pt.id}
-                        type="button"
-                        onClick={() => handleUpdateProp('testType', pt.id)}
-                        className={`h-11 px-2.5 text-xs font-bold rounded-xl border-2 transition-all cursor-pointer select-none active:scale-[0.98] ${
-                          (state.properties.testType || 'Förstaprov') === pt.id
-                            ? 'bg-[#002f6c] text-white border-[#002f6c] dark:bg-blue-600 dark:border-blue-500 shadow-sm font-black'
-                            : 'bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:border-gray-300 hover:bg-gray-50'
-                        }`}
-                      >
-                        {pt.label}
-                      </button>
-                    ))}
+                    ].map(pt => {
+                      const selected = (state.properties.testType || 'Förstaprov') === pt.id;
+                      return (
+                        <button
+                          key={pt.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={selected}
+                          onClick={() => handleUpdateProp('testType', pt.id)}
+                          className={choiceCls(selected)}
+                        >
+                          {pt.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* License Grid */}
-            <div className="space-y-3 pt-2">
-              <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/5 pb-2">
-                <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 tracking-wide uppercase flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">3</span>
-                  Körkortsbehörighet & Förarbevis
-                </label>
-                {(() => {
-                  const currentLic = LICENSE_CONFIG.find(l => l.id === licenseType);
-                  return (
-                    <span className="text-xs font-black text-[#002f6c] dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-lg flex items-center gap-1.5 border border-blue-200 dark:border-blue-800">
-                      <span className="text-sm">{currentLic?.icon || '🚗'}</span>
-                      <span>{licenseType}</span>
-                    </span>
-                  );
-                })()}
-              </div>
+            {/* Behörighet, grupperad per fordonsslag */}
+            <section className="space-y-4 pt-8 border-t border-line">
+              {sectionTitle(3, 'Behörighet', (
+                <span className="text-sm font-semibold text-navy dark:text-blue-300 flex items-center gap-1.5">
+                  <span aria-hidden="true">{selectedLicense?.icon || '🚗'}</span>
+                  {selectedLicense?.label.split(' (')[0] || licenseType}
+                </span>
+              ))}
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
-                {LICENSE_CONFIG.map((lic) => {
-                  const isSelected = licenseType === lic.id;
+              <div className="space-y-4">
+                {categories.map(cat => {
+                  const items = LICENSE_CONFIG.filter(l => l.category === cat);
+                  const wide = cat === 'Yrke/Special' || cat === 'Spårtrafik';
                   return (
-                    <button
-                      key={lic.id}
-                      type="button"
-                      onClick={() => {
-                        triggerHaptic('light');
-                        handleUpdateProp('licenseType', lic.id);
-                      }}
-                      className={`min-h-[58px] p-2.5 rounded-2xl transition-all select-none active:scale-[0.97] cursor-pointer flex flex-col justify-center items-start text-left border-2 relative overflow-hidden group ${
-                        isSelected
-                          ? 'bg-[#002f6c] dark:bg-blue-600 text-white border-[#002f6c] dark:border-blue-500 shadow-md font-black ring-2 ring-blue-500/20'
-                          : 'bg-white dark:bg-slate-900 text-gray-800 dark:text-slate-200 border-gray-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-slate-700 hover:bg-slate-50/80'
-                      }`}
-                      title={lic.label}
-                    >
-                      <div className="flex items-center gap-2 w-full">
-                        <span className="text-lg shrink-0 group-hover:scale-110 transition-transform duration-150">
-                          {lic.icon}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className={`text-xs font-extrabold leading-tight break-words ${isSelected ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
-                            {lic.label.split(' (')[0]}
-                          </div>
-                          <div className={`text-[10px] leading-tight mt-0.5 ${isSelected ? 'text-blue-100 font-medium' : 'text-gray-500 dark:text-slate-400'}`}>
-                            {lic.label.includes('(') ? lic.label.split('(')[1].replace(')', '') : lic.category}
-                          </div>
-                        </div>
+                    <div key={cat}>
+                      <h3 className="text-[13px] font-medium font-sans text-ink-3 mb-2 tracking-normal">{cat}</h3>
+                      <div className={`grid gap-2 ${wide ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-4 sm:grid-cols-5'}`} role="radiogroup" aria-label={cat}>
+                        {items.map((lic) => {
+                          const isSelected = licenseType === lic.id;
+                          const code = lic.label.split(' (')[0];
+                          const sub = lic.label.includes('(') ? lic.label.split('(')[1].replace(')', '') : '';
+                          return (
+                            <button
+                              key={lic.id}
+                              type="button"
+                              role="radio"
+                              aria-checked={isSelected}
+                              title={lic.label}
+                              onClick={() => {
+                                triggerHaptic('light');
+                                handleUpdateProp('licenseType', lic.id);
+                              }}
+                              className={`min-h-[52px] px-2 py-1.5 rounded-control border transition-colors select-none active:scale-[0.97] cursor-pointer flex ${wide ? 'items-center gap-2 text-left' : 'flex-col items-center justify-center text-center'} ${
+                                isSelected
+                                  ? 'bg-navy text-white border-navy dark:bg-blue-600 dark:border-blue-600'
+                                  : 'bg-surface text-ink border-line hover:bg-surface-2'
+                              }`}
+                            >
+                              {wide && <span className="text-lg shrink-0" aria-hidden="true">{lic.icon}</span>}
+                              <span className="min-w-0">
+                                <span className="block text-[15px] font-semibold leading-tight">{code}</span>
+                                {sub && (
+                                  <span className={`block text-[11px] leading-tight mt-0.5 truncate ${isSelected ? 'text-white/75' : 'text-ink-3'}`}>{sub}</span>
+                                )}
+                              </span>
+                            </button>
+                          );
+                        })}
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
-            </div>
+            </section>
 
             {/* Fordonsegenskaper: Växellåda & Färdskrivare */}
             {(() => {
               const isHeavy = ['C', 'C1', 'CE', 'C1E', 'D', 'D1', 'DE', 'D1E'].includes(licenseType);
               return (
-                <div className={`grid grid-cols-1 ${isHeavy ? 'sm:grid-cols-2' : ''} gap-4 pt-2`}>
+                <div className={`grid grid-cols-1 ${isHeavy ? 'sm:grid-cols-2' : ''} gap-4`}>
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 tracking-wide uppercase block">
-                      Växellåda (Transmission)
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <span className={labelCls}>Växellåda</span>
+                    <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Växellåda">
                       <button
                         type="button"
+                        role="radio"
+                        aria-checked={(state.properties.transmission || 'Manuell') !== 'Automat'}
                         onClick={() => {
                           triggerHaptic('light');
                           handleUpdateProp('transmission', 'Manuell');
                         }}
-                        className={`h-11 px-3 text-xs font-bold rounded-xl border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none active:scale-95 ${
-                          (state.properties.transmission || 'Manuell') !== 'Automat'
-                            ? 'bg-[#002f6c] dark:bg-blue-600 text-white border-[#002f6c] dark:border-blue-500 shadow-sm font-black'
-                            : 'bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:bg-gray-50'
-                        }`}
+                        className={choiceCls((state.properties.transmission || 'Manuell') !== 'Automat')}
                       >
-                        <span>Manuell</span>
+                        Manuell
                       </button>
                       <button
                         type="button"
+                        role="radio"
+                        aria-checked={state.properties.transmission === 'Automat'}
                         onClick={() => {
                           triggerHaptic('light');
                           handleUpdateProp('transmission', 'Automat');
                         }}
-                        className={`h-11 px-3 text-xs font-bold rounded-xl border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none active:scale-95 ${
-                          state.properties.transmission === 'Automat'
-                            ? 'bg-[#002f6c] dark:bg-blue-600 text-white border-[#002f6c] dark:border-blue-500 shadow-sm font-black'
-                            : 'bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:bg-gray-50'
-                        }`}
+                        className={choiceCls(state.properties.transmission === 'Automat')}
                       >
-                        <span>Automat (78)</span>
+                        Automat (78)
                       </button>
                     </div>
                   </div>
@@ -651,37 +917,31 @@ export function StartScreen() {
                   {/* Färdskrivare (endast på tunga prov C, C1, CE, C1E, D, D1, DE, D1E) */}
                   {isHeavy && (
                     <div className="space-y-1.5 animate-in fade-in duration-200">
-                      <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 tracking-wide uppercase block">
-                        Färdskrivare (Tunga fordon)
-                      </label>
-                      <div className="grid grid-cols-2 gap-2">
+                      <span className={labelCls}>Färdskrivare</span>
+                      <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Färdskrivare">
                         <button
                           type="button"
+                          role="radio"
+                          aria-checked={(state.properties.tachograph || 'Med färdskrivare') !== 'Utan färdskrivare'}
                           onClick={() => {
                             triggerHaptic('light');
                             handleUpdateProp('tachograph' as any, 'Med färdskrivare');
                           }}
-                          className={`h-11 px-3 text-xs font-bold rounded-xl border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none active:scale-95 ${
-                            (state.properties.tachograph || 'Med färdskrivare') !== 'Utan färdskrivare'
-                              ? 'bg-[#002f6c] dark:bg-blue-600 text-white border-[#002f6c] dark:border-blue-500 shadow-sm font-black'
-                              : 'bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:bg-gray-50'
-                          }`}
+                          className={choiceCls((state.properties.tachograph || 'Med färdskrivare') !== 'Utan färdskrivare')}
                         >
-                          <span>Med färdskrivare</span>
+                          Med
                         </button>
                         <button
                           type="button"
+                          role="radio"
+                          aria-checked={state.properties.tachograph === 'Utan färdskrivare'}
                           onClick={() => {
                             triggerHaptic('light');
                             handleUpdateProp('tachograph' as any, 'Utan färdskrivare');
                           }}
-                          className={`h-11 px-3 text-xs font-bold rounded-xl border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none active:scale-95 ${
-                            state.properties.tachograph === 'Utan färdskrivare'
-                              ? 'bg-[#c40000] text-white border-[#c40000] shadow-sm font-black'
-                              : 'bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:bg-gray-50'
-                          }`}
+                          className={choiceCls(state.properties.tachograph === 'Utan färdskrivare', 'red')}
                         >
-                          <span>Utan färdskrivare</span>
+                          Utan
                         </button>
                       </div>
                     </div>
@@ -690,48 +950,46 @@ export function StartScreen() {
               );
             })()}
 
-            {/* ID Checkbox */}
-            <div className="pt-6">
-              <label className={`flex items-start gap-4 p-5 rounded-2xl border-2 transition-colors cursor-pointer group focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 dark:focus-within:ring-offset-slate-900 ${
-                state.checklist.identityChecked
-                  ? 'border-emerald-300 dark:border-emerald-800/60 bg-emerald-50/60 dark:bg-emerald-950/20'
-                  : 'border-transparent bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}>
-                <div className="pt-0.5 relative">
-                  <input 
-                    type="checkbox" 
-                    id="checkbox-identity"
-                    checked={state.checklist.identityChecked}
-                    onChange={(e) => {
-                      triggerHaptic(e.target.checked ? 'success' : 'light');
-                      updateState(prev => ({
-                        ...prev,
-                        checklist: { ...prev.checklist, identityChecked: e.target.checked }
-                      }));
-                    }}
-                    className="peer w-6 h-6 shrink-0 opacity-0 absolute"
-                  />
-                  <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all duration-150 ${
-                    state.checklist.identityChecked
-                      ? 'bg-emerald-500 border-emerald-500 scale-105 shadow-sm shadow-emerald-600/30'
-                      : 'border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900'
-                  }`}>
-                    {state.checklist.identityChecked && (
-                      <CheckCircle2 size={16} className="text-white animate-in zoom-in-75 duration-100" />
-                    )}
-                  </div>
+            {/* Identitetskontroll */}
+            <label className={`flex items-start gap-3.5 p-4 rounded-control border transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 dark:focus-within:ring-offset-slate-900 ${
+              state.checklist.identityChecked
+                ? 'border-emerald-300 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/20'
+                : 'border-line bg-surface-2 hover:border-ink-3/40'
+            }`}>
+              <div className="pt-0.5 relative">
+                <input
+                  type="checkbox"
+                  id="checkbox-identity"
+                  checked={state.checklist.identityChecked}
+                  onChange={(e) => {
+                    triggerHaptic(e.target.checked ? 'success' : 'light');
+                    updateState(prev => ({
+                      ...prev,
+                      checklist: { ...prev.checklist, identityChecked: e.target.checked }
+                    }));
+                  }}
+                  className="peer w-6 h-6 shrink-0 opacity-0 absolute"
+                />
+                <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors duration-150 ${
+                  state.checklist.identityChecked
+                    ? 'bg-emerald-600 border-emerald-600'
+                    : 'border-ink-3/60 bg-surface'
+                }`}>
+                  {state.checklist.identityChecked && (
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="white" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m3.5 8.5 3 3 6-7" /></svg>
+                  )}
                 </div>
-                <div className="flex-1">
-                  <div className="font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
-                    <UserCheck size={18} className={state.checklist.identityChecked ? 'text-emerald-500' : 'text-gray-400 dark:text-slate-500'} /> 
-                    Fastställ identitet <span className="text-red-500">*</span>
-                  </div>
-                  <div className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed max-w-lg">
-                    Intyga att giltig id-handling kontrollerats och kandidatens fysik stämmer.
-                  </div>
+              </div>
+              <div className="flex-1">
+                <div className="font-semibold text-[15px] text-ink flex items-center gap-2">
+                  <UserCheck size={17} className={state.checklist.identityChecked ? 'text-emerald-600' : 'text-ink-3'} />
+                  Identitet kontrollerad <span className="text-red-500">*</span>
                 </div>
-              </label>
-            </div>
+                <div className="text-[13px] text-ink-2 leading-relaxed mt-0.5">
+                  Giltig id-handling är kontrollerad och stämmer med kandidaten.
+                </div>
+              </div>
+            </label>
 
             {/* Testperiod: Trafikverkets nya protokollayout */}
             <button
@@ -743,189 +1001,84 @@ export function StartScreen() {
                 triggerHaptic('light');
                 changeLayout(protocolLayout === 'ny' ? 'klassisk' : 'ny');
               }}
-              className={`w-full flex items-start gap-4 p-5 rounded-2xl border-2 text-left transition-colors cursor-pointer ${
+              className={`w-full flex items-start gap-3.5 p-4 rounded-control border text-left transition-colors cursor-pointer ${
                 protocolLayout === 'ny'
                   ? 'border-violet-300 dark:border-violet-800/60 bg-violet-50/70 dark:bg-violet-950/20'
-                  : 'border-dashed border-gray-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                  : 'border-dashed border-line hover:bg-surface-2'
               }`}
             >
-              <span className={`mt-0.5 w-11 h-6 rounded-full p-0.5 shrink-0 transition-colors ${protocolLayout === 'ny' ? 'bg-violet-600' : 'bg-gray-300 dark:bg-slate-600'}`}>
+              <span className={`mt-0.5 w-11 h-6 rounded-full p-0.5 shrink-0 transition-colors ${protocolLayout === 'ny' ? 'bg-violet-600' : 'bg-ink-3/40'}`}>
                 <span className={`block w-5 h-5 rounded-full bg-white shadow transition-transform ${protocolLayout === 'ny' ? 'translate-x-5' : ''}`} />
               </span>
               <span className="flex-1 min-w-0">
-                <span className="font-bold text-gray-900 dark:text-white flex flex-wrap items-center gap-2">
-                  <Sparkles size={16} className="text-violet-500" />
-                  Testa ny provlayout
-                  <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-violet-100 text-violet-800 dark:bg-violet-900/50 dark:text-violet-200">Testperiod</span>
+                <span className="font-semibold text-[15px] text-ink flex flex-wrap items-center gap-2">
+                  Ny provlayout
+                  <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md bg-violet-100 text-violet-800 dark:bg-violet-900/50 dark:text-violet-200">Testperiod</span>
                 </span>
-                <span className="block text-sm text-gray-500 dark:text-slate-400 leading-relaxed mt-1">
-                  Resultatet visas som i Trafikverkets nya protokoll: <em>Orsaker till underkännandet – Du måste bli bättre på</em>, samt <em>Detta bedömdes i ditt körprov</em>. Valet sparas tills du stänger av det.
+                <span className="block text-[13px] text-ink-2 leading-relaxed mt-1">
+                  Resultatet visas som i Trafikverkets nya protokoll, med <em>Du måste bli bättre på</em> och <em>Detta bedömdes i ditt körprov</em>. Valet sparas tills du stänger av det.
                 </span>
               </span>
             </button>
 
           </div>
 
-          {/* Action Area footer inside card */}
-          <div className="bg-gray-50/80 dark:bg-slate-800/30 p-6 sm:p-8 border-t border-gray-100 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-              {readinessChecks.map(check => (
-                <span
-                  key={check.label}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-colors ${
-                    check.done
-                      ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-400'
-                      : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-white/10 text-gray-400 dark:text-slate-500'
-                  }`}
-                >
-                  {check.done ? <CheckCircle2 size={13} /> : <span className="w-3 h-3 rounded-full border-2 border-current" />}
-                  {check.label}
+          {/* Åtgärdsrad – följer med längst ner på mobilen */}
+          <div className="sticky bottom-0 z-10 bg-surface/95 backdrop-blur-xl border-t border-line rounded-b-card p-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3 text-[13px] text-ink-2 min-w-0">
+              {studentName?.trim() && (
+                <span className="hidden sm:flex items-center gap-2 min-w-0 pr-3 mr-0.5 border-r border-line">
+                  <span className="w-8 h-8 rounded-full bg-navy/10 dark:bg-blue-500/20 text-navy dark:text-blue-300 flex items-center justify-center text-[13px] font-bold shrink-0">
+                    {studentName.trim()[0].toUpperCase()}
+                  </span>
+                  <span className="min-w-0 leading-tight">
+                    <span className="block font-semibold text-ink truncate max-w-[180px]">{studentName}</span>
+                    <span className="block text-[12px] text-ink-3">Behörighet {licenseType || 'B'}</span>
+                  </span>
                 </span>
-              ))}
+              )}
+              <div className="flex gap-1 shrink-0" aria-hidden="true">
+                {readinessChecks.map(check => (
+                  <span key={check.label} className={`h-1.5 w-6 rounded-full transition-colors ${check.done ? 'bg-emerald-500' : 'bg-line'}`} />
+                ))}
+              </div>
+              <span>
+                {readyCount === readinessChecks.length
+                  ? 'Redo att starta'
+                  : `Saknas: ${readinessChecks.filter(c => !c.done).map(c => c.label.toLowerCase()).join(', ')}`}
+              </span>
             </div>
-            
+
             <button
               id="btn-open-prov"
               onClick={() => {
                 triggerHaptic('success');
                 handleStartTest();
               }}
-              className="w-full sm:w-auto px-8 py-4 bg-[#002f6c] hover:bg-[#00204a] dark:bg-blue-600 dark:hover:bg-blue-500 active:scale-95 text-white font-black text-sm tracking-widest uppercase transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-3 rounded-2xl cursor-pointer"
+              className="w-full sm:w-auto h-12 px-6 bg-navy hover:bg-navy-deep dark:bg-blue-600 dark:hover:bg-blue-500 active:scale-[0.98] text-white font-semibold text-[15px] transition-colors flex items-center justify-center gap-2 rounded-control cursor-pointer"
             >
-              <span>Skapa prov & Gå vidare</span>
+              Skapa prov och fortsätt
               <ChevronRight size={18} />
             </button>
           </div>
 
         </div>
 
-        {/* Right Side: Terminal Control Desk (Quick schedule scheduler) */}
-        <div className="lg:col-span-5 space-y-6 lg:space-y-8">
-          
-          {/* Quick Schedule Selector */}
-          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/5 rounded-[2rem] shadow-sm p-6 sm:p-8 flex flex-col h-full max-h-[600px]">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-black text-sm text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
-                <Calendar size={18} className="text-blue-600 dark:text-blue-400" /> Schema
-              </h3>
-              <span className="text-[10px] uppercase tracking-widest font-black bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 px-2.5 py-1 rounded-lg">
-                Idag
-              </span>
-            </div>
-            
-            {/* Quick Filter Search */}
-            <div className="relative mb-6">
-              <input 
-                type="text"
-                placeholder="Sök inbokad kandidat..."
-                value={activeSearch}
-                onChange={(e) => setActiveSearch(e.target.value)}
-                className="w-full h-11 px-4 text-sm bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 rounded-xl dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
-              />
-            </div>
-
-            <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
-              {filteredSchedule.length === 0 ? (
-                <div className="text-center py-10 px-4 border border-dashed border-gray-200 dark:border-slate-800 rounded-2xl">
-                  <p className="text-xs text-gray-500 dark:text-slate-400 mb-3">
-                    Inga inbokade kandidater i schemat.
-                  </p>
-                  <button
-                    onClick={() => navigate('/elevregister')}
-                    className="px-3 py-2 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 text-[#002f6c] dark:text-blue-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                  >
-                    + Öppna Elevregister
-                  </button>
-                </div>
-              ) : (
-                filteredSchedule.map(item => {
-                  const isSelected = studentName === item.studentName && licenseType === item.licenseType;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        triggerHaptic('medium');
-                        setPresetCandidate({
-                          studentName: item.studentName,
-                          personalNumber: item.personalNumber,
-                          email: item.email,
-                          licenseType: item.licenseType,
-                          testType: item.testType,
-                          transmission: item.transmission
-                        });
-                      }}
-                      className={`w-full p-4 rounded-2xl border text-left transition-all flex items-center justify-between cursor-pointer group ${
-                        isSelected
-                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-500/30 shadow-sm border-l-4 border-l-[#002f6c] dark:border-l-blue-400'
-                          : 'bg-white dark:bg-slate-900 border-gray-100 dark:border-white/5 hover:border-gray-200 dark:hover:border-white/10 hover:bg-gray-50 dark:hover:bg-slate-800/50'
-                      }`}
-                    >
-                      <div className="space-y-1.5 flex-1 pr-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-[#002f6c] dark:group-hover:text-blue-400 transition-colors">
-                            {item.studentName}
-                          </span>
-                          {item.status === 'Underkänd historik' && (
-                            <span className="text-[9px] font-black text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded-md uppercase tracking-wider">
-                              Omprov
-                            </span>
-                          )}
-                          <VtrStatusBadge personalNumber={item.personalNumber} compact />
-                        </div>
-                        <div className="text-[11px] text-gray-500 dark:text-slate-400 font-mono flex items-center gap-2">
-                          {item.personalNumber} <span className="opacity-50">•</span> {item.transmission}
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <div className="text-xs font-black text-gray-900 dark:text-white flex items-center gap-1.5 justify-end bg-gray-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
-                          <Clock size={12} className="text-gray-400 dark:text-slate-500" />
-                          {item.time}
-                        </div>
-                        <div className="mt-2 text-right">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black bg-[#002f6c] text-white dark:bg-blue-900/60 dark:text-blue-200 px-2 py-0.5 rounded-md shadow-sm">
-                            <span>{LICENSE_CONFIG.find(l => l.id === item.licenseType)?.icon || '🚗'}</span>
-                            <span>{item.licenseType}</span>
-                          </span>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          {/* Simuleringsverktyg – bara i utvecklingsläge, aldrig i den publicerade appen */}
-          {import.meta.env.DEV && (
-          <div className="bg-slate-900 dark:bg-slate-900 border border-slate-800 rounded-[2rem] shadow-lg p-6 sm:p-8 space-y-5 relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div className="flex items-center gap-3 relative z-10">
-              <span className="p-2 rounded-xl bg-slate-800 text-purple-400">
-                <Cpu size={18} />
-              </span>
-              <h3 className="font-black text-sm text-white uppercase tracking-widest">
-                Simuleringsverktyg (utveckling)
-              </h3>
-            </div>
-
-            <p className="text-sm text-slate-400 leading-relaxed relative z-10">
-              Simulera en historik där en kandidat blivit underkänd, för att i nästa vy testa hämtning av omprovsuppgifter.
-            </p>
-
-            <button
-               onClick={() => {
-                 triggerHaptic('heavy');
-                 loadMockFailedTest();
-               }}
-               className="relative z-10 w-full h-12 text-xs font-black uppercase tracking-widest bg-slate-800 hover:bg-slate-700 text-white transition-all rounded-xl cursor-pointer shadow-sm flex items-center justify-center gap-2 border border-slate-700"
-            >
-              <History size={16} className="text-purple-400" />
-              <span>Simulera underkänt prov</span>
-            </button>
-          </div>
-          )}
-
+        )}
         </div>
+
+        {/* Simuleringsverktyg på mobil – sist, under formuläret */}
+        {import.meta.env.DEV && (
+          <button
+            onClick={() => {
+              triggerHaptic('heavy');
+              loadMockFailedTest();
+            }}
+            className="lg:hidden order-last w-full h-11 text-sm font-medium text-ink-2 border border-dashed border-line rounded-control cursor-pointer flex items-center justify-center gap-2"
+          >
+            <Cpu size={15} /> Simulera underkänt prov (utveckling)
+          </button>
+        )}
 
       </div>
 

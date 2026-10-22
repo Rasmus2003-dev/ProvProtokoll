@@ -1,6 +1,6 @@
 import QRCode from 'qrcode';
 import { AppState } from '../types';
-import { supabase, isSupabaseConfigured } from './supabase';
+import { supabase, isCloudDataEnabled } from './supabase';
 import { readJSON, writeJSON } from './safeStorage';
 
 export interface SharedProtocolSummary {
@@ -10,6 +10,7 @@ export interface SharedProtocolSummary {
   personalNumber: string;
   licenseType: string;
   transmission: string;
+  tachograph?: string;
   testType: string;
   testDate: string;
   examiner: string;
@@ -42,9 +43,10 @@ export function extractShareablePayload(state: AppState, examinerName?: string, 
     personalNumber: state.properties.personalNumber || '',
     licenseType: state.properties.licenseType || 'B',
     transmission: state.properties.transmission || 'Manuell',
+    tachograph: state.properties.tachograph,
     testType: state.properties.testType || 'Förstaprov',
     testDate: state.properties.testDate || new Date().toISOString().split('T')[0],
-    examiner: examinerName || state.properties.examiner || 'Trafikinspektör',
+    examiner: state?.properties?.examiner?.trim() || examinerName || 'Trafikinspektör',
     drivingResult: state.result.drivingResult,
     safetyCheckResult: state.result.safetyCheckResult,
     isPassed,
@@ -74,7 +76,7 @@ export async function createCandidateShareLink(state: AppState, examinerName?: s
   writeJSON('provprotokoll_public_shares', existingShares);
 
   // 2. Om Supabase är konfigurerat, synka dit
-  if (isSupabaseConfigured()) {
+  if (isCloudDataEnabled()) {
     try {
       await supabase.from('protocols').upsert([{
         id: summary.id,
@@ -160,7 +162,7 @@ export async function loadSharedProtocol(id?: string, hashParam?: string): Promi
     }
 
     // 3. Försök hämta från Supabase
-    if (isSupabaseConfigured()) {
+    if (isCloudDataEnabled()) {
       try {
         const { data, error } = await supabase
           .from('protocols')

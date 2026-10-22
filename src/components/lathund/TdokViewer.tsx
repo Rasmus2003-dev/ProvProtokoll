@@ -93,7 +93,7 @@ export function TdokViewer({ defaultDocId }: TdokViewerProps) {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Escape' && query) { e.stopPropagation(); setQuery(''); } }}
             placeholder="Sök t.ex. backning, fusk, 25 min..."
-            className="w-full h-11 pl-10 pr-10 text-sm [&::-webkit-search-cancel-button]:hidden rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500"
+            className="w-full h-11 pl-10 pr-10 text-sm [&::-webkit-search-cancel-button]:hidden rounded-control border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500"
           />
           {query && (
             <button type="button" onClick={() => setQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-gray-700 cursor-pointer" aria-label="Rensa sökning">
@@ -127,16 +127,16 @@ export function TdokViewer({ defaultDocId }: TdokViewerProps) {
                 key={doc.id}
                 type="button"
                 onClick={() => setActiveDocId(doc.id)}
-                className={`text-left min-w-56 md:min-w-0 p-3 rounded-xl border transition-all cursor-pointer ${
+                className={`text-left min-w-56 md:min-w-0 p-3 rounded-control border transition-all cursor-pointer ${
                   active
                     ? 'bg-white dark:bg-slate-800 border-[#002f6c] dark:border-blue-500 ring-1 ring-[#002f6c] dark:ring-blue-500 shadow-sm'
                     : 'bg-white/70 dark:bg-slate-900 border-gray-200 dark:border-slate-800 hover:border-gray-300'
                 }`}
               >
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="text-[10px] font-mono font-bold text-[#002f6c] dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-1.5 py-0.5 rounded">{doc.tdok}</span>
+                  <span className="text-[11px] tabular-nums font-bold text-[#002f6c] dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-1.5 py-0.5 rounded">{doc.tdok}</span>
                   {searching && hits > 0 && (
-                    <span className="text-[10px] font-black text-amber-800 dark:text-amber-300 bg-yellow-100 dark:bg-yellow-900/40 px-1.5 py-0.5 rounded">{hits} träff{hits > 1 ? 'ar' : ''}</span>
+                    <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 bg-yellow-100 dark:bg-yellow-900/40 px-1.5 py-0.5 rounded">{hits} träff{hits > 1 ? 'ar' : ''}</span>
                   )}
                 </div>
                 <div className="text-sm font-bold text-gray-900 dark:text-white leading-snug">
@@ -154,7 +154,7 @@ export function TdokViewer({ defaultDocId }: TdokViewerProps) {
           <header className="space-y-2 pb-3 border-b border-gray-200 dark:border-slate-800">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-xs">
-                <span className="font-mono font-black text-white bg-[#002f6c] dark:bg-blue-600 px-2.5 py-1 rounded-lg">{activeDoc.tdok}</span>
+                <span className="tabular-nums font-bold text-white bg-[#002f6c] dark:bg-blue-600 px-2.5 py-1 rounded-lg">{activeDoc.tdok}</span>
                 <span className="text-gray-500 dark:text-slate-400">Version {activeDoc.version} · {activeDoc.date}</span>
               </div>
               <div className="flex gap-1.5">
@@ -162,7 +162,7 @@ export function TdokViewer({ defaultDocId }: TdokViewerProps) {
                 <button type="button" onClick={() => setAll(true)} className="h-8 px-2.5 rounded-lg bg-gray-100 dark:bg-slate-800 text-xs font-bold text-gray-700 dark:text-slate-300 hover:bg-gray-200 cursor-pointer">Fäll ihop alla</button>
               </div>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white leading-tight">{activeDoc.title}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white leading-tight">{activeDoc.title}</h2>
             <p className="text-sm text-gray-600 dark:text-slate-300">{activeDoc.subtitle}</p>
 
             {/* Innehållsförteckning */}
@@ -189,14 +189,14 @@ export function TdokViewer({ defaultDocId }: TdokViewerProps) {
               <div
                 key={section.id}
                 ref={el => { sectionRefs.current[section.id] = el; }}
-                className="scroll-mt-4 rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden"
+                className="scroll-mt-4 rounded-card border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden"
               >
                 <button
                   type="button"
                   onClick={() => setCollapsed(prev => ({ ...prev, [section.id]: !prev[section.id] }))}
                   className="w-full px-4 py-3 flex items-center justify-between gap-3 text-left bg-gray-50 dark:bg-slate-800/60 hover:bg-blue-50/50 dark:hover:bg-slate-800 cursor-pointer"
                 >
-                  <h3 className="font-extrabold text-sm sm:text-base text-gray-900 dark:text-white"><Highlight text={section.title} query={query} /></h3>
+                  <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white"><Highlight text={section.title} query={query} /></h3>
                   <span className="text-gray-400 shrink-0">{isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}</span>
                 </button>
 
@@ -205,8 +205,8 @@ export function TdokViewer({ defaultDocId }: TdokViewerProps) {
                     <p><Highlight text={section.content} query={query} /></p>
 
                     {section.highlights && section.highlights.length > 0 && (
-                      <div className="p-3.5 rounded-xl border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-950/30 space-y-1.5">
-                        <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-amber-800 dark:text-amber-300">
+                      <div className="p-3.5 rounded-control border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-950/30 space-y-1.5">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-800 dark:text-amber-300">
                           <ShieldAlert size={14} /> Viktigt
                         </div>
                         {section.highlights.map((hl, i) => (
@@ -229,7 +229,7 @@ export function TdokViewer({ defaultDocId }: TdokViewerProps) {
                     )}
 
                     {section.table && (
-                      <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-800">
+                      <div className="overflow-x-auto rounded-control border border-gray-200 dark:border-slate-800">
                         <table className="w-full text-left text-xs sm:text-sm">
                           <thead className="bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white">
                             <tr>{section.table.headers.map((h, i) => <th key={i} className="p-2.5 font-bold whitespace-nowrap">{h}</th>)}</tr>

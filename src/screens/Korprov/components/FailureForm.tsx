@@ -2,7 +2,8 @@ import React, { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { FailureAssessment } from '../../../types';
-import { failureCategories, failureSituations, TAXI_ONLY_AREAS, deficiencyGroups } from '../data/failureData';
+import { failureSituations, deficiencyGroups, areasForLicense, vehicleAreaForLicense } from '../data/failureData';
+import { TEST_CONTENT } from '../../../data/testContentCatalog';
 import { v4 as uuidv4 } from 'uuid';
 import { useAppStore } from '../../../store/ProvContext';
 import { isNewLayout } from '../../../lib/protocolLayout';
@@ -32,16 +33,15 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
     onChange({ ...data, ...partial });
   };
 
-  const isTaxi = state.properties.licenseType === 'TAXI';
+  const licenseType = state.properties.licenseType;
   // Ny provlayout (testperiod): nya formuleringar visas först
   const newLayout = isNewLayout(state);
   const listHeading = newLayout
     ? 'Du måste bli bättre på:'
     : `Din ${type === 'driving' ? 'körning' : 'kontroll'} visar brister i att:`;
-  const availableAreas = useMemo(
-    () => isTaxi ? failureCategories.areas : failureCategories.areas.filter(a => !TAXI_ONLY_AREAS.includes(a)),
-    [isTaxi]
-  );
+  // Egna kompetensområden för spårtrafik, taxi får sina extra områden
+  const availableAreas = useMemo(() => areasForLicense(licenseType), [licenseType]);
+  const vehicleArea = vehicleAreaForLicense(licenseType);
 
   // Auto-initialize safety check failure to Fordonskännedom
   React.useEffect(() => {
@@ -49,7 +49,7 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
       const needsArea = !data.primaryCause || !data.primaryCause.area;
       if (needsArea) {
         updateContent({
-          primaryCause: { area: 'Fordonskännedom', deficiencies: data.primaryCause?.deficiencies || [] }
+          primaryCause: { area: vehicleArea, deficiencies: data.primaryCause?.deficiencies || [] }
         });
       }
     }
@@ -70,8 +70,10 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
     if (included.length > 0) {
       return Array.from(new Set(included));
     }
-    return Array.from(new Set([...safetyDefaults, ...failureSituations]));
-  }, [state.includedTestItems, type]);
+    // Spårtrafik: behörighetens egna moment i stället för bilprovets situationer
+    const base = /^(Lokförare|Spårvagn|Tunnelbana)/.test(licenseType || '') ? (TEST_CONTENT[licenseType] || failureSituations) : failureSituations;
+    return Array.from(new Set([...safetyDefaults, ...base]));
+  }, [state.includedTestItems, type, licenseType]);
 
   // Ensure any situations already in state that were not tested get pruned if included items exist
   React.useEffect(() => {
@@ -136,7 +138,7 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
   };
 
   return (
-    <Card className="border border-slate-200/80 dark:border-slate-800 overflow-hidden rounded-2xl shadow-xs bg-white dark:bg-slate-900">
+    <Card className="border border-slate-200/80 dark:border-slate-800 overflow-hidden rounded-card shadow-xs bg-white dark:bg-slate-900">
       <CardHeader className="border-b border-slate-100 dark:border-slate-800 py-4 px-5">
         <CardTitle className="flex items-center gap-2.5 font-sans font-bold text-[15px] text-slate-900 dark:text-white">
           <span className="w-2 h-2 bg-red-600 rounded-full shrink-0" />
@@ -203,7 +205,7 @@ export function FailureForm({ data, onChange, title, type = 'driving', hideSitua
                         key={d}
                         type="button"
                         onClick={() => togglePrimaryDeficiency(d)}
-                        className={`text-left px-3.5 py-3 rounded-xl text-xs sm:text-sm transition-all duration-150 flex items-start gap-3 border ${
+                        className={`text-left px-3.5 py-3 rounded-control text-xs sm:text-sm transition-all duration-150 flex items-start gap-3 border ${
                           isSelected
                             ? 'bg-red-50/50 dark:bg-red-950/20 border-[#C0504D] text-gray-950 dark:text-white font-bold shadow-xs ring-1 ring-[#C0504D]/60'
                             : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-800 text-gray-700 dark:text-gray-300 hover:border-[#C0504D]/50 hover:bg-gray-50/60'

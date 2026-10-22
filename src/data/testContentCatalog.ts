@@ -248,7 +248,50 @@ export const TRAIN_SPECIFIC_ITEMS = [
   'Säkerhetsavsyning av koppel och bromsslangar'
 ];
 
+// Utökade moment för lokförare – enligt TSFS 2011:60 (2 kap. 5–7 §§, 3 kap. 8 §)
+// och indelningen i lokförardirektivet 2007/59/EG: rullande materiel respektive
+// infrastruktur, med kontroller före avgång, körning, fel, onormala situationer,
+// nödsituationer och kommunikation.
+export const TRAIN_EXTENDED_ITEMS = [
+  // Före avgång – rullande materiel
+  'Genomgång av tågets dokument och körorder',
+  'Kontroll av förarhytt, reglage och indikatorer',
+  'Test av säkerhetsutrustning (ATC/ETCS, död mans grepp, tyfon)',
+  'Kontroll av belysning, slutsignal och frontsignal',
+  'Bromsprov: fullständigt, förenklat och bromsprov efter växling',
+  'Beräkning av bromsprocent och bromsvikt',
+  // Körning – infrastruktur och trafiksäkerhetsinstruktion
+  'Start och acceleration med hänsyn till last och lutning',
+  'Energisnål körning (utrullning och rätt fartnivå)',
+  'Hastighetsanpassning efter linjens största tillåtna hastighet',
+  'Linjekännedom: lutningar, kurvor och driftplatser',
+  'Tillfälliga hastighetsnedsättningar och banarbeten',
+  'Körning in på och ut från driftplats',
+  'Passage av plankorsning och vägskydd',
+  'Tågfärd, spärrfärd och växlingsrörelse – skillnader och regler',
+  'Körning på linje med ERTMS/ETCS nivå 2',
+  'Tidtabellsföljning och uppehåll enligt plan',
+  // Fel och onormala situationer
+  'Felsökning och åtgärd vid fordonsfel under färd',
+  'Körning med ATC/ETCS ur funktion eller i nedsatt läge',
+  'Signal i stopp: begäran om och körning på tillstånd',
+  'Felaktig eller släckt signal',
+  'Hinder på spår eller påkörning',
+  'Kontaktledningsfel och strömlöst läge',
+  'Oavsiktlig rörelse och säkring av tåget',
+  // Nödsituationer
+  'Skydd av olycksplats och stopp av mötande trafik',
+  'Larmning av trafikledning och räddningstjänst',
+  'Utrymning av fordon och personsäkerhet i spårområdet',
+  'Brand i fordon',
+  // Kommunikation (språknivå 3)
+  'Kommunikation med tågklarerare/fjärrtågklarerare i normalläge',
+  'Kommunikation vid störning och i nödläge',
+  'Rapportering av avvikelser och händelser efter färd',
+];
+
 TEST_CONTENT['Lokförare'] = [
+  ...TRAIN_EXTENDED_ITEMS,
   ...TRAIN_SPECIFIC_ITEMS,
   'Säkerhetskontroll (yttre och inre lok)',
   'Klargöring av fordon',
@@ -259,6 +302,7 @@ TEST_CONTENT['Lokförare'] = [
 ];
 
 TEST_CONTENT['Lokförare (Person)'] = [
+  ...TRAIN_EXTENDED_ITEMS,
   ...TRAIN_SPECIFIC_ITEMS,
   'Passagerarhantering i nödsituationer',
   'Säkerhetskontroll (yttre och inre lok)',
@@ -267,10 +311,15 @@ TEST_CONTENT['Lokförare (Person)'] = [
   'Dörrblockering och plattformsövervakning',
   'Brandskydd och utrymning av persontåg',
   'Trafikantinformation vid trafikstörning',
-  'Hissning av rullstolslyft och tillgänglighet'
+  'Hissning av rullstolslyft och tillgänglighet',
+  'Tågets dörrar: frigivning, stängning och avgångsklart',
+  'Uppehåll vid kort plattform och selektiv dörröppning',
+  'Utrop till resenärer vid försening och inställt tåg',
+  'Omhändertagande av resenärer vid utrymning på linjen'
 ];
 
 TEST_CONTENT['Lokförare (Gods)'] = [
+  ...TRAIN_EXTENDED_ITEMS,
   ...TRAIN_SPECIFIC_ITEMS,
   'Farligt gods hantering (RID)',
   'Säkerhetskontroll (yttre och inre lok)',
@@ -279,7 +328,11 @@ TEST_CONTENT['Lokförare (Gods)'] = [
   'Kontroll av vagnvikter och axeltryck',
   'Säkring av godsvagnar mot rullning (handbroms/skruvbroms)',
   'Rangering på bangård med radiostyrningsdosa',
-  'Tillsyn av godsöverhäng och profilfrihet'
+  'Tillsyn av godsöverhäng och profilfrihet',
+  'Kontroll av lastsäkring och presenningar',
+  'Framförande av tungt tåg i stark lutning',
+  'Koppling och avkoppling av vagnar vid lastplats',
+  'Uppgifter i tåganmälan och vagnlista'
 ];
 
 TEST_CONTENT['Spårvagn'] = [
@@ -295,7 +348,23 @@ TEST_CONTENT['Spårvagn'] = [
   'Nödbromsning och magnetskenbroms',
   'Backning och rangering i vagnhall',
   'Särskild uppmärksamhet vid gågator och torg',
-  'Samverkan med trafikledningen vid banarbete'
+  'Samverkan med trafikledningen vid banarbete',
+  'Klargöring och avgångskontroll i depå',
+  'Bromsprov före utfart från depå',
+  'Företräde och väjning mot spårvagn i korsning',
+  'Körning i gemensamt körfält med busstrafik',
+  'Passage av övergångsställe och cykelöverfart',
+  'Körning genom cirkulationsplats och signalreglerad korsning',
+  'Hållplatsuppehåll med resenärer i gatan',
+  'Siktfart och stopp inom halva siktsträckan',
+  'Växel i fel läge eller oklar växelindikering',
+  'Hinder på spår (felparkerat fordon)',
+  'Strömlöst i kontaktledningen och bärgning',
+  'Olycka med gående eller cyklist – åtgärder',
+  'Utrymning av spårvagn i gatumiljö',
+  'Kommunikation med trafikledning vid störning',
+  'Tillgänglighet: rullstol, barnvagn och ramp',
+  'Energisnål körning och mjuk inbromsning för stående resenärer'
 ];
 
 TEST_CONTENT['Tunnelbana'] = [

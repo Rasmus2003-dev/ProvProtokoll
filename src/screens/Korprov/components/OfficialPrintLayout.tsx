@@ -1,7 +1,7 @@
 import { useAppStore } from '../../../store/ProvContext';
 import { AppState } from '../../../types';
-import provprotokollLogoImg from '../../../assets/images/provprotokoll_logo.png';
-import { ABORTED_TEXT, ABORTED_TITLE, abortedDrivingText, collectImprovementAreas, failedSituations, isNewLayout, resultHeadings, resultTranslationLines, translationUrl } from '../../../lib/protocolLayout';
+import provprotokollLogoImg from '../../../assets/images/provprotokoll_logo_trim.png';
+import { ABORTED_TEXT, ABORTED_TITLE, abortedDrivingText, protocolTestTypeLabel, safetyCellText, collectImprovementAreas, failedSituations, isNewLayout, resultHeadings, resultTranslationLines, translationUrl } from '../../../lib/protocolLayout';
 
 interface OfficialPrintLayoutProps {
   testState?: AppState;
@@ -103,28 +103,7 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
   const newLayout = isNewLayout(state);
   const improvementAreas = collectImprovementAreas(state);
 
-  let testTypeLabel = state.properties.licenseType === 'B96' ? 'Släpvagn' : `Körprov ${state.properties.licenseType || 'B'}`;
-  if (state.properties.licenseType === 'B96') {
-    if (state.properties.testType?.includes('Omprov säkerhetskontroll och körning')) {
-      testTypeLabel = 'Omprov säkerhetskontroll och körning Släpvagn';
-    } else if (state.properties.testType?.includes('Omprov säkerhetskontroll')) {
-      testTypeLabel = 'Säkerhetskontroll Släpvagn';
-    } else if (state.properties.testType?.includes('Omprov körning')) {
-      testTypeLabel = 'Omprov körning Släpvagn';
-    } else if (state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov')) {
-      testTypeLabel = 'Bedömningsprov Släpvagn';
-    } else {
-      testTypeLabel = 'Släpvagn';
-    }
-  } else if (state.properties.testType?.includes('Bedömningsprov') || state.properties.testType?.includes('Testprov')) {
-    testTypeLabel = `Bedömningsprov (${state.properties.licenseType || 'B'})`;
-  } else if (state.properties.testType?.includes('Omprov säkerhetskontroll och körning')) {
-    testTypeLabel = `Omprov säkerhetskontroll och körning ${state.properties.licenseType || 'B'}`;
-  } else if (state.properties.testType?.includes('Omprov säkerhetskontroll')) {
-    testTypeLabel = `Säkerhetskontroll ${state.properties.licenseType || 'B'}`;
-  } else if (state.properties.testType?.includes('Omprov körning')) {
-    testTypeLabel = `Omprov körning ${state.properties.licenseType || 'B'}`;
-  }
+  const testTypeLabel = protocolTestTypeLabel(state.properties.licenseType, state.properties.testType);
 
   return (
     <div 
@@ -133,9 +112,9 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
         width: '100%', 
         maxWidth: '800px', 
         margin: '0 auto', 
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '13px',
-        lineHeight: '1.4'
+        fontFamily: 'Arial, Helvetica, sans-serif',
+        fontSize: '15px',
+        lineHeight: '1.5'
       }}
     >
       <div>
@@ -147,7 +126,7 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
                   className="logo" 
                   src={provprotokollLogoImg} 
                   alt="ProvProtokoll - Digital Provhantering" 
-                  style={{ maxHeight: '55px', maxWidth: '220px', objectFit: 'contain', display: 'block' }}
+                  style={{ maxHeight: '92px', maxWidth: '200px', objectFit: 'contain', display: 'block' }}
                 />
               </td>
               <td></td>
@@ -165,7 +144,7 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
             <tr>
               <td colSpan={3}>
                 <div style={{ marginTop: '30px' }}>
-                  <h1 style={{ fontSize: '26px', margin: '0 0 14px 0', fontWeight: 'bold' }}>
+                  <h1 style={{ fontSize: '28px', margin: '0 0 16px 0', fontWeight: 'bold' }}>
                     Körprovsresultat
                   </h1>
                   <table className="infoTable" style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -203,9 +182,19 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
                           <div className="resultHeaderLabel" style={{ fontWeight: 'bold', marginBottom: '2px' }}>
                             Provförrättare:
                           </div>
-                          <div>{profile?.name || state.properties.examiner || 'Hans Eriksson'}</div>
+                          <div>{state.properties.examiner?.trim() || profile?.name || 'Hans Eriksson'}</div>
                         </td>
-                        <td></td>
+                        <td style={{ padding: '4px 20px 4px 0', verticalAlign: 'top' }}>
+                          {/* Tunga prov utan färdskrivare markeras här */}
+                          {['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'].includes(state.properties.licenseType) && state.properties.tachograph === 'Utan färdskrivare' && (
+                            <>
+                              <div className="resultHeaderLabel" style={{ fontWeight: 'bold', marginBottom: '2px' }}>
+                                Färdskrivare:
+                              </div>
+                              <div><b>Utan färdskrivare</b></div>
+                            </>
+                          )}
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -250,7 +239,7 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
                   Säkerhetskontroll
                 </td>
                 <td style={{ paddingBottom: '3px' }}>
-                  {!newLayout && !isOmprovSakerhet && state.result.drivingResult === 'Underkänt' ? '-' : (state.result.safetyCheckResult || '-')}
+                  {safetyCellText(state)}
                 </td>
               </tr>
             )}
@@ -265,6 +254,25 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
           }
           <br />
           Här ser du ditt resultat inom provets olika ämnesområden.
+          {/* Gamla layouten: Translation direkt under lagtexten, som i Trafikverkets mejl */}
+          {!newLayout && (
+            <div className="translate print:hidden">
+              <br />
+              <a
+                href={translationUrl([
+                  isTaxi
+                    ? 'Detta beslut grundas på taxitrafiklagen (2012:211) och taxitrafikförordningen (2012:238).'
+                    : 'Detta beslut får enligt 8 kap. 2 § körkortslagen (1998:488) inte överklagas.',
+                  'Här ser du ditt resultat inom provets olika ämnesområden.',
+                ])}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: '#0066cc', textDecoration: 'underline' }}
+              >
+                Translation
+              </a>
+            </div>
+          )}
         </div>
         <br />
 
@@ -280,7 +288,7 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
         {newLayout ? (
           <div>
             {resultHeadings(state).map(h => (
-              <h2 key={h.text} style={{ color: h.passed ? 'green' : 'red', fontSize: '18px', margin: '0 0 14px 0', fontWeight: 'bold', lineHeight: 1.35 }}>
+              <h2 key={h.text} style={{ color: h.passed ? 'green' : 'red', fontSize: '20px', margin: '0 0 14px 0', fontWeight: 'bold', lineHeight: 1.35 }}>
                 {renderHeadingJsx(h.text)}
               </h2>
             ))}
@@ -294,7 +302,10 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
                   <ul style={{ margin: '4px 0 10px', paddingLeft: '28px', listStyleType: 'disc' }}>
                     {improvementAreas.map(entry => (
                       <li key={entry.area} style={{ marginBottom: '4px', display: 'list-item' }}>
-                        {entry.area}
+                        {/* Grundorsaken står först, i fetstil */}
+                        {entry.isPrimary ? (
+                          <b>{entry.area}</b>
+                        ) : entry.area}
                         {entry.deficiencies.map(def => (
                           <div key={def} style={{ paddingLeft: '48px' }}>- {def}</div>
                         ))}
@@ -330,17 +341,17 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
         ) : isFailed ? (
           <div>
             {!isOmprovSakerhet && !isAborted && state.result.drivingResult === 'Godkänt' && (
-              <h2 style={{ color: 'green', fontSize: '18px', margin: '0 0 14px 0', fontWeight: 'bold', lineHeight: 1.35 }}>
+              <h2 style={{ color: 'green', fontSize: '20px', margin: '0 0 14px 0', fontWeight: 'bold', lineHeight: 1.35 }}>
                 {renderHeadingJsx('Din körning är godkänd.')}
               </h2>
             )}
             {!isOmprovSakerhet && state.result.drivingResult === 'Underkänt' && (
-              <h2 style={{ color: 'red', fontSize: '18px', margin: '0 0 14px 0', fontWeight: 'bold', lineHeight: 1.35 }}>
+              <h2 style={{ color: 'red', fontSize: '20px', margin: '0 0 14px 0', fontWeight: 'bold', lineHeight: 1.35 }}>
                 {renderHeadingJsx('Din körning är underkänd.')}
               </h2>
             )}
             {isSafetyCheckRequired && !isOmprovKorning && state.result.drivingResult !== 'Underkänt' && state.result.safetyCheckResult === 'Underkänt' && (
-              <h2 style={{ color: 'red', fontSize: '18px', margin: '0 0 14px 0', fontWeight: 'bold', lineHeight: 1.35 }}>
+              <h2 style={{ color: 'red', fontSize: '20px', margin: '0 0 14px 0', fontWeight: 'bold', lineHeight: 1.35 }}>
                 {renderHeadingJsx('Din säkerhetskontroll är underkänd.')}
               </h2>
             )}
@@ -348,7 +359,7 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
             {/* Grundorsak med exakt 3px #C0504D ram - Körning */}
             {drivingFail?.primaryCause?.area && state.result.drivingResult === 'Underkänt' && (
               <>
-                <b>{state.result.safetyCheckResult === 'Underkänt' ? 'Grundorsak till körningens underkännande är:' : 'Grundorsak till underkännandet är:'}</b><br />
+                <b>Grundorsak till underkännandet är:</b><br />
                 <div style={{ border: '3px #C0504D solid', marginBottom: '10px', padding: '5px', marginTop: '5px' }}>
                   <div style={{ marginBottom: '10px' }}>{drivingFail.primaryCause.area}</div>
                   Din körning visar brister i att:
@@ -380,7 +391,7 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
             )}
 
             {/* Säkerhetskontroll underkännande om relevant */}
-            {isSafetyCheckRequired && safetyFail?.primaryCause?.area && state.result.safetyCheckResult === 'Underkänt' && (
+            {isSafetyCheckRequired && (isOmprovSakerhet || state.result.drivingResult !== 'Underkänt') && safetyFail?.primaryCause?.area && state.result.safetyCheckResult === 'Underkänt' && (
               <>
                 <div style={{ marginTop: '15px' }}>
                   <b>{state.result.drivingResult === 'Underkänt' ? 'Grundorsak till säkerhetskontrollens underkännande är:' : 'Grundorsak till underkännandet är:'}</b>
@@ -418,7 +429,7 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
                 <span><b>Brister har visat sig i följande situationer:</b></span>
                 <ul style={{ marginTop: '4px', paddingLeft: '18px', listStyleType: 'disc' }}>
                   {allSituations.map((sit, idx) => (
-                    <li key={idx} style={{ marginBottom: '2px', fontSize: '13px' }}>
+                    <li key={idx} style={{ marginBottom: '2px' }}>
                       {sit}
                     </li>
                   ))}
@@ -432,7 +443,7 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
                   <span><b>Ingripande har skett i följande situationer:</b></span>
                   <ul style={{ marginTop: '4px', paddingLeft: '18px', listStyleType: 'disc' }}>
                     {state.result.interventionSituations!.map((sit, idx) => (
-                      <li key={idx} style={{ marginBottom: '2px', fontSize: '13px' }}>
+                      <li key={idx} style={{ marginBottom: '2px' }}>
                         {sit}
                       </li>
                     ))}
@@ -448,12 +459,12 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
         ) : (
           <div>
             {!isOmprovSakerhet && state.result.drivingResult === 'Godkänt' && (
-              <h2 style={{ color: 'green', fontSize: '18px', margin: '0 0 14px 0', fontWeight: 'bold', lineHeight: 1.35 }}>
+              <h2 style={{ color: 'green', fontSize: '20px', margin: '0 0 14px 0', fontWeight: 'bold', lineHeight: 1.35 }}>
                 {renderHeadingJsx('Din körning är godkänd.')}
               </h2>
             )}
             {isSafetyCheckRequired && state.result.safetyCheckResult === 'Godkänt' && (
-              <h2 style={{ color: 'green', fontSize: '18px', margin: '10px 0', fontWeight: 'bold', lineHeight: 1.35 }}>
+              <h2 style={{ color: 'green', fontSize: '20px', margin: '10px 0', fontWeight: 'bold', lineHeight: 1.35 }}>
                 {renderHeadingJsx('Din säkerhetskontroll är godkänd.')}
               </h2>
             )}
@@ -467,40 +478,37 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
         {state.includedTestItems && state.includedTestItems.length > 0 ? (
           <ul style={{ marginTop: '4px', paddingLeft: '18px', listStyleType: 'disc' }}>
             {state.includedTestItems.map((item, idx) => (
-              <li key={idx} style={{ marginBottom: '2px', fontSize: '13px' }}>
+              <li key={idx} style={{ marginBottom: '2px' }}>
                 {item}
               </li>
             ))}
           </ul>
         ) : (
-          <p style={{ marginTop: 0, fontStyle: 'italic' }}>Inga specifika moment registrerade.</p>
+          <p style={{ marginTop: 0, fontStyle: 'italic' }}>Inga provmoment har registrerats.</p>
         )}
 
         {isFailed ? (
           <p style={{ marginTop: '50px' }}>
             {isTaxi 
-              ? <>Du uppfyllde inte kraven för godkänt taxiförarprov enligt taxitrafiklagen (2012:211). Det är viktigt att du tränar mer innan du genomför ditt nästa prov.<br />Välkommen åter!</>
+              ? <>Du uppfyllde inte kraven för godkänt taxiförarprov enligt taxitrafiklagen (2012:211). Det är viktigt att du tränar mer innan du gör nästa prov.<br />Välkommen åter!</>
               : <>Det är viktigt att du tränar mer innan du genomför ditt nästa körprov.<br />Välkommen åter!</>
             }
           </p>
-        ) : (
+        ) : (isTaxi || isAssessmentOnly) ? (
+          // Godkänt körprov: inget efter provinnehållet, som i Trafikverkets mejl
           <div style={{ marginTop: '20px' }}>
             <span><b>Vad händer nu?</b></span>
             {isTaxi ? (
               <p style={{ margin: '5px 0 0 0', lineHeight: '1.5' }}>
-                Du har blivit godkänd på taxiförarprovet. Du kan nu ansöka om <strong>taxiförarlegitimation</strong> hos Transportstyrelsen enligt taxitrafiklagen (2012:211). Legitimationen utfärdas efter prövning av övriga krav.
-              </p>
-            ) : isAssessmentOnly ? (
-              <p style={{ margin: '5px 0 0 0', lineHeight: '1.5' }}>
-                Du har blivit godkänd på bedömningsprovet. Du uppfyller de formella kompetenskraven för körbedömning. Du kan nu bifoga detta intyg för ansökan och behörighetsprövning till <strong>trafiklärarutbildning</strong> samt vidare prövning för <strong>förarprövar- eller inspektörsbehörighet</strong>.
+                Du är godkänd på taxiförarprovet och kan nu ansöka om <strong>taxiförarlegitimation</strong> hos Transportstyrelsen. Legitimationen utfärdas när övriga krav har prövats.
               </p>
             ) : (
               <p style={{ margin: '5px 0 0 0', lineHeight: '1.5' }}>
-                Du har blivit godkänd på ditt körprov. Du kan nu köra med en giltig legitimation i Sverige till dess att du har fått ditt körkort, dock i högst två månader.
+                Du är godkänd på bedömningsprovet och uppfyller kompetenskraven för körbedömning. Intyget kan bifogas en ansökan till <strong>trafiklärarutbildning</strong> eller vid prövning för <strong>förarprövar- eller inspektörsbehörighet</strong>.
               </p>
             )}
           </div>
-        )}
+        ) : null}
 
         {/* Ny layout: hela resultatet kan översättas, som i Trafikverkets protokoll */}
         {newLayout && (
@@ -516,13 +524,13 @@ export function OfficialPrintLayout({ testState }: OfficialPrintLayoutProps = {}
                 ],
                 isFailed
                   ? [isTaxi
-                      ? 'Du uppfyllde inte kraven för godkänt taxiförarprov enligt taxitrafiklagen (2012:211). Det är viktigt att du tränar mer innan du genomför ditt nästa prov.'
+                      ? 'Du uppfyllde inte kraven för godkänt taxiförarprov enligt taxitrafiklagen (2012:211). Det är viktigt att du tränar mer innan du gör nästa prov.'
                       : 'Det är viktigt att du tränar mer innan du genomför ditt nästa körprov.', 'Välkommen åter!']
-                  : ['Vad händer nu?', isTaxi
-                      ? 'Du har blivit godkänd på taxiförarprovet. Du kan nu ansöka om taxiförarlegitimation hos Transportstyrelsen enligt taxitrafiklagen (2012:211). Legitimationen utfärdas efter prövning av övriga krav.'
-                      : isAssessmentOnly
-                        ? 'Du har blivit godkänd på bedömningsprovet. Du uppfyller de formella kompetenskraven för körbedömning.'
-                        : 'Du har blivit godkänd på ditt körprov. Du kan nu köra med en giltig legitimation i Sverige till dess att du har fått ditt körkort, dock i högst två månader.'],
+                  : isTaxi
+                    ? ['Vad händer nu?', 'Du är godkänd på taxiförarprovet och kan nu ansöka om taxiförarlegitimation hos Transportstyrelsen. Legitimationen utfärdas när övriga krav har prövats.']
+                    : isAssessmentOnly
+                      ? ['Vad händer nu?', 'Du är godkänd på bedömningsprovet och uppfyller kompetenskraven för körbedömning.']
+                      : [],
               ))}
               target="_blank"
               rel="noopener noreferrer"

@@ -102,7 +102,7 @@ function Alert({ tone, children }: { tone: 'error' | 'success'; children: React.
     ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/60 text-red-800 dark:text-red-200'
     : 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/60 text-emerald-800 dark:text-emerald-200';
   return (
-    <div role={tone === 'error' ? 'alert' : 'status'} className={`p-3.5 border rounded-xl text-sm font-medium flex items-start gap-2.5 animate-in fade-in slide-in-from-top-1 duration-200 ${styles}`}>
+    <div role={tone === 'error' ? 'alert' : 'status'} className={`p-3.5 border rounded-control text-sm font-medium flex items-start gap-2.5 animate-in fade-in slide-in-from-top-1 duration-200 ${styles}`}>
       {tone === 'error' ? <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /> : <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />}
       <span>{children}</span>
     </div>
@@ -390,7 +390,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 </form>
 
                 <p className="mt-5 text-xs text-slate-500 dark:text-slate-400 text-center">
-                  Glömt lösenordet? Kontakta en administratör.
+                  Glömt lösenordet? Hör av dig till din administratör.
                 </p>
               </div>
             )}

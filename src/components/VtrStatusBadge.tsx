@@ -47,7 +47,7 @@ export function VtrStatusBadge({ personalNumber, compact = false }: VtrStatusBad
   const { icon: Icon, cls } = styleFor();
 
   return (
-    <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${cls}`}>
+    <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md border ${cls}`}>
       <Icon size={11} />
       {status}
     </span>

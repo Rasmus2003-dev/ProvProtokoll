@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useBackToClose } from '../../hooks/useBackToClose';
 import { Play, Pause, RotateCcw, X, MapPinOff } from 'lucide-react';
 import { DrivingEvent, RouteRecording } from '../../types';
 import { EVENT_META, formatDistance, formatElapsed, positionAt, routeDistanceM, routeStartTime } from '../../lib/route';
@@ -86,14 +87,14 @@ export function RouteReview({ route, events: rawEvents, large = false, mapClassN
             className={mapClassName || (large ? 'flex-1 min-h-[300px]' : 'h-80')}
           />
         ) : (
-          <div className="h-40 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 flex flex-col items-center justify-center text-gray-400 text-sm gap-2">
+          <div className="h-40 rounded-control border border-dashed border-gray-300 dark:border-slate-700 flex flex-col items-center justify-center text-gray-400 text-sm gap-2">
             <MapPinOff size={22} />
             Ingen inspelad rutt – händelserna visas i listan.
           </div>
         )}
 
         {canPlay && (
-          <div className="rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2.5 flex items-center gap-3">
+          <div className="rounded-control border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2.5 flex items-center gap-3">
             <button
               type="button"
               onClick={togglePlay}
@@ -126,7 +127,7 @@ export function RouteReview({ route, events: rawEvents, large = false, mapClassN
                   aria-label="Tidslinje"
                 />
               </div>
-              <div className="flex justify-between text-[11px] font-mono text-gray-500 dark:text-slate-400 mt-1">
+              <div className="flex justify-between text-[11px] tabular-nums text-gray-500 dark:text-slate-400 mt-1">
                 <span className="font-bold text-gray-900 dark:text-white">{formatElapsed(time - start)}</span>
                 <span>{formatElapsed(duration)}</span>
               </div>
@@ -137,7 +138,7 @@ export function RouteReview({ route, events: rawEvents, large = false, mapClassN
                   key={s}
                   type="button"
                   onClick={() => setSpeed(s)}
-                  className={`px-2 h-7 rounded-md text-[11px] font-black cursor-pointer ${speed === s ? 'bg-gray-900 text-white dark:bg-white dark:text-slate-900' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800'}`}
+                  className={`px-2 h-7 rounded-md text-[11px] font-bold cursor-pointer ${speed === s ? 'bg-gray-900 text-white dark:bg-white dark:text-slate-900' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800'}`}
                 >
                   {s}×
                 </button>
@@ -182,14 +183,14 @@ export function RouteReview({ route, events: rawEvents, large = false, mapClassN
                   <button
                     type="button"
                     onClick={() => selectEvent(ev)}
-                    className={`w-full text-left flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                    className={`w-full text-left flex items-start gap-3 p-3 rounded-control border transition-all cursor-pointer ${
                       focused
                         ? 'border-[#002f6c] dark:border-blue-500 bg-blue-50/60 dark:bg-blue-950/30 ring-1 ring-[#002f6c]/30'
                         : 'border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-gray-300'
                     } ${passed ? '' : 'opacity-40'}`}
                   >
                     <span
-                      className={`rounded-full text-white font-black flex items-center justify-center shrink-0 ${large ? 'w-8 h-8 text-sm' : 'w-7 h-7 text-xs'}`}
+                      className={`rounded-full text-white font-bold flex items-center justify-center shrink-0 ${large ? 'w-8 h-8 text-sm' : 'w-7 h-7 text-xs'}`}
                       style={{ background: EVENT_META[ev.kind].color }}
                     >
                       {idx + 1}
@@ -199,13 +200,13 @@ export function RouteReview({ route, events: rawEvents, large = false, mapClassN
                         {ev.situation || EVENT_META[ev.kind].label}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className={`text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border ${EVENT_META[ev.kind].badge}`}>
+                        <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded border ${EVENT_META[ev.kind].badge}`}>
                           {EVENT_META[ev.kind].label}
                         </span>
-                        <span className="text-[11px] font-mono text-gray-500 dark:text-slate-400">
+                        <span className="text-[11px] tabular-nums text-gray-500 dark:text-slate-400">
                           {formatElapsed(ev.t - start)} in i provet
                         </span>
-                        {typeof ev.lat !== 'number' && <span className="text-[10px] text-gray-400">(ingen plats)</span>}
+                        {typeof ev.lat !== 'number' && <span className="text-[11px] text-gray-400">(ingen plats)</span>}
                       </div>
                       {ev.note && <p className={`${large ? 'text-sm' : 'text-xs'} text-gray-600 dark:text-slate-300 mt-1.5`}>{ev.note}</p>}
                     </div>
@@ -229,6 +230,8 @@ interface RouteReviewModalProps extends RouteReviewProps {
 
 // Helskärmsvy för att gå igenom körningen tillsammans med kandidaten
 export function RouteReviewModal({ open, onClose, title = 'Genomgång av körningen', subtitle, ...rest }: RouteReviewModalProps) {
+  // Androids bakåtknapp stänger dialogen
+  useBackToClose(open, onClose);
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -242,13 +245,13 @@ export function RouteReviewModal({ open, onClose, title = 'Genomgång av körnin
     <div className="fixed inset-0 z-[60] bg-slate-50 dark:bg-slate-950 flex flex-col animate-in fade-in duration-150">
       <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3 bg-[#002f6c] text-white shrink-0">
         <div className="min-w-0">
-          <h2 className="font-black text-base sm:text-lg truncate">{title}</h2>
+          <h2 className="font-bold text-base sm:text-lg truncate">{title}</h2>
           {subtitle && <p className="text-xs text-blue-200 truncate">{subtitle}</p>}
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="min-w-10 min-h-10 flex items-center justify-center rounded-xl hover:bg-white/10 cursor-pointer"
+          className="min-w-10 min-h-10 flex items-center justify-center rounded-control hover:bg-white/10 cursor-pointer"
           aria-label="Stäng"
         >
           <X size={22} />

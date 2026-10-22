@@ -538,8 +538,8 @@ export function ElevProvScreen() {
       <div className="h-full overflow-y-auto bg-[#eaedf1] flex flex-col items-center justify-center py-6 px-3 sm:py-12 sm:px-4 font-sans select-none">
         <div className="w-full max-w-md bg-white border border-gray-300 shadow-xl rounded-sm">
           <div className="bg-[#002f6c] text-white p-5 sm:p-6 border-b-4 border-[#d2232a] text-center">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight uppercase">ProvProtokoll</h1>
-            <p className="text-[10px] sm:text-xs uppercase tracking-widest text-slate-300 font-bold mt-1">Kunskapsprov Portal</p>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight ">ProvProtokoll</h1>
+            <p className="text-[11px] sm:text-xs text-slate-300 font-bold mt-1">Kunskapsprov Portal</p>
           </div>
           
           {!allowLogin ? (
@@ -548,12 +548,12 @@ export function ElevProvScreen() {
                 <Lock className="w-8 h-8 text-[#d2232a]" />
               </div>
               <div className="space-y-2">
-                <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">PORTALEN ÄR STÄNGD</h3>
+                <h3 className="text-lg font-bold text-slate-800 tracking-tight">Portalen är stängd</h3>
                 <p className="text-xs sm:text-sm text-gray-500 leading-relaxed font-semibold">
                   Inloggningen är för närvarande stängd av provledaren. Vänligen vänta tills provledaren öppnar portalen på din skärm.
                 </p>
               </div>
-              <div className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 rounded border border-gray-200 text-gray-400 text-xs font-mono">
+              <div className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 rounded border border-gray-200 text-gray-400 text-xs tabular-nums">
                 <Loader2 className="w-4 h-4 animate-spin text-[#d2232a]" />
                 Väntar på behörighetsöppning...
               </div>
@@ -562,7 +562,7 @@ export function ElevProvScreen() {
                 <button
                   type="button"
                   onClick={handleCopyPortalLink}
-                  className={`w-full py-2 sm:py-2.5 px-4 rounded-sm text-[10px] sm:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer border ${copiedLink ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-gray-50 border-gray-300 hover:bg-gray-100 text-gray-700'}`}
+                  className={`w-full py-2 sm:py-2.5 px-4 rounded-sm text-[11px] sm:text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer border ${copiedLink ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-gray-50 border-gray-300 hover:bg-gray-100 text-gray-700'}`}
                 >
                   {copiedLink ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-bounce" /> : <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                   {copiedLink ? 'Provlänk kopierad!' : 'Dela provsidan'}
@@ -586,7 +586,7 @@ export function ElevProvScreen() {
                 )}
 
                 <div>
-                  <label className="block text-[11px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 sm:mb-2">Ditt Fullständiga Namn</label>
+                  <label className="block text-[11px] sm:text-xs font-bold text-gray-500 mb-1 sm:mb-2">Ditt Fullständiga Namn</label>
                   <div className="relative rounded-sm shadow-sm">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                       <User className="w-4 h-4" />
@@ -605,7 +605,7 @@ export function ElevProvScreen() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 sm:mb-2">Personnummer (ÅÅÅÅMMDD-XXXX)</label>
+                  <label className="block text-[11px] sm:text-xs font-bold text-gray-500 mb-1 sm:mb-2">Personnummer (ÅÅÅÅMMDD-XXXX)</label>
                   <div className="relative rounded-sm shadow-sm">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                       <Lock className="w-4 h-4" />
@@ -618,7 +618,7 @@ export function ElevProvScreen() {
                         setPnrInput(e.target.value);
                         setLoginError(null);
                       }}
-                      className="block w-full pl-9 pr-3 py-2.5 sm:py-3 border border-gray-300 bg-slate-50 rounded-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#002f6c] text-sm font-mono font-bold"
+                      className="block w-full pl-9 pr-3 py-2.5 sm:py-3 border border-gray-300 bg-slate-50 rounded-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#002f6c] text-sm tabular-nums font-bold"
                       placeholder="YYYYMMDD-XXXX"
                     />
                   </div>
@@ -627,7 +627,7 @@ export function ElevProvScreen() {
 
               <button 
                 type="submit"
-                className="w-full py-2.5 sm:py-3 bg-[#002f6c] hover:bg-[#001d4a] text-white text-xs sm:text-sm rounded-sm font-bold uppercase tracking-widest transition-colors cursor-pointer"
+                className="w-full py-2.5 sm:py-3 bg-[#002f6c] hover:bg-[#001d4a] text-white text-xs sm:text-sm rounded-sm font-bold transition-colors cursor-pointer"
               >
                 Starta Provskrivning
               </button>
@@ -641,7 +641,7 @@ export function ElevProvScreen() {
                 <button
                   type="button"
                   onClick={handleCopyPortalLink}
-                  className={`w-full py-2 sm:py-2.5 px-4 rounded-sm text-[10px] sm:text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all cursor-pointer border ${copiedLink ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-gray-50 border-gray-300 hover:bg-gray-100 text-gray-700'}`}
+                  className={`w-full py-2 sm:py-2.5 px-4 rounded-sm text-[11px] sm:text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer border ${copiedLink ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-gray-50 border-gray-300 hover:bg-gray-100 text-gray-700'}`}
                 >
                   {copiedLink ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-bounce" /> : <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                   {copiedLink ? 'Provlänk kopierad!' : 'Dela provsidan'}
@@ -674,11 +674,11 @@ export function ElevProvScreen() {
         <div className="w-full max-w-4xl">
           <div className="mb-6 border-b border-gray-300 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-[#d2232a] uppercase tracking-tight">ProvProtokoll</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#d2232a] tracking-tight">ProvProtokoll</h1>
               <h2 className="text-lg sm:text-xl font-medium text-gray-800 mt-0.5">Kunskapsprov för körkort</h2>
             </div>
             <div className="bg-white border border-gray-300 px-3 py-2 sm:px-4 sm:py-3 rounded text-xs sm:text-sm text-gray-700">
-              Inloggad som: <strong className="text-gray-900 uppercase">{studentName}</strong> 
+              Inloggad som: <strong className="text-gray-900 ">{studentName}</strong> 
               <br />
               Datorbänk: <strong className="text-[#002f6c]">Bänk {activeCandidate?.bench || Math.floor(Math.random() * 24) + 1}</strong>
             </div>
@@ -692,7 +692,7 @@ export function ElevProvScreen() {
           </div>
 
           <div className="bg-white border border-gray-300 shadow-sm overflow-hidden rounded-sm">
-            <div className="hidden sm:grid grid-cols-12 gap-4 p-4 border-b border-gray-300 bg-gray-100 font-bold text-sm text-gray-700 uppercase tracking-wider">
+            <div className="hidden sm:grid grid-cols-12 gap-4 p-4 border-b border-gray-300 bg-gray-100 font-bold text-sm text-gray-700 ">
               <div className="col-span-3">Kategori</div>
               <div className="col-span-6">Teoriprov</div>
               <div className="col-span-3 text-right">Provtid & Frågor</div>
@@ -710,7 +710,7 @@ export function ElevProvScreen() {
                     }`}
                   >
                     <div className="col-span-3">
-                      <span className={`px-2 py-0.5 sm:px-2.5 sm:py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded ${
+                      <span className={`px-2 py-0.5 sm:px-2.5 sm:py-1 text-[11px] sm:text-[11px] font-bold rounded ${
                         test.category === 'Officiellt Prov'
                           ? 'bg-amber-100 text-amber-800' 
                           : 'bg-slate-100 text-slate-700'
@@ -723,15 +723,15 @@ export function ElevProvScreen() {
                       <span className="text-sm sm:text-base font-bold text-gray-900 block flex items-center gap-1.5 sm:gap-2">
                         {test.title}
                         {isAssigned && (
-                          <span className="text-[9px] sm:text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded font-black tracking-widest uppercase shrink-0">TILLDELAD</span>
+                          <span className="text-[11px] sm:text-[11px] bg-blue-600 text-white px-1.5 py-0.5 rounded font-bold shrink-0">Tilldelad</span>
                         )}
                       </span>
-                      <span className="text-[10px] sm:text-xs text-gray-400 font-semibold block mt-0.5 font-mono">ID: {test.id}</span>
+                      <span className="text-[11px] sm:text-xs text-gray-400 font-semibold block mt-0.5 tabular-nums">ID: {test.id}</span>
                     </div>
 
-                    <div className="col-span-3 flex items-center justify-between sm:justify-end gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600 font-semibold font-mono">
+                    <div className="col-span-3 flex items-center justify-between sm:justify-end gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600 font-semibold tabular-nums">
                       <span>{test.duration} / {test.limit} Frågor</span>
-                      <span className="bg-[#002f6c] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-sm text-[11px] sm:text-xs uppercase tracking-widest font-black transition-transform hover:scale-105">Starta</span>
+                      <span className="bg-[#002f6c] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-sm text-[11px] sm:text-xs font-bold transition-transform hover:scale-105">Starta</span>
                     </div>
                   </button>
                 );
@@ -751,20 +751,20 @@ export function ElevProvScreen() {
       {showConfirmDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white max-w-md w-full p-8 rounded shadow-2xl">
-            <h3 className="text-2xl font-black text-gray-950 mb-3 uppercase tracking-tight">LÄMNA IN PROVET?</h3>
+            <h3 className="text-2xl font-bold text-gray-950 mb-3 tracking-tight">LÄMNA IN PROVET?</h3>
             <p className="text-gray-600 mb-6 leading-relaxed text-sm font-semibold">
               Är du helt färdig? Detta beslut går inte att ångra och dina svar registreras omedelbart för rättning.
             </p>
             <div className="flex gap-4">
               <button 
                 onClick={() => setShowConfirmDialog(false)}
-                className="flex-1 py-3 text-gray-700 font-bold bg-gray-100 hover:bg-gray-200 rounded transition-colors cursor-pointer text-xs uppercase tracking-widest"
+                className="flex-1 py-3 text-gray-700 font-bold bg-gray-100 hover:bg-gray-200 rounded transition-colors cursor-pointer text-xs "
               >
                 Gå Tillbaka
               </button>
               <button 
                 onClick={() => calculateAndSubmitTest()}
-                className="flex-1 py-3 text-white font-bold bg-[#51a351] hover:bg-[#438a43] rounded transition-colors cursor-pointer text-xs uppercase tracking-widest"
+                className="flex-1 py-3 text-white font-bold bg-[#51a351] hover:bg-[#438a43] rounded transition-colors cursor-pointer text-xs "
               >
                 Lämna in nu
               </button>
@@ -780,13 +780,13 @@ export function ElevProvScreen() {
             <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center text-amber-500 mb-5 animate-pulse border border-amber-200">
               <AlertTriangle className="w-10 h-10" />
             </div>
-            <h2 className="text-2xl font-black text-slate-950 mb-3 tracking-tight uppercase">PROVET ÄR PAUSAT</h2>
+            <h2 className="text-2xl font-bold text-slate-950 mb-3 tracking-tight ">Provet är pausat</h2>
             <p className="text-sm text-slate-600 mb-8 leading-relaxed font-semibold">
               Provledaren har tillfälligt pausat provskrivningen på din bänk. 
               <br />
               <span className="font-bold text-amber-600 mt-2 block">Ditt provtidsur har stoppats och alla dina svar är sparade säkert.</span>
             </p>
-            <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded text-slate-500 text-xs font-mono">
+            <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded text-slate-500 text-xs tabular-nums">
               <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
               Väntar på att provledaren aktiverar din skärm...
             </div>
@@ -816,7 +816,7 @@ export function ElevProvScreen() {
                 <div className="w-4 h-4 rounded-full bg-white shadow-xs" />
               </button>
               {showTime && (
-                <div className="font-mono font-bold text-xs sm:text-sm text-gray-900 bg-slate-100 px-2 py-0.5 rounded border border-gray-300">
+                <div className="tabular-nums font-bold text-xs sm:text-sm text-gray-900 bg-slate-100 px-2 py-0.5 rounded border border-gray-300">
                   {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{Math.floor(timeLeft % 60).toString().padStart(2, '0')}
                 </div>
               )}
@@ -855,12 +855,12 @@ export function ElevProvScreen() {
               <span className="absolute inset-0 rounded-full bg-amber-500/20 animate-ping" />
               <AlertTriangle className="w-10 h-10" />
             </div>
-            <h2 className="text-3xl font-extrabold text-slate-900 mb-3 uppercase tracking-tight">KONTROLLERAD AV PROVLEDAREN</h2>
+            <h2 className="text-3xl font-bold text-slate-900 mb-3 tracking-tight">Kontrollerad av provledaren</h2>
             <p className="text-base font-bold text-[#002f6c] mb-4">Väntar på startgodkännande från provledaren...</p>
             <p className="text-sm font-semibold text-gray-500 leading-relaxed mb-8">
               Din legitimation är kontrollerad och din bänk <strong>Bänk {activeCandidate?.bench || "7"}</strong> är registrerad. Provet kan endast påbörjas efter att provledaren har startat det från sitt system. Sitt kvar på din plats.
             </p>
-            <div className="flex items-center gap-2.5 px-5 py-3 bg-white rounded-lg shadow-sm border border-gray-200 text-gray-600 text-xs font-mono">
+            <div className="flex items-center gap-2.5 px-5 py-3 bg-white rounded-lg shadow-sm border border-gray-200 text-gray-600 text-xs tabular-nums">
               <Loader2 className="w-4 h-4 animate-spin text-[#002f6c]" />
               Systemet är redo. Synkar i realtid...
             </div>
@@ -883,7 +883,7 @@ export function ElevProvScreen() {
               </div>
 
               {/* Status Header */}
-              <h2 className={`text-2xl sm:text-3xl font-black uppercase tracking-tight mb-3 ${
+              <h2 className={`text-2xl sm:text-3xl font-bold tracking-tight mb-3 ${
                 testResult.passed ? 'text-emerald-700' : 'text-red-700'
               }`}>
                 {testResult.passed ? 'Ditt prov är godkänt' : 'Ditt prov är underkänt'}
@@ -895,8 +895,8 @@ export function ElevProvScreen() {
               </p>
 
               {/* Candidate reference metadata */}
-              <div className="w-full text-xs text-gray-500 font-mono border-t border-gray-200 pt-5 space-y-1 text-center bg-gray-50/60 p-3 rounded-md">
-                <div>Kandidat: <strong className="text-gray-900 uppercase font-bold">{studentName}</strong></div>
+              <div className="w-full text-xs text-gray-500 tabular-nums border-t border-gray-200 pt-5 space-y-1 text-center bg-gray-50/60 p-3 rounded-md">
+                <div>Kandidat: <strong className="text-gray-900 font-bold">{studentName}</strong></div>
                 <div>Personnummer: <strong className="text-gray-900 font-bold">{activeCandidate?.pnr || pnrInput}</strong></div>
                 <div>Datum: <strong className="text-gray-900 font-bold">{new Date().toLocaleDateString('sv-SE')}</strong></div>
                 <div>Dator / Bänk: <strong className="text-gray-900 font-bold">Bänk {activeCandidate?.bench || '7'}</strong></div>
@@ -905,7 +905,7 @@ export function ElevProvScreen() {
 
             <button
               onClick={handleExitTest}
-              className="mt-8 px-8 py-3 bg-[#002f6c] hover:bg-[#001d4a] text-white text-xs font-bold uppercase tracking-widest rounded-sm cursor-pointer shadow transition-all hover:scale-105"
+              className="mt-8 px-8 py-3 bg-[#002f6c] hover:bg-[#001d4a] text-white text-xs font-bold rounded-sm cursor-pointer shadow transition-all hover:scale-105"
             >
               Tillbaka till startsidan
             </button>
@@ -941,7 +941,7 @@ export function ElevProvScreen() {
               </button>
 
               {/* Central split view panel */}
-              <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-0 items-start overflow-y-auto lg:overflow-hidden p-2.5 sm:p-4 bg-[#f1f3f6] rounded-xl border border-gray-300 shadow-xs">
+              <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-0 items-start overflow-y-auto lg:overflow-hidden p-2.5 sm:p-4 bg-[#f1f3f6] rounded-control border border-gray-300 shadow-xs">
 
                 {/* LEFT CARD (Question text & options) */}
                 <div id="question-details" className="lg:col-span-5 bg-[#f9fafb] border border-gray-300 rounded-lg p-4 sm:p-6 flex flex-col lg:h-full overflow-y-auto">
@@ -1126,7 +1126,7 @@ export function ElevProvScreen() {
                             >
                               <span>{i + 1}</span>
                               {isMarked && (
-                                <span className="absolute -top-1.5 -right-1 text-amber-500 font-extrabold text-sm drop-shadow-xs leading-none">
+                                <span className="absolute -top-1.5 -right-1 text-amber-500 font-bold text-sm drop-shadow-xs leading-none">
                                   ★
                                 </span>
                               )}

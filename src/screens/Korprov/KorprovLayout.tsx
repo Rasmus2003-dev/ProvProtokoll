@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Outlet, NavLink, useLocation, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { PenTool, X, Clock, Play, Square } from 'lucide-react';
+import { PenTool, X, Play, Pause, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppStore } from '../../store/ProvContext';
 import { triggerHaptic } from '../../lib/utils';
 import { isTestStepPath } from '../../lib/activeTest';
@@ -14,7 +14,6 @@ const steps = [
   { id: '3', name: 'Inledning', path: 'inledning' },
   { id: '4', name: 'Körning', path: 'korning' },
   { id: '5', name: 'Resultat', path: 'resultat' },
-  { id: '6', name: 'Protokoll', path: 'protokoll' },
 ];
 
 function formatTime(seconds: number) {
@@ -28,14 +27,23 @@ export function KorprovLayout() {
   const { state, updateState } = useAppStore();
   const [showNotes, setShowNotes] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  // Den flytande knappen (timer + anteckningar) kan fällas ihop så att den inte skymmer innehåll
+  const [dockHidden, setDockHidden] = useState(() => {
+    try { return localStorage.getItem('korprov-dock-hidden') === '1'; } catch { return false; }
+  });
+  const setDockHiddenPersist = (hidden: boolean) => {
+    setDockHidden(hidden);
+    if (hidden) setShowNotes(false);
+    try { localStorage.setItem('korprov-dock-hidden', hidden ? '1' : '0'); } catch {}
+  };
 
   // Timer Effect
   useEffect(() => {
     let interval: any;
     if (state.testStartTime) {
-      interval = setInterval(() => {
-        setElapsed(Math.floor((Date.now() - state.testStartTime!) / 1000));
-      }, 1000);
+      const tick = () => setElapsed(Math.floor((Date.now() - state.testStartTime!) / 1000));
+      tick();
+      interval = setInterval(tick, 1000);
     } else {
       setElapsed(0);
     }
@@ -66,140 +74,106 @@ export function KorprovLayout() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [onTestStep]);
 
-  // Mobile step calculation
   const activeStepIdx = useMemo(() => {
     const currentStep = steps.findIndex(s => location.pathname.endsWith(s.path));
     return currentStep >= 0 ? currentStep : 0;
   }, [location.pathname]);
 
-  const activeStepName = useMemo(() => {
-    return steps[activeStepIdx]?.name || 'Start';
-  }, [activeStepIdx]);
-
   if (location.pathname === '/korprov' || location.pathname === '/korprov/') {
     return <Navigate to="start" replace />;
   }
 
-  // Determine if we should show the secondary nav menu
+  // Körning och Protokoll har egna huvuden; Dagens prov är ett schema, inte ett steg
   const isProtokoll = location.pathname.endsWith('protokoll');
   const isKorning = location.pathname.endsWith('korning');
   const isResultat = location.pathname.endsWith('resultat');
-  const showNav = !isProtokoll && !isKorning;
+  const isDagens = location.pathname.endsWith('dagens');
+  const showNav = !isProtokoll && !isKorning && !isDagens;
+  const timerRunning = Boolean(state.testStartTime);
 
   const toggleTimer = () => {
-    if (state.testStartTime) {
-      // Stop timer
-      updateState(s => ({ ...s, testStartTime: null }));
-    } else {
-      // Start timer
-      updateState(s => ({ ...s, testStartTime: Date.now() }));
-    }
+    triggerHaptic('medium');
+    updateState(s => ({ ...s, testStartTime: s.testStartTime ? null : Date.now() }));
   };
 
   const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     updateState(s => ({ ...s, testNotes: e.target.value }));
   };
 
+  const timerButton = (
+    <button
+      type="button"
+      onClick={toggleTimer}
+      aria-label={timerRunning ? 'Pausa provtiden' : 'Starta provtiden'}
+      className={`h-11 pl-3 pr-3.5 rounded-full flex items-center gap-2 font-semibold transition-colors cursor-pointer shrink-0 ${
+        timerRunning
+          ? 'bg-red-600 text-white shadow-[0_0_0_4px_rgb(220_38_38/0.15)]'
+          : 'bg-surface text-ink border border-line hover:bg-surface-2'
+      }`}
+    >
+      {timerRunning ? <Pause size={15} className="fill-current" /> : <Play size={15} className="fill-current text-navy dark:text-blue-400" />}
+      <span className="tabular-nums text-[15px]">{formatTime(elapsed)}</span>
+    </button>
+  );
+
   return (
-    <div className="max-w-7xl mx-auto py-4 md:py-8 w-full px-0 sm:px-4 print:py-0 print:m-0 print:max-w-none relative min-h-full">
-      {/* Scrollable Navigation */}
+    <div className="max-w-7xl mx-auto pt-3 md:pt-6 w-full px-0 sm:px-4 print:py-0 print:m-0 print:max-w-none relative min-h-full">
+      {/* Stegindikator: provets fem steg som en vägmarkering som fylls i */}
       {showNav && (
-        <div className="relative mb-4 md:mb-8 mt-1 md:mt-2 print:hidden select-none">
-          
-          {/* Mobile-Only Progress Stepper Dashboard Card */}
-          <div className="block md:hidden px-4 mb-4">
-            <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-white/5 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-none">
-                    Steg {activeStepIdx + 1} av {steps.filter(s => s.name !== 'Protokoll').length}
-                  </span>
-                  <span className="text-sm font-black text-[#002F6C] dark:text-blue-400 mt-1 leading-none uppercase tracking-tight">
-                    {activeStepName}
-                  </span>
-                </div>
-
-                {/* Mobile Timer Badge inside Dashboard */}
-                <button
-                  onClick={() => { triggerHaptic('medium'); toggleTimer(); }}
-                  className={`flex items-center gap-1.5 px-3 py-2.5 min-h-10 rounded-xl font-bold text-xs transition-all ${
-                    state.testStartTime 
-                      ? 'bg-red-50 text-red-600 border border-red-200 dark:bg-red-950/20 dark:border-red-900 dark:text-red-400' 
-                      : 'bg-gray-100 text-gray-600 border border-transparent dark:bg-white/5 dark:text-gray-400'
-                  }`}
-                >
-                  {state.testStartTime ? <Square size={10} className="fill-current animate-pulse text-red-600" /> : <Play size={10} className="fill-current" />}
-                  <span className="font-mono text-sm font-black">{formatTime(elapsed)}</span>
-                </button>
-              </div>
-
-              {/* Segmented Progress indicator dots */}
-              <div className="flex gap-1.5 h-1.5 w-full bg-gray-100 dark:bg-slate-850 rounded-full overflow-hidden">
-                {steps.filter(s => s.name !== 'Protokoll').map((step, idx) => (
-                  <div 
-                    key={step.id} 
-                    className={`flex-1 h-full rounded-full transition-all duration-305 ${
-                      idx <= activeStepIdx 
-                        ? 'bg-[#D42220] dark:bg-blue-500' 
-                        : 'bg-gray-200 dark:bg-slate-800'
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
+        <nav aria-label="Provets steg" className="px-4 sm:px-2 mb-5 md:mb-8 print:hidden select-none">
+          <div className="flex items-center justify-between gap-3 mb-1">
+            <p className="text-[13px] text-ink-2 font-medium">
+              Steg <span className="text-ink font-semibold tabular-nums">{activeStepIdx + 1}</span> av {steps.length}
+            </p>
+            {timerButton}
           </div>
 
-          {/* Stepper Tabs Bar (Desktop-centered, Mobile-scrollable) */}
-          <div className="relative overflow-x-auto hide-scrollbar pb-2">
-            <div className="px-4 md:px-6 w-full flex items-center justify-between">
-              <div className="flex gap-2 sm:gap-2.5 w-full justify-start md:justify-center min-w-max pb-1">
-                {steps.filter(s => s.name !== 'Protokoll').map((step, idx) => (
+          <ol className="grid grid-cols-5 gap-1.5">
+            {steps.map((step, idx) => {
+              const done = idx < activeStepIdx;
+              const current = idx === activeStepIdx;
+              return (
+                <li key={step.id} className="min-w-0">
                   <NavLink
-                    key={step.id}
                     to={`/korprov/${step.path}`}
                     onClick={() => triggerHaptic('light')}
-                    className={({ isActive }) =>
-                      `text-xs sm:text-xs py-2 px-3.5 sm:px-4 rounded-xl transition-all duration-200 font-bold uppercase tracking-wider relative flex items-center gap-2 border-2 ${
-                        isActive
-                          ? 'bg-[#002F6C] dark:bg-blue-600 text-white border-[#002F6C] dark:border-blue-500 shadow-md font-black ring-2 ring-blue-500/20'
-                          : idx < activeStepIdx
-                            ? 'bg-emerald-50/60 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/50 hover:bg-emerald-100/60'
-                            : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700 hover:bg-gray-50'
-                      }`
-                    }
+                    aria-current={current ? 'step' : undefined}
+                    className="group block pt-2 pb-1 rounded-[8px] cursor-pointer"
                   >
-                    <span className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black bg-black/10 dark:bg-white/10 shrink-0">
-                      {idx < activeStepIdx ? '✓' : idx + 1}
+                    <span
+                      data-state={done ? 'done' : current ? 'current' : 'todo'}
+                      className={`block road-line ${current && timerRunning ? 'road-line-live' : ''}`}
+                    />
+                    <span
+                      className={`mt-1.5 block text-[11px] sm:text-xs truncate transition-colors ${
+                        current
+                          ? 'text-ink font-semibold'
+                          : done
+                            ? 'text-ink-2 font-medium'
+                            : 'text-ink-3 font-medium group-hover:text-ink-2'
+                      }`}
+                    >
+                      {step.name}
                     </span>
-                    <span>{step.name}</span>
                   </NavLink>
-                ))}
-              </div>
-
-              <div className="hidden md:flex ml-6 h-full items-center pb-1">
-                 <button 
-                    onClick={toggleTimer}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-2xs ${state.testStartTime ? 'bg-red-50 text-red-600 border border-red-200 dark:bg-red-950/40 dark:border-red-900 dark:text-red-400' : 'bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 border border-gray-200/60 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700'}`}
-                 >
-                   {state.testStartTime ? <Square size={13} className="fill-current text-red-600 animate-pulse" /> : <Play size={13} className="fill-current text-[#002f6c] dark:text-blue-400" />}
-                   <span className="font-mono text-sm font-black">{formatTime(elapsed)}</span>
-                 </button>
-              </div>
-            </div>
-          </div>
-        </div>
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
       )}
-      
-      <div className="px-4 pb-20 sm:pb-24 sm:px-0 relative w-full overflow-hidden print:overflow-visible print:pb-0">
+
+      {/* overflow-x-clip (inte hidden): en fast åtgärdsrad (position: sticky) måste kunna följa med vid scroll */}
+      <div className="px-4 pb-28 md:pb-24 sm:px-0 relative w-full overflow-x-clip print:overflow-visible print:pb-0">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
-            // transitionEnd: ta bort filter/transform efter övergången – annars blir
-            // de "containing block" för position: fixed och modaler hamnar fel
-            animate={{ opacity: 1, y: 0, filter: 'blur(0px)', transitionEnd: { filter: 'none', transform: 'none' } }}
-            exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, y: 8 }}
+            // transitionEnd: ta bort transform efter övergången – annars blir
+            // den "containing block" för position: fixed och modaler hamnar fel
+            animate={{ opacity: 1, y: 0, transitionEnd: { transform: 'none' } }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             className="w-full"
           >
             <Outlet />
@@ -207,63 +181,88 @@ export function KorprovLayout() {
         </AnimatePresence>
       </div>
 
-      {/* Anteckningar och timer – tillgänglig under provets alla moment, inklusive körning */}
+      {/* Anteckningar (och timer under körning) – tillgängligt under provets alla moment */}
       {onTestStep && !isProtokoll && (
         <div className={`fixed right-3 sm:right-6 md:right-8 z-40 print:hidden ${
           // Resultat har en fast åtgärdsrad längst ner – lyft knapparna ovanför den
-          isResultat ? 'bottom-36 md:bottom-24' : isKorning ? 'bottom-24 sm:bottom-20' : 'bottom-20 sm:bottom-24 md:bottom-12'
+          isResultat || location.pathname.endsWith('egenskaper') || location.pathname.endsWith('inledning')
+            ? 'bottom-[calc(148px+env(safe-area-inset-bottom))] md:bottom-28'
+            : 'bottom-[calc(76px+env(safe-area-inset-bottom))] md:bottom-8'
         }`}>
           <AnimatePresence>
             {showNotes && (
               <motion.div
-                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                initial={{ opacity: 0, y: 16, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                transition={{ duration: 0.2 }}
-                className="absolute bottom-16 right-0 w-[calc(100vw-2rem)] max-w-sm sm:w-80 md:w-96 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] overflow-hidden flex flex-col"
+                exit={{ opacity: 0, y: 16, scale: 0.97 }}
+                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute bottom-[68px] right-0 w-[calc(100vw-1.5rem)] max-w-sm md:w-96 bg-surface border border-line rounded-card shadow-float overflow-hidden flex flex-col origin-bottom-right"
               >
-                <div className="bg-[#002F6C] dark:bg-slate-950 p-4 flex items-center justify-between">
-                  <div className="text-white text-sm font-bold flex items-center gap-2">
-                    <PenTool size={16} /> Egna noteringar under provet
+                <div className="px-4 py-3 flex items-center justify-between border-b border-line">
+                  <div className="text-[15px] font-semibold text-ink flex items-center gap-2">
+                    <PenTool size={16} className="text-ink-3" /> Egna anteckningar
                   </div>
-                  <button onClick={() => setShowNotes(false)} className="text-white/70 hover:text-white p-2 min-w-10 min-h-10 flex items-center justify-center transition-colors bg-white/10 hover:bg-white/20 rounded-full">
-                    <X size={16} />
+                  <button
+                    onClick={() => setShowNotes(false)}
+                    aria-label="Stäng anteckningar"
+                    className="w-10 h-10 -mr-2 flex items-center justify-center text-ink-3 hover:text-ink rounded-full hover:bg-surface-2 transition-colors cursor-pointer"
+                  >
+                    <X size={18} />
                   </button>
                 </div>
-                <div className="p-0 bg-yellow-50/30 dark:bg-yellow-900/5">
-                  <textarea 
-                    value={state.testNotes || ''}
-                    onChange={handleNoteChange}
-                    placeholder="Skriv dina privata noteringar här under körningen (sparas kontinuerligt)..." 
-                    className="w-full h-48 text-sm bg-transparent border-0 focus:ring-0 resize-none p-4 block dark:text-gray-200 outline-none leading-relaxed placeholder:text-gray-400"
-                    autoFocus
-                  />
-                  <div className="text-right px-4 pb-3 text-xs text-gray-400 italic">Sparades automatiskt</div>
-                </div>
+                <textarea
+                  value={state.testNotes || ''}
+                  onChange={handleNoteChange}
+                  placeholder="Skriv privata anteckningar under provet. De sparas medan du skriver."
+                  className="w-full h-48 text-[15px] bg-amber-50/40 dark:bg-amber-400/5 border-0 focus:ring-0 resize-none p-4 block text-ink outline-none leading-relaxed placeholder:text-ink-3"
+                  autoFocus
+                />
+                <div className="px-4 py-2 text-xs text-ink-3 border-t border-line">Sparas automatiskt</div>
               </motion.div>
             )}
           </AnimatePresence>
-          
-          <div className="flex flex-col gap-3">
-             {/* Mobile timer (only shown on small screens) */}
-             <button 
-                onClick={toggleTimer}
-                className={`md:hidden w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-lg text-white font-mono text-sm font-bold ${state.testStartTime ? 'bg-red-600' : 'bg-gray-800 dark:bg-gray-700'}`}
-             >
-               {formatTime(elapsed)}
-             </button>
 
+          {dockHidden ? (
+            // Ihopfälld: en smal flik vid kanten som tar nästan ingen plats
+            <button
+              type="button"
+              onClick={() => setDockHiddenPersist(false)}
+              aria-label="Visa timer och anteckningar"
+              className="-mr-3 sm:-mr-6 md:-mr-8 h-12 pl-2.5 pr-2 rounded-l-full bg-surface/95 backdrop-blur-xl border border-r-0 border-line shadow-float flex items-center gap-1.5 text-ink-2 cursor-pointer"
+            >
+              <ChevronLeft size={18} />
+              {timerRunning && <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" aria-hidden="true" />}
+              {state.testNotes && !timerRunning && <span className="w-2 h-2 rounded-full bg-amber-400" aria-hidden="true" />}
+            </button>
+          ) : (
+          <div className="flex items-center gap-1 p-1 rounded-full bg-surface/95 backdrop-blur-xl border border-line shadow-float">
+            <button
+              type="button"
+              onClick={() => setDockHiddenPersist(true)}
+              aria-label="Dölj timer och anteckningar"
+              title="Dölj"
+              className="w-9 h-12 flex items-center justify-center rounded-full text-ink-3 hover:text-ink cursor-pointer"
+            >
+              <ChevronRight size={18} />
+            </button>
+            {/* Under körning finns ingen stegrad – då sitter timern här */}
+            {isKorning && timerButton}
             <button
               onClick={() => setShowNotes(!showNotes)}
-              className={`w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-lg active:scale-95 text-white relative ${showNotes ? 'bg-[#D42220] scale-95' : 'bg-[#0052cc] hover:bg-[#0043a8]'}`}
-              title="Snabbanteckning"
+              aria-label={showNotes ? 'Stäng anteckningar' : 'Öppna anteckningar'}
+              aria-expanded={showNotes}
+              className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors active:scale-95 relative cursor-pointer ${
+                showNotes ? 'bg-ink text-canvas' : 'bg-navy dark:bg-blue-600 text-white hover:bg-navy-deep'
+              }`}
+              title="Anteckningar"
             >
               {state.testNotes && !showNotes && (
-                 <span className="absolute top-0 right-0 w-4 h-4 bg-yellow-400 rounded-full border-2 border-[#0052cc]"></span>
+                <span className="absolute top-1 right-1 w-3 h-3 bg-amber-400 rounded-full ring-2 ring-surface" />
               )}
-              {showNotes ? <X size={24} /> : <PenTool size={24} />}
+              {showNotes ? <X size={20} /> : <PenTool size={20} />}
             </button>
           </div>
+          )}
         </div>
       )}
     </div>

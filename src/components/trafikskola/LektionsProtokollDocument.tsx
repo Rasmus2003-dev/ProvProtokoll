@@ -62,7 +62,7 @@ export function LektionsProtokollDocument({
   };
 
   return (
-    <div className="bg-white text-slate-900 rounded-2xl shadow-xl border border-slate-200 overflow-hidden max-w-3xl mx-auto my-4 print:my-0 print:border-none print:shadow-none print:max-w-none">
+    <div data-protocol className="bg-white text-slate-900 rounded-2xl shadow-xl border border-slate-200 overflow-hidden max-w-3xl mx-auto my-4 print:my-0 print:border-none print:shadow-none print:max-w-none">
       
       {/* Top action bar (hidden when printing) */}
       <div className="bg-slate-900 text-white px-5 py-3 flex items-center justify-between print:hidden">

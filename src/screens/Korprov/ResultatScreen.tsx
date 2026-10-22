@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useBackToClose } from '../../hooks/useBackToClose';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../../store/ProvContext';
 import { FailureForm } from './components/FailureForm';
@@ -37,7 +38,7 @@ function Choice<T extends string | boolean>({ value, options, onChange }: {
         const activeStyle =
           opt.tone === 'pass' ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm shadow-emerald-600/20'
           : opt.tone === 'fail' ? 'bg-red-600 border-red-600 text-white shadow-sm shadow-red-600/20'
-          : 'bg-slate-800 border-slate-800 text-white dark:bg-slate-200 dark:border-slate-200 dark:text-slate-900';
+          : 'bg-navy border-navy text-white dark:bg-slate-200 dark:border-slate-200 dark:text-slate-900';
         const Icon = opt.tone === 'pass' ? Check : opt.tone === 'fail' ? X : Minus;
         return (
           <button
@@ -45,13 +46,13 @@ function Choice<T extends string | boolean>({ value, options, onChange }: {
             type="button"
             aria-pressed={active}
             onClick={() => { triggerHaptic('light'); onChange(opt.value); }}
-            className={`min-h-12 px-1.5 sm:px-3 rounded-xl border text-[13px] sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer select-none active:scale-[0.98] ${
+            className={`min-h-12 px-1.5 sm:px-3 rounded-control border text-[13px] sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer select-none active:scale-[0.98] ${
               active
                 ? activeStyle
-                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'
+                : 'bg-surface border-line text-ink-2 hover:text-ink hover:bg-surface-2'
             }`}
           >
-            <Icon size={16} strokeWidth={2.75} className={`hidden sm:block shrink-0 ${active ? '' : 'text-slate-400'}`} />
+            <Icon size={16} strokeWidth={2.75} className={`hidden sm:block shrink-0 ${active ? '' : 'text-ink-3'}`} />
             <span className="leading-tight text-center">{opt.label}</span>
           </button>
         );
@@ -62,11 +63,11 @@ function Choice<T extends string | boolean>({ value, options, onChange }: {
 
 function Section({ title, hint, children, action }: { title: string; hint?: string; children: ReactNode; action?: ReactNode }) {
   return (
-    <section className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs">
+    <section className="bg-surface border border-line rounded-card shadow-lift">
       <header className="px-5 pt-4 pb-3 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">{title}</h3>
-          {hint && <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">{hint}</p>}
+          <h3 className="text-[15px] font-bold text-ink">{title}</h3>
+          {hint && <p className="text-[13px] text-ink-2 mt-0.5">{hint}</p>}
         </div>
         {action}
       </header>
@@ -98,6 +99,8 @@ export function ResultatScreen() {
 
   const [validationIssues, setValidationIssues] = useState<{ level: 'error' | 'warning'; text: string }[] | null>(null);
   const [showReview, setShowReview] = useState(false);
+  // Androids bakåtknapp stänger öppna dialoger
+  useBackToClose(validationIssues !== null, () => setValidationIssues(null));
   const topRef = useRef<HTMLDivElement>(null);
 
   const isOmprovSakerhet = testType === 'Omprov säkerhetskontroll';
@@ -240,6 +243,27 @@ export function ResultatScreen() {
     }
   }, [state.result.drivingResult]);
 
+  const handleApproveAll = () => {
+    triggerHaptic('success');
+    updateState((prev) => {
+      const next = { ...prev };
+      next.result = {
+        ...next.result,
+        drivingResult: 'Godkänt',
+        drivingScore: prev.properties.testType?.includes('Testprov') ? 6 : next.result.drivingScore,
+        drivingFailure: { ...EMPTY_FAILURE, primaryCause: { area: '', deficiencies: [] } },
+        interventionOccurred: false,
+        interventionSituations: [],
+        testAborted: false,
+      };
+      if (heavyMandatory) {
+        next.result.safetyCheckResult = 'Godkänt';
+        next.result.safetyCheckFailure = { ...EMPTY_FAILURE, primaryCause: { area: '', deficiencies: [] } };
+      }
+      return next;
+    });
+  };
+
   // Samma kontroll som vid "Skapa protokoll", men löpande i raden längst ner
   const liveIssues = collectIssues();
   const liveErrors = liveIssues.filter(i => i.level === 'error').length;
@@ -274,8 +298,8 @@ export function ResultatScreen() {
     <PrivacyGuard className="max-w-[1300px] mx-auto px-4 sm:px-6 pb-40 block">
       <div ref={topRef} className="scroll-mt-4" />
 
-      {/* Rubrik */}
-      <div className="flex flex-wrap items-end justify-between gap-3 mt-2 sm:mt-4 mb-5">
+      {/* Rubrik & Snabbval */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mt-2 sm:mt-4 mb-5">
         <div className="min-w-0">
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Resultat</p>
           <h2 className="text-2xl sm:text-[28px] font-bold tracking-tight text-slate-900 dark:text-white truncate">
@@ -294,6 +318,17 @@ export function ResultatScreen() {
             )}
           </div>
         </div>
+
+        {/* 1-klick: Godkänn allt snabbt */}
+        <button
+          type="button"
+          onClick={handleApproveAll}
+          className="h-11 sm:h-12 px-4 sm:px-5 rounded-control bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-semibold text-sm flex items-center gap-2 shadow-sm shadow-emerald-600/20 cursor-pointer transition-all shrink-0"
+          title="Sätt godkänt på både körning och säkerhetskontroll direkt"
+        >
+          <Check size={18} strokeWidth={2.75} />
+          <span>Godkänn hela provet</span>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start">
@@ -317,7 +352,7 @@ export function ResultatScreen() {
                             updateResult('drivingScore' as any, score);
                             updateResult('drivingResult', passing ? 'Godkänt' : 'Underkänt');
                           }}
-                          className={`h-12 rounded-xl border font-bold transition-colors cursor-pointer ${
+                          className={`h-12 rounded-control border font-bold transition-colors cursor-pointer ${
                             active
                               ? passing ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-red-600 border-red-600 text-white'
                               : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
@@ -354,7 +389,7 @@ export function ResultatScreen() {
           {showDriving && state.result.drivingResult === 'Underkänt' && (
             <div ref={failureFormRef} className="animate-fade-in scroll-mt-4 space-y-3">
               {suggestedSituations.length > 0 && (
-                <div className="rounded-2xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/70 dark:bg-blue-950/20 p-4">
+                <div className="rounded-card border border-blue-200 dark:border-blue-900/60 bg-blue-50/70 dark:bg-blue-950/20 p-4">
                   <div className="flex items-start justify-between gap-3 mb-2.5">
                     <div>
                       <div className="text-sm font-semibold text-blue-950 dark:text-blue-100">Markerat under körningen</div>
@@ -490,7 +525,7 @@ export function ResultatScreen() {
           )}
 
           {/* Förhandsvisning av protokollet */}
-          <details className="group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
+          <details className="group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-card shadow-xs overflow-hidden">
             <summary className="cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden px-5 py-4 flex items-center gap-3">
               <FileText size={18} className="text-slate-400 shrink-0" />
               <div className="min-w-0 flex-1">
@@ -505,7 +540,7 @@ export function ResultatScreen() {
           </details>
 
           {/* Bedömningsgrunder */}
-          <details className="group rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 print:hidden">
+          <details className="group rounded-card border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 print:hidden">
             <summary className="cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden px-5 py-3.5 flex items-center gap-3 text-sm font-semibold">
               <Info size={16} className="text-slate-400 shrink-0" />
               Bedömningsgrunder (TSFS 2012:41, 4 kap.)
@@ -521,11 +556,11 @@ export function ResultatScreen() {
 
         {/* Höger: sammanfattning */}
         <aside className="lg:col-span-4 lg:sticky lg:top-4 space-y-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-card shadow-xs overflow-hidden">
             <div className="px-5 pt-4 pb-4 border-b border-slate-100 dark:border-slate-800">
               <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Sammanfattning</div>
               <div className="mt-1 font-semibold text-slate-900 dark:text-white truncate">{state.properties.studentName || 'Namn saknas'}</div>
-              <div className="text-sm text-slate-500 dark:text-slate-400 font-mono">{state.properties.personalNumber || 'Personnummer saknas'}</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400 tabular-nums">{state.properties.personalNumber || 'Personnummer saknas'}</div>
             </div>
 
             <dl className="px-5 py-3 divide-y divide-slate-100 dark:divide-slate-800 text-sm">
@@ -557,18 +592,18 @@ export function ResultatScreen() {
 
             {/* Delprov som tillgodoräknas vid omprov */}
             {heavyWithNote && state.result.safetyCheckResult === 'Godkänt' && state.result.drivingResult === 'Underkänt' && (
-              <p className="mx-5 mb-3 text-[13px] leading-snug rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200 px-3.5 py-2.5">
+              <p className="mx-5 mb-3 text-[13px] leading-snug rounded-control bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200 px-3.5 py-2.5">
                 Säkerhetskontrollen är godkänd och behöver inte göras om vid omprov.
               </p>
             )}
             {heavyWithNote && state.result.safetyCheckResult === 'Underkänt' && state.result.drivingResult === 'Godkänt' && (
-              <p className="mx-5 mb-3 text-[13px] leading-snug rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200 px-3.5 py-2.5">
+              <p className="mx-5 mb-3 text-[13px] leading-snug rounded-control bg-blue-50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200 px-3.5 py-2.5">
                 Körningen är godkänd. Vid omprov görs bara säkerhetskontrollen.
               </p>
             )}
 
-            <div className={`m-3 mt-1 rounded-xl border p-4 flex items-center gap-3.5 ${toneBox}`}>
-              <span className={`w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0 ${toneIcon}`}>
+            <div className={`m-3 mt-1 rounded-control border p-4 flex items-center gap-3.5 ${toneBox}`}>
+              <span className={`w-11 h-11 rounded-control flex items-center justify-center text-white shrink-0 ${toneIcon}`}>
                 <TotalIcon size={22} strokeWidth={3} />
               </span>
               <div className="min-w-0">
@@ -583,13 +618,13 @@ export function ResultatScreen() {
 
       {/* Raden längst ner – alltid synlig */}
       <Portal>
-        <div className="fixed inset-x-0 bottom-[calc(60px+env(safe-area-inset-bottom))] md:bottom-0 z-40 print:hidden border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md">
+        <div className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] md:bottom-0 z-40 print:hidden border-t border-line bg-surface/95 backdrop-blur-md">
           <div className="max-w-[1300px] mx-auto px-3 sm:px-6 py-2.5 flex items-center gap-2 sm:gap-3 md:pb-[max(0.625rem,env(safe-area-inset-bottom))]">
             <button
               type="button"
               onClick={() => liveIssues.length > 0 && setValidationIssues(liveIssues)}
               title={liveIssues.length > 0 ? 'Visa vad som saknas' : undefined}
-              className={`text-left flex items-center gap-2.5 min-w-0 flex-1 px-3 h-12 rounded-xl border ${liveIssues.length > 0 ? 'cursor-pointer' : 'cursor-default'} ${toneBox}`}
+              className={`text-left flex items-center gap-2.5 min-w-0 flex-1 px-3 h-12 rounded-control border ${liveIssues.length > 0 ? 'cursor-pointer' : 'cursor-default'} ${toneBox}`}
             >
               <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0 ${toneIcon}`}>
                 <TotalIcon size={16} strokeWidth={3} />
@@ -606,10 +641,22 @@ export function ResultatScreen() {
               </div>
             </button>
 
+            {total.tone !== 'pass' && (
+              <button
+                type="button"
+                onClick={handleApproveAll}
+                className="h-12 px-3 sm:px-4 rounded-control bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-sm font-semibold flex items-center justify-center gap-1.5 cursor-pointer shrink-0 transition-all shadow-sm shadow-emerald-600/20"
+                title="Sätt godkänt på provet med ett klick"
+              >
+                <Check size={18} strokeWidth={2.75} />
+                <span className="hidden sm:inline">Godkänn allt</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => printProtocol(state)}
-              className="h-12 w-12 sm:w-auto sm:px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center gap-2 text-sm font-semibold cursor-pointer shrink-0"
+              className="h-12 w-12 sm:w-auto sm:px-4 rounded-control border border-line bg-surface text-ink-2 hover:bg-surface-2 hover:text-ink flex items-center justify-center gap-2 text-sm font-semibold cursor-pointer shrink-0 transition-colors"
               title="Skriv ut eller spara som PDF"
             >
               <Printer size={18} />
@@ -619,7 +666,7 @@ export function ResultatScreen() {
             <button
               type="button"
               onClick={handleNext}
-              className="h-12 px-4 sm:px-7 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer shrink-0 transition-all"
+              className="h-12 px-4 sm:px-7 rounded-control bg-navy hover:bg-navy-deep dark:bg-blue-600 dark:hover:bg-blue-500 active:scale-[0.98] text-white text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer shrink-0 transition-all shadow-sm"
             >
               Skapa protokoll
               <ArrowRight size={18} />
@@ -632,9 +679,9 @@ export function ResultatScreen() {
       {validationIssues && (
         <Portal>
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150" onClick={() => setValidationIssues(null)}>
-          <div className="w-full sm:max-w-lg bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full sm:max-w-lg bg-white dark:bg-slate-900 rounded-t-sheet sm:rounded-card shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="px-5 pt-5 pb-3 flex items-start gap-3">
-              <span className={`p-2 rounded-xl shrink-0 ${validationIssues.some(i => i.level === 'error') ? 'bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400' : 'bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'}`}>
+              <span className={`p-2 rounded-control shrink-0 ${validationIssues.some(i => i.level === 'error') ? 'bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400' : 'bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'}`}>
                 <AlertTriangle size={20} />
               </span>
               <div>
@@ -646,7 +693,7 @@ export function ResultatScreen() {
             </div>
             <ul className="px-5 pb-4 space-y-2 max-h-[50dvh] overflow-y-auto">
               {validationIssues.map((issue, idx) => (
-                <li key={idx} className={`text-sm p-3 rounded-xl flex gap-2.5 ${
+                <li key={idx} className={`text-sm p-3 rounded-control flex gap-2.5 ${
                   issue.level === 'error'
                     ? 'bg-red-50 dark:bg-red-950/20 text-red-900 dark:text-red-200'
                     : 'bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200'
@@ -660,14 +707,14 @@ export function ResultatScreen() {
               <button
                 type="button"
                 onClick={() => { setValidationIssues(null); navigate('/korprov/protokoll'); }}
-                className="h-11 px-4 rounded-xl text-sm font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                className="h-11 px-4 rounded-control text-sm font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 Skapa protokoll ändå
               </button>
               <button
                 type="button"
                 onClick={() => { setValidationIssues(null); topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
-                className="h-12 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold cursor-pointer"
+                className="h-12 px-6 rounded-control bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold cursor-pointer"
               >
                 Komplettera
               </button>

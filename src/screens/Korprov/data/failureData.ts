@@ -182,12 +182,118 @@ export const newLayoutDeficiencies: Record<string, string[]> = {
   ]
 };
 
+// Kompetensområden för spårtrafik. Lokförare följer TSFS 2011:60
+// (rullande materiel, infrastruktur/trafiksäkerhetsinstruktion, språk),
+// spårvagn och tunnelbana har egna områden för stads- och gatumiljö.
+export const RAIL_DEFICIENCIES: Record<string, string[]> = {
+  "Rullande materiel och kontroller före avgång": [
+    "Utföra kontroller och prov före avgång",
+    "Genomföra bromsprov korrekt",
+    "Kontrollera tågets sammansättning, bromsvikt och bromsprocent",
+    "Använda reglage, ATC/ETCS och säkerhetsutrustning på rätt sätt",
+    "Upptäcka, rapportera och åtgärda fel på fordonet",
+  ],
+  "Framförande och hastighetsanpassning": [
+    "Anpassa hastigheten efter banans egenskaper och största tillåtna hastighet",
+    "Följa tillfälliga hastighetsnedsättningar och banarbeten",
+    "Ta hänsyn till tågets vikt, bromsförmåga och lutning",
+    "Stanna på rätt plats vid plattform och signal",
+    "Köra energisnålt med utrullning och rätt fartnivå",
+  ],
+  "Signaler och trafiksäkerhetsinstruktion": [
+    "Uppfatta och tolka signaler korrekt",
+    "Respektera stoppsignal och tillstånd att passera",
+    "Tillämpa reglerna för tågfärd, spärrfärd och växling",
+    "Följa trafiksäkerhetsinstruktionen",
+    "Hantera ATC/ETCS-ingrepp och körning i nedsatt läge",
+  ],
+  "Linjekännedom": [
+    "Känna till banans lutningar, kurvor och driftplatser",
+    "Planera körningen efter linjens förutsättningar",
+    "Känna till plankorsningar och andra riskpunkter längs banan",
+  ],
+  "Kommunikation": [
+    "Kommunicera tydligt med tågklarerare och trafikledning",
+    "Använda rätt fraseologi och kvittera order",
+    "Rapportera avvikelser och händelser",
+    "Informera resenärer vid störning",
+  ],
+  "Onormala situationer och nödläge": [
+    "Agera korrekt vid fel, störning och signal i stopp",
+    "Skydda tåget och olycksplatsen",
+    "Larma och utrymma på rätt sätt",
+    "Säkra tåget mot oavsiktlig rörelse",
+  ],
+  // Spårvagn och tunnelbana
+  "Fordon och kontroller": [
+    "Klargöra fordonet och göra avgångskontroll",
+    "Utföra bromsprov",
+    "Använda reglage, sandning och nödbroms på rätt sätt",
+    "Hantera dörrar och tillgänglighet för resenärer",
+  ],
+  "Manövrering och hastighet": [
+    "Anpassa hastigheten efter sikt och trafik (siktfart)",
+    "Bromsa mjukt med hänsyn till stående resenärer",
+    "Stanna exakt vid hållplats och plattform",
+    "Köra energisnålt och jämnt",
+  ],
+  "Signaler och trafikregler": [
+    "Följa spårvägens signaler och tecken",
+    "Tillämpa trafikreglerna i blandtrafik",
+    "Kontrollera växelläge och hantera växlar",
+    "Respektera företräde och väjningsplikt",
+  ],
+  "Samspel och trafiksäkerhet": [
+    "Uppmärksamma gående och cyklister i tid",
+    "Förutse andra trafikanters beteende",
+    "Hålla säkerhetsmarginaler i gatumiljö",
+    "Varna med klocka eller signal i tid",
+  ],
+  "Kommunikation och onormala situationer": [
+    "Kommunicera med trafikledningen",
+    "Agera vid hinder, olycka och strömlöst läge",
+    "Utrymma fordonet och ta hand om resenärer",
+  ],
+};
+
+const LOK_AREAS = [
+  "Rullande materiel och kontroller före avgång",
+  "Framförande och hastighetsanpassning",
+  "Signaler och trafiksäkerhetsinstruktion",
+  "Linjekännedom",
+  "Kommunikation",
+  "Onormala situationer och nödläge",
+];
+const TRAM_AREAS = [
+  "Fordon och kontroller",
+  "Manövrering och hastighet",
+  "Signaler och trafikregler",
+  "Samspel och trafiksäkerhet",
+  "Kommunikation och onormala situationer",
+];
+
+/** Kompetensområden som går att välja för en behörighet */
+export function areasForLicense(license: string | undefined): string[] {
+  if (license?.startsWith('Lokförare')) return LOK_AREAS;
+  if (license === 'Spårvagn' || license === 'Tunnelbana') return TRAM_AREAS;
+  const all = failureCategories.areas;
+  return license === 'TAXI' ? all : all.filter(a => !TAXI_ONLY_AREAS.includes(a));
+}
+
+/** Området som säkerhetskontrollen/fordonskontrollen hör till */
+export function vehicleAreaForLicense(license: string | undefined): string {
+  if (license?.startsWith('Lokförare')) return LOK_AREAS[0];
+  if (license === 'Spårvagn' || license === 'Tunnelbana') return TRAM_AREAS[0];
+  return 'Fordonskännedom';
+}
+
 // Sorterar valda brister i listans ordning (nya formuleringar först), som i
 // Trafikverkets protokoll – oavsett i vilken ordning de klickades i
 export function sortByCatalog(area: string, selected: string[]): string[] {
   const order = [
     ...(newLayoutDeficiencies[area] || []),
     ...((failureCategories.deficiencies as Record<string, string[]>)[area] || []),
+    ...(RAIL_DEFICIENCIES[area] || []),
   ];
   const rank = (d: string) => {
     const i = order.indexOf(d);
@@ -198,6 +304,8 @@ export function sortByCatalog(area: string, selected: string[]): string[] {
 
 // Valbara brister för ett område, uppdelat i grupper för formuläret
 export function deficiencyGroups(area: string, newLayout: boolean): { label?: string; items: string[] }[] {
+  // Spårtrafikens områden har bara en uppsättning formuleringar
+  if (RAIL_DEFICIENCIES[area]) return [{ items: RAIL_DEFICIENCIES[area] }];
   const classic = (failureCategories.deficiencies as Record<string, string[]>)[area] || [];
   if (!newLayout) return [{ items: classic }];
   const fresh = newLayoutDeficiencies[area] || [];

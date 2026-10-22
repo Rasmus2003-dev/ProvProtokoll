@@ -74,7 +74,7 @@ export function NavigatorPanel({ onMark }: NavigatorPanelProps) {
   const statusColor = recording ? 'text-red-600 dark:text-red-400' : finished ? 'text-emerald-600 dark:text-emerald-400' : started ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400';
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 overflow-hidden">
+    <div className="rounded-control border border-gray-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 overflow-hidden">
       {/* Kompakt rad */}
       <div className="flex items-center gap-3 px-3 py-2">
         <button
@@ -87,12 +87,12 @@ export function NavigatorPanel({ onMark }: NavigatorPanelProps) {
           <span className="text-xs font-bold text-gray-700 dark:text-slate-300">Navigator</span>
           <span className={`text-[11px] font-semibold ${statusColor}`}>{status}</span>
           {started && (
-            <span className="hidden sm:inline text-[11px] font-mono text-gray-500 dark:text-slate-400 truncate">
+            <span className="hidden sm:inline text-[11px] tabular-nums text-gray-500 dark:text-slate-400 truncate">
               {formatElapsed(elapsedMs)} · {formatDistance(distance)}{speedKmh != null ? ` · ${speedKmh} km/h` : ''}
             </span>
           )}
           {events.length > 0 && (
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300">
+            <span className="text-[11px] font-bold px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300">
               {events.length} händelse{events.length > 1 ? 'r' : ''}
             </span>
           )}
@@ -166,7 +166,7 @@ export function NavigatorPanel({ onMark }: NavigatorPanelProps) {
               {events.map((ev, idx) => ({ ev, idx })).reverse().map(({ ev, idx }) => (
                 <div key={ev.id} className="flex items-center gap-2.5 py-1 text-xs">
                   <span
-                    className="w-5 h-5 rounded-full text-white font-black text-[10px] flex items-center justify-center shrink-0"
+                    className="w-5 h-5 rounded-full text-white font-bold text-[11px] flex items-center justify-center shrink-0"
                     style={{ background: EVENT_META[ev.kind].color }}
                   >
                     {idx + 1}
@@ -175,7 +175,7 @@ export function NavigatorPanel({ onMark }: NavigatorPanelProps) {
                     <span className="font-semibold text-gray-800 dark:text-white">{ev.situation || EVENT_META[ev.kind].label}</span>
                     {ev.note && <span className="text-gray-500 dark:text-slate-400"> – {ev.note}</span>}
                   </div>
-                  <span className="font-mono text-[10px] text-gray-400 shrink-0">{start ? formatElapsed(ev.t - start) : ''}</span>
+                  <span className="tabular-nums text-[11px] text-gray-400 shrink-0">{start ? formatElapsed(ev.t - start) : ''}</span>
                   <button
                     type="button"
                     onClick={() => removeEvent(ev.id)}

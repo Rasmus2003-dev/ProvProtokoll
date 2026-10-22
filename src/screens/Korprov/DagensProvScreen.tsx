@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useBackToClose } from '../../hooks/useBackToClose';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/ProvContext';
 import { Plus, X, Clock, User, FileText, ChevronRight, CheckCircle2 } from 'lucide-react';
@@ -8,17 +9,19 @@ export function DagensProvScreen() {
   const { updateState } = useAppStore();
   
   const [testList, setTestList] = useState([
-    { time: '08:30', name: 'Elvira Strömqvist', id: '19700613-1234', auth: 'B', lang: 'Svenska', status: 'Pågående', statusColor: 'text-blue-600', bgStatus: 'bg-blue-50', inspector: 'Rasmus Lundin', active: true },
-    { time: '09:15', name: 'Mikael Andersson', id: '19881020-4321', auth: 'CE', lang: 'Svenska', status: 'Väntar', statusColor: 'text-gray-500', bgStatus: 'bg-white', inspector: 'Rasmus Lundin', active: true },
-    { time: '10:00', name: 'Fatima Al-Sayed', id: '19950314-5566', auth: 'D', lang: 'Svenska', status: 'Väntar', statusColor: 'text-gray-500', bgStatus: 'bg-white', inspector: 'Rasmus Lundin', active: true },
-    { time: '11:15', name: 'Johan Lundin', id: '19920512-7788', auth: 'TAXI', lang: 'Svenska', status: 'Väntar', statusColor: 'text-gray-500', bgStatus: 'bg-white', inspector: 'Rasmus Lundin', active: true },
-    { time: '13:00', name: 'Sara Petrovic', id: '20010830-1122', auth: 'A', lang: 'Engelska', status: 'Väntar', statusColor: 'text-gray-500', bgStatus: 'bg-white', inspector: 'Rasmus Lundin', active: true },
-    { time: '14:30', name: 'Lars Olofsson', id: '19751101-9900', auth: 'BE', lang: 'Svenska', status: 'Väntar', statusColor: 'text-gray-500', bgStatus: 'bg-white', inspector: 'Rasmus Lundin', active: true },
-    { time: '15:15', name: 'Anna Bergström', id: '19991224-3344', auth: 'C', lang: 'Svenska', status: 'Väntar', statusColor: 'text-gray-500', bgStatus: 'bg-white', inspector: 'Rasmus Lundin', active: true },
+    { time: '08:30', name: 'Elvira Strömqvist', id: '19700673-2391', auth: 'B', lang: 'Svenska', status: 'Pågående', statusColor: 'text-blue-600', bgStatus: 'bg-blue-50', inspector: 'Rasmus Lundin', active: true },
+    { time: '09:15', name: 'Mikael Andersson', id: '19881080-4328', auth: 'CE', lang: 'Svenska', status: 'Väntar', statusColor: 'text-gray-500', bgStatus: 'bg-white', inspector: 'Rasmus Lundin', active: true },
+    { time: '10:00', name: 'Fatima Al-Sayed', id: '19950374-5561', auth: 'D', lang: 'Svenska', status: 'Väntar', statusColor: 'text-gray-500', bgStatus: 'bg-white', inspector: 'Rasmus Lundin', active: true },
+    { time: '11:15', name: 'Johan Lundin', id: '19920572-7783', auth: 'TAXI', lang: 'Svenska', status: 'Väntar', statusColor: 'text-gray-500', bgStatus: 'bg-white', inspector: 'Rasmus Lundin', active: true },
+    { time: '13:00', name: 'Sara Petrovic', id: '20010890-1127', auth: 'A', lang: 'Engelska', status: 'Väntar', statusColor: 'text-gray-500', bgStatus: 'bg-white', inspector: 'Rasmus Lundin', active: true },
+    { time: '14:30', name: 'Lars Olofsson', id: '19751161-9905', auth: 'BE', lang: 'Svenska', status: 'Väntar', statusColor: 'text-gray-500', bgStatus: 'bg-white', inspector: 'Rasmus Lundin', active: true },
+    { time: '15:15', name: 'Anna Bergström', id: '19991284-3349', auth: 'C', lang: 'Svenska', status: 'Väntar', statusColor: 'text-gray-500', bgStatus: 'bg-white', inspector: 'Rasmus Lundin', active: true },
   ]);
 
   const [activeTab, setActiveTab] = useState<'aktiva' | 'avslutade' | 'ej_genomforda'>('aktiva');
   const [showAddModal, setShowAddModal] = useState(false);
+  // Androids bakåtknapp stänger öppna dialoger
+  useBackToClose(showAddModal, () => setShowAddModal(false));
   const [newStudent, setNewStudent] = useState({ name: '', id: '', auth: 'B', lang: 'Svenska' });
 
   const handleAddStudent = (e: React.FormEvent) => {
@@ -119,9 +122,9 @@ export function DagensProvScreen() {
         <div>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#002f6c] dark:text-blue-400">PROVSCHEMA • PROVPROTOKOLL</span>
+            <span className="text-xs tabular-nums font-bold text-[#002f6c] dark:text-blue-400">PROVSCHEMA • PROVPROTOKOLL</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight mt-0.5">Dagens prov</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white tracking-tight mt-0.5">Dagens prov</h1>
           <p className="text-gray-500 dark:text-zinc-400 font-medium text-sm mt-1">
             Välj ett prov direkt från schemat eller starta ett nytt prov och fyll i elevuppgifter.
           </p>
@@ -162,7 +165,7 @@ export function DagensProvScreen() {
               }));
               navigate('/korprov/start');
             }}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-white dark:bg-zinc-800/90 text-gray-700 dark:text-zinc-100 border border-gray-200/90 dark:border-zinc-700 text-xs sm:text-sm font-bold uppercase tracking-wider rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-700 transition-all shadow-xs hover:shadow-sm active:scale-98 cursor-pointer"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-white dark:bg-zinc-800/90 text-gray-700 dark:text-zinc-100 border border-gray-200/90 dark:border-zinc-700 text-xs sm:text-sm font-bold rounded-control hover:bg-gray-50 dark:hover:bg-zinc-700 transition-all shadow-xs hover:shadow-sm active:scale-98 cursor-pointer"
           >
             <FileText className="w-4 h-4 text-[#002f6c] dark:text-blue-400" />
             <span>Nytt tomt prov</span>
@@ -170,7 +173,7 @@ export function DagensProvScreen() {
 
           <button 
             onClick={() => setShowAddModal(true)}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 bg-[#002f6c] hover:bg-[#002353] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs sm:text-sm font-black uppercase tracking-wider rounded-xl transition-all shadow-md shadow-blue-950/20 active:scale-98 cursor-pointer"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 bg-[#002f6c] hover:bg-[#002353] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs sm:text-sm font-bold rounded-control transition-all shadow-md shadow-blue-950/20 active:scale-98 cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             <span>Lägg till i schema</span>
@@ -179,9 +182,9 @@ export function DagensProvScreen() {
       </div>
 
       {/* QUICK SELECTOR: VÄLJ PROVTYP / BEHÖRIGHET DIREKT */}
-      <div className="bg-white dark:bg-zinc-900 border border-gray-200/90 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 mb-6 shadow-xs hover:border-gray-300 dark:hover:border-zinc-700 transition-colors">
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200/90 dark:border-zinc-800 rounded-card p-4 sm:p-5 mb-6 shadow-xs hover:border-gray-300 dark:hover:border-zinc-700 transition-colors">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3.5">
-          <span className="text-[11px] font-black uppercase tracking-widest text-gray-500 dark:text-zinc-400 flex items-center gap-2">
+          <span className="text-[11px] font-bold text-gray-500 dark:text-zinc-400 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#002f6c] dark:bg-blue-400"></span>
             Snabbval: Starta valfritt prov direkt
           </span>
@@ -238,12 +241,12 @@ export function DagensProvScreen() {
                 }));
                 navigate('/korprov/start');
               }}
-              className="flex flex-col items-center justify-center p-2.5 sm:py-3 rounded-xl border border-gray-200/90 dark:border-zinc-800 bg-gray-50/80 dark:bg-zinc-850 hover:bg-[#002f6c] hover:text-white dark:hover:bg-blue-600 hover:border-transparent transition-all duration-150 group cursor-pointer shadow-2xs hover:shadow-md active:scale-95"
+              className="flex flex-col items-center justify-center p-2.5 sm:py-3 rounded-control border border-gray-200/90 dark:border-zinc-800 bg-gray-50/80 dark:bg-zinc-850 hover:bg-[#002f6c] hover:text-white dark:hover:bg-blue-600 hover:border-transparent transition-all duration-150 group cursor-pointer shadow-2xs hover:shadow-md active:scale-95"
             >
-              <span className="text-base sm:text-lg font-black text-gray-900 dark:text-white group-hover:text-white transition-colors">
+              <span className="text-base sm:text-lg font-bold text-gray-900 dark:text-white group-hover:text-white transition-colors">
                 {lic}
               </span>
-              <span className="text-[10px] font-semibold text-gray-500 dark:text-zinc-400 group-hover:text-white/90 transition-colors truncate max-w-full">
+              <span className="text-[11px] font-semibold text-gray-500 dark:text-zinc-400 group-hover:text-white/90 transition-colors truncate max-w-full">
                 {name}
               </span>
             </button>
@@ -252,7 +255,7 @@ export function DagensProvScreen() {
       </div>
 
       {/* TABS */}
-      <div className="flex bg-gray-200/80 dark:bg-zinc-800/80 p-1 rounded-xl mb-6 self-start w-full sm:w-auto overflow-x-auto hide-scrollbar border border-gray-200 dark:border-zinc-700/50">
+      <div className="flex bg-gray-200/80 dark:bg-zinc-800/80 p-1 rounded-control mb-6 self-start w-full sm:w-auto overflow-x-auto hide-scrollbar border border-gray-200 dark:border-zinc-700/50">
         <button 
           onClick={() => setActiveTab('aktiva')}
           className={`flex-1 sm:flex-none px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${activeTab === 'aktiva' ? 'bg-white dark:bg-zinc-900 text-gray-900 dark:text-white shadow-xs' : 'text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white'}`}
@@ -289,16 +292,16 @@ export function DagensProvScreen() {
             <div 
               key={i} 
               onClick={() => handleSelectTest(test)}
-              className={`relative group flex flex-col sm:flex-row sm:items-center justify-between p-4 md:p-5 rounded-2xl border transition-all ${
+              className={`relative group flex flex-col sm:flex-row sm:items-center justify-between p-4 md:p-5 rounded-card border transition-all ${
                 test.active 
                   ? 'cursor-pointer border-gray-200 dark:border-zinc-800 hover:border-[#002f6c] dark:hover:border-blue-500 hover:shadow-md bg-white dark:bg-zinc-900/90' 
                   : 'opacity-70 bg-gray-50 dark:bg-zinc-900/40 border-gray-200 dark:border-zinc-800'
               }`}
             >
               <div className="flex items-start sm:items-center gap-4">
-                <div className="bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 font-bold px-3.5 py-2.5 rounded-xl text-center min-w-[72px] border border-gray-200/60 dark:border-zinc-700/50 shrink-0">
+                <div className="bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 font-bold px-3.5 py-2.5 rounded-control text-center min-w-[72px] border border-gray-200/60 dark:border-zinc-700/50 shrink-0">
                   <Clock className="w-4 h-4 mx-auto mb-1 text-slate-500 dark:text-zinc-400" />
-                  <span className="text-sm font-mono font-black">{test.time}</span>
+                  <span className="text-sm tabular-nums font-bold">{test.time}</span>
                 </div>
                 
                 <div className="flex flex-col min-w-0">
@@ -306,7 +309,7 @@ export function DagensProvScreen() {
                     {test.name}
                   </h3>
                   <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs md:text-sm text-gray-600 dark:text-zinc-400 font-medium">
-                    <span className="flex items-center gap-1 font-mono text-gray-700 dark:text-zinc-300">
+                    <span className="flex items-center gap-1 tabular-nums text-gray-700 dark:text-zinc-300">
                       <User className="w-3.5 h-3.5 text-gray-400" /> {test.id}
                     </span>
                     <span className="hidden sm:inline text-gray-300 dark:text-zinc-700">•</span>
@@ -320,7 +323,7 @@ export function DagensProvScreen() {
               </div>
 
               <div className="flex items-center justify-between mt-4 sm:mt-0 sm:pl-4 border-t sm:border-t-0 sm:border-l border-gray-100 dark:border-zinc-800 pt-4 sm:pt-0 gap-3">
-                <div className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider ${
+                <div className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
                   test.status === 'Pågående' 
                     ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800' 
                     : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 border border-transparent'
@@ -335,7 +338,7 @@ export function DagensProvScreen() {
                         e.stopPropagation();
                         handleSelectTest(test);
                       }}
-                      className="px-4 py-2.5 bg-[#002f6c] dark:bg-blue-600 hover:bg-[#001f48] dark:hover:bg-blue-500 text-white text-xs font-black uppercase tracking-wider rounded-xl flex items-center gap-2 shadow-xs hover:shadow-md transition-all active:scale-95 cursor-pointer"
+                      className="px-4 py-2.5 bg-[#002f6c] dark:bg-blue-600 hover:bg-[#001f48] dark:hover:bg-blue-500 text-white text-xs font-bold rounded-control flex items-center gap-2 shadow-xs hover:shadow-md transition-all active:scale-95 cursor-pointer"
                     >
                       <span>Välj och starta</span>
                       <ChevronRight className="w-4 h-4 stroke-[3]" />
@@ -348,7 +351,7 @@ export function DagensProvScreen() {
         })}
         
         {filteredTests.length === 0 && (
-          <div className="text-center py-12 px-4 bg-gray-50 dark:bg-zinc-900/50 rounded-2xl border border-gray-200 dark:border-zinc-800 border-dashed">
+          <div className="text-center py-12 px-4 bg-gray-50 dark:bg-zinc-900/50 rounded-card border border-gray-200 dark:border-zinc-800 border-dashed">
             <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Inga prov i denna vy</h3>
             <p className="text-gray-500 dark:text-zinc-400 text-sm">Listan är tom för tillfället.</p>
@@ -357,7 +360,7 @@ export function DagensProvScreen() {
       </div>
 
       {/* FOOTER INFO */}
-      <div className="flex flex-col sm:flex-row justify-between items-center mt-8 pt-6 border-t border-gray-200 dark:border-zinc-800 text-xs text-gray-500 dark:text-zinc-400 font-mono gap-2">
+      <div className="flex flex-col sm:flex-row justify-between items-center mt-8 pt-6 border-t border-gray-200 dark:border-zinc-800 text-xs text-gray-500 dark:text-zinc-400 tabular-nums gap-2">
         <div>PROV-ID: <span className="font-bold text-gray-800 dark:text-zinc-200">2026-05-19-0013</span></div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -368,9 +371,9 @@ export function DagensProvScreen() {
       {/* ADD STUDENT MODAL */}
       {showAddModal && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:px-4">
-          <div className="bg-white dark:bg-zinc-900 w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden animate-slide-up sm:animate-fade-in flex flex-col max-h-[90vh] border border-gray-200 dark:border-zinc-800">
+          <div className="bg-white dark:bg-zinc-900 w-full sm:max-w-lg rounded-t-sheet sm:rounded-card shadow-2xl overflow-hidden animate-slide-up sm:animate-fade-in flex flex-col max-h-[90vh] border border-gray-200 dark:border-zinc-800">
             <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-0 z-10">
-              <h2 className="text-xl font-black text-gray-900 dark:text-white">Lägg till elev</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Lägg till elev</h2>
               <button
                 onClick={() => setShowAddModal(false)}
                 className="bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700 p-2 min-w-10 min-h-10 flex items-center justify-center rounded-full transition-colors cursor-pointer"
@@ -381,7 +384,7 @@ export function DagensProvScreen() {
             
             <form onSubmit={handleAddStudent} className="p-6 flex flex-col gap-5 overflow-y-auto">
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-widest mb-1.5">
+                <label className="block text-[11px] font-bold text-gray-500 dark:text-zinc-400 mb-1.5">
                   Elevens fullständiga namn
                 </label>
                 <input 
@@ -389,13 +392,13 @@ export function DagensProvScreen() {
                   required
                   value={newStudent.name}
                   onChange={(e) => setNewStudent({...newStudent, name: e.target.value})}
-                  className="w-full px-4 py-3.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-[#002f6c] dark:focus:ring-blue-500 text-gray-900 dark:text-white text-[15px] font-medium transition-all"
+                  className="w-full px-4 py-3.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-control focus:outline-none focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-[#002f6c] dark:focus:ring-blue-500 text-gray-900 dark:text-white text-[15px] font-medium transition-all"
                   placeholder="t.ex. Anna Svensson"
                 />
               </div>
               
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-widest mb-1.5">
+                <label className="block text-[11px] font-bold text-gray-500 dark:text-zinc-400 mb-1.5">
                   Personnummer
                 </label>
                 <input 
@@ -403,20 +406,20 @@ export function DagensProvScreen() {
                   required
                   value={newStudent.id}
                   onChange={(e) => setNewStudent({...newStudent, id: e.target.value})}
-                  className="w-full px-4 py-3.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-[#002f6c] dark:focus:ring-blue-500 text-gray-900 dark:text-white text-[15px] font-mono font-medium transition-all"
+                  className="w-full px-4 py-3.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-control focus:outline-none focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-[#002f6c] dark:focus:ring-blue-500 text-gray-900 dark:text-white text-[15px] tabular-nums font-medium transition-all"
                   placeholder="ÅÅÅÅMMDD-XXXX"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[11px] font-bold text-gray-500 dark:text-zinc-400 mb-1.5">
                     Behörighet
                   </label>
                   <select
                     value={newStudent.auth}
                     onChange={(e) => setNewStudent({...newStudent, auth: e.target.value})}
-                    className="w-full px-4 py-3.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-[#002f6c] dark:focus:ring-blue-500 text-gray-900 dark:text-white text-[15px] font-medium appearance-none transition-all"
+                    className="w-full px-4 py-3.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-control focus:outline-none focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-[#002f6c] dark:focus:ring-blue-500 text-gray-900 dark:text-white text-[15px] font-medium appearance-none transition-all"
                   >
                     <option value="AM">AM</option>
                     <option value="A1">A1</option>
@@ -436,13 +439,13 @@ export function DagensProvScreen() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[11px] font-bold text-gray-500 dark:text-zinc-400 mb-1.5">
                     Provets Språk
                   </label>
                   <select
                     value={newStudent.lang}
                     onChange={(e) => setNewStudent({...newStudent, lang: e.target.value})}
-                    className="w-full px-4 py-3.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-[#002f6c] dark:focus:ring-blue-500 text-gray-900 dark:text-white text-[15px] font-medium appearance-none transition-all"
+                    className="w-full px-4 py-3.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-control focus:outline-none focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-[#002f6c] dark:focus:ring-blue-500 text-gray-900 dark:text-white text-[15px] font-medium appearance-none transition-all"
                   >
                     <option value="Svenska">Svenska</option>
                     <option value="Engelska">Engelska</option>
@@ -455,13 +458,13 @@ export function DagensProvScreen() {
                 <button 
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 px-4 py-4 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold text-[13px] rounded-xl hover:bg-gray-200 dark:hover:bg-zinc-700 uppercase tracking-wider transition-colors cursor-pointer active:scale-[0.98]"
+                  className="flex-1 px-4 py-4 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold text-[13px] rounded-control hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer active:scale-[0.98]"
                 >
                   Avbryt
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 px-4 py-4 bg-[#002f6c] dark:bg-blue-600 text-white font-bold text-[13px] rounded-xl hover:bg-[#001d4a] dark:hover:bg-blue-500 uppercase tracking-wider transition-colors shadow-md cursor-pointer active:scale-[0.98]"
+                  className="flex-1 px-4 py-4 bg-[#002f6c] dark:bg-blue-600 text-white font-bold text-[13px] rounded-control hover:bg-[#001d4a] dark:hover:bg-blue-500 transition-colors shadow-md cursor-pointer active:scale-[0.98]"
                 >
                   Spara och lägg till
                 </button>

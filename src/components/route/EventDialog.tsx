@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useBackToClose } from '../../hooks/useBackToClose';
 import { X, MapPin, MapPinOff } from 'lucide-react';
 import { DrivingEventKind } from '../../types';
 import { EVENT_META } from '../../lib/route';
@@ -39,6 +40,8 @@ export function EventDialog({
   onSave,
   onClose,
 }: EventDialogProps) {
+  // Androids bakåtknapp stänger dialogen
+  useBackToClose(open, onClose);
   const [kind, setKind] = useState<DrivingEventKind>(initialKind);
   const [situation, setSituation] = useState<string | undefined>(initialSituation);
   const [note, setNote] = useState('');
@@ -62,12 +65,12 @@ export function EventDialog({
       onClick={onClose}
     >
       <div
-        className="w-full sm:max-w-lg max-h-[90dvh] flex flex-col bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-800 overflow-hidden"
+        className="w-full sm:max-w-lg max-h-[90dvh] flex flex-col bg-white dark:bg-slate-900 rounded-t-sheet sm:rounded-card shadow-2xl border border-gray-200 dark:border-slate-800 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3 border-b border-gray-100 dark:border-slate-800">
           <div>
-            <h3 className="text-base font-black text-gray-900 dark:text-white">{title}</h3>
+            <h3 className="text-base font-bold text-gray-900 dark:text-white">{title}</h3>
             {description && <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{description}</p>}
             <div className={`mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold ${hasPosition ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}`}>
               {hasPosition ? <MapPin size={12} /> : <MapPinOff size={12} />}
@@ -92,7 +95,7 @@ export function EventDialog({
                   key={k}
                   type="button"
                   onClick={() => setKind(k)}
-                  className={`h-11 rounded-xl border-2 text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                  className={`h-11 rounded-control border-2 text-xs font-bold transition-all cursor-pointer ${
                     kind === k ? EVENT_META[k].badge : 'bg-white dark:bg-slate-900 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-700'
                   }`}
                 >
@@ -103,7 +106,7 @@ export function EventDialog({
           )}
 
           <div className="space-y-2">
-            <div className="text-[11px] font-black uppercase tracking-wider text-gray-500 dark:text-slate-400">Situation</div>
+            <div className="text-[11px] font-bold text-gray-500 dark:text-slate-400">Situation</div>
             <div className="flex flex-wrap gap-2">
               {situations.map(sit => {
                 const selected = situation === sit;
@@ -126,7 +129,7 @@ export function EventDialog({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[11px] font-black uppercase tracking-wider text-gray-500 dark:text-slate-400" htmlFor="event-note">
+            <label className="text-[11px] font-bold text-gray-500 dark:text-slate-400" htmlFor="event-note">
               Kommentar <span className="normal-case font-medium">(valfritt)</span>
             </label>
             <textarea
@@ -135,7 +138,7 @@ export function EventDialog({
               onChange={(e) => setNote(e.target.value)}
               rows={2}
               placeholder="t.ex. sen avsökning åt vänster"
-              className="w-full rounded-xl border-2 border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500 resize-none"
+              className="w-full rounded-control border-2 border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500 resize-none"
             />
           </div>
         </div>
@@ -145,7 +148,7 @@ export function EventDialog({
             <button
               type="button"
               onClick={secondaryAction.onClick}
-              className="h-11 px-4 rounded-xl text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 cursor-pointer"
+              className="h-11 px-4 rounded-control text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 cursor-pointer"
             >
               {secondaryAction.label}
             </button>
@@ -153,7 +156,7 @@ export function EventDialog({
           <button
             type="button"
             onClick={() => onSave({ kind, situation, note })}
-            className="h-12 px-6 rounded-xl bg-[#002f6c] hover:bg-[#00204a] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-sm font-black uppercase tracking-wider cursor-pointer active:scale-[0.98] transition-all"
+            className="h-12 px-6 rounded-control bg-[#002f6c] hover:bg-[#00204a] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-sm font-bold cursor-pointer active:scale-[0.98] transition-all"
           >
             {saveLabel}
           </button>

@@ -41,6 +41,9 @@ export interface AppState {
     specialConditions?: string[];
     interpreterPresent?: boolean;
     interpreterLanguage?: string;
+    // Identitetskontroll: vilken legitimation som visades och dess nummer
+    idType?: string;
+    idNumber?: string;
   };
   checklist: {
     identityChecked: boolean;
@@ -71,6 +74,18 @@ export interface AppState {
   lightSafetyTasks?: string[];
   // Protokollayout som provet skapades med (saknas = klassisk)
   protocolLayout?: 'klassisk' | 'ny';
+  // Kandidatens intygande om att hen inte har körkort i ett annat EU/EES-land.
+  // Frivilligt – inspektören kan hoppa över det och ange varför.
+  euLicenseDeclaration?: EuLicenseDeclaration;
+  // Protokollets id, sätts när provet sparas – samma id vid varje synkförsök
+  protocolId?: string;
+}
+
+export interface EuLicenseDeclaration {
+  status: 'signed' | 'skipped';
+  signature?: string; // PNG som data-URL
+  signedAt?: string;  // ISO-tid
+  skipReason?: string;
 }
 
 export type DrivingEventKind = 'brist' | 'ingripande' | 'notering';
@@ -107,6 +122,11 @@ export interface ElevRecord {
   status: 'Inbokad' | 'Klar för start' | 'Aktiv elev' | 'Genomförd';
   teacher?: string;
   createdDate: string;
+  // Bokningsuppgifter som visas på startsidans bokningskort
+  place?: string;         // t.ex. "Förarprov Sundsvall"
+  city?: string;          // t.ex. "Sundsvall"
+  vehicle?: string;       // t.ex. "Trafikskolebil" eller "Egen bil"
+  hasConditions?: boolean;
 }
 
 export interface Inspector {

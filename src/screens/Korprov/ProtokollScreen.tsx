@@ -1,21 +1,61 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useBackToClose } from '../../hooks/useBackToClose';
+import { AppLogo } from '../../components/icons/AppLogo';
 import { useAppStore } from '../../store/ProvContext';
-import { Button } from '../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { OfficialPrintLayout } from './components/OfficialPrintLayout';
 import { TrafiklararProtokollView } from './components/TrafiklararProtokollView';
-import { AlertTriangle, Send, FileCheck, Mail, Copy, Check, Loader2, MailCheck, MailX, ArrowLeft, Printer, FileDown, Code2, Link2, Share2, QrCode, GraduationCap } from 'lucide-react';
+import { AlertTriangle, Send, FileCheck, Mail, Copy, Check, Loader2, MailCheck, MailX, ArrowLeft, Printer, FileDown, Code2, Share2, GraduationCap, X, CircleCheck, CircleX, CircleSlash, CircleDashed, PenLine } from 'lucide-react';
 import { downloadProtocolHtml, downloadEmailProtocolHtml, generateEmailProtocolHtml, printProtocol } from '../../lib/generateProtocolHtml';
 import { authHeaders } from '../../lib/inspectors';
 import { useToast } from '../../components/Toast';
+import { Portal } from '../../components/Portal';
+import { triggerHaptic } from '../../lib/utils';
 import { CandidateShareModal } from './components/CandidateShareModal';
 import { EmailComposerModal } from '../../components/EmailComposerModal';
+import { isDemoMode } from '../../lib/demoMode';
+
+type Tab = 'beslut' | 'larare' | 'email';
+type Verdict = 'pass' | 'fail' | 'aborted' | 'pending';
+
+const TABS: { id: Tab; label: string; short: string; icon: typeof FileCheck }[] = [
+  { id: 'beslut', label: 'Officiellt protokoll', short: 'Beslut', icon: FileCheck },
+  { id: 'larare', label: 'Lärarprotokoll', short: 'Lärare', icon: GraduationCap },
+  { id: 'email', label: 'E-post till kandidaten', short: 'E-post', icon: Mail },
+];
+
+const VERDICT_STYLE: Record<Verdict, { label: string; icon: typeof CircleCheck; badge: string; bar: string }> = {
+  pass: {
+    label: 'Godkänt',
+    icon: CircleCheck,
+    badge: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-400/30',
+    bar: 'bg-emerald-500',
+  },
+  fail: {
+    label: 'Underkänt',
+    icon: CircleX,
+    badge: 'bg-red-50 text-[#b51d1b] ring-red-600/20 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-400/30',
+    bar: 'bg-[#D42220]',
+  },
+  aborted: {
+    label: 'Avbrutet',
+    icon: CircleSlash,
+    badge: 'bg-amber-50 text-amber-800 ring-amber-600/25 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-400/30',
+    bar: 'bg-amber-500',
+  },
+  pending: {
+    label: 'Ej fastställt',
+    icon: CircleDashed,
+    badge: 'bg-surface-2 text-ink-2 ring-line',
+    bar: 'bg-ink-3',
+  },
+};
 
 export function ProtokollScreen() {
   const { state, saveTest, resetCurrentTest, profile } = useAppStore();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'email' | 'beslut' | 'larare'>('beslut');
+  const [activeTab, setActiveTab] = useState<Tab>('beslut');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -31,6 +71,11 @@ export function ProtokollScreen() {
   const [confirmReportChecked, setConfirmReportChecked] = useState(false);
   const [confirmEmailChecked, setConfirmEmailChecked] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
+  // Skydd mot dubbelklick: state hinner inte uppdateras mellan två snabba tryck
+  const finalizingRef = useRef(false);
+  // Androids bakåtknapp stänger öppna dialoger
+  useBackToClose(showEmailModal, () => setShowEmailModal(false));
+  useBackToClose(showConfirmModal, () => { if (!finalizingRef.current) setShowConfirmModal(false); });
 
   // Både "Skriv ut" och "Hämta PDF" går via samma printProtocol-funktion,
   // som renderar exakt samma HTML-källa som mejlet och HTML-nedladdningen -
@@ -47,37 +92,57 @@ export function ProtokollScreen() {
   const handleDownloadPDF = () => {
     setIsGeneratingPdf(true);
     setTimeout(() => {
-      if (activeTab === 'larare') {
-        window.print();
-      } else {
-        printProtocol(state, profile?.name);
+      try {
+        if (activeTab === 'larare') {
+          window.print();
+        } else {
+          printProtocol(state, profile?.name);
+        }
+      } finally {
+        setIsGeneratingPdf(false);
       }
-      setIsGeneratingPdf(false);
     }, 50);
   };
 
   const handleDownloadHTML = () => {
     setIsGeneratingHtml(true);
     setTimeout(() => {
-      downloadProtocolHtml(state, profile?.name);
-      setIsGeneratingHtml(false);
+      try {
+        downloadProtocolHtml(state, profile?.name);
+      } catch {
+        showToast('Kunde inte skapa HTML-filen.', 'error');
+      } finally {
+        setIsGeneratingHtml(false);
+      }
     }, 50);
   };
 
   const handleDownloadEmailHTML = () => {
     setIsGeneratingEmailHtml(true);
     setTimeout(() => {
-      downloadEmailProtocolHtml(state, profile?.name);
-      setIsGeneratingEmailHtml(false);
+      try {
+        downloadEmailProtocolHtml(state, profile?.name);
+      } catch {
+        showToast('Kunde inte skapa HTML-mejlet.', 'error');
+      } finally {
+        setIsGeneratingEmailHtml(false);
+      }
     }, 50);
   };
 
   const handleCopyEmailHTML = () => {
     const html = generateEmailProtocolHtml(state, profile?.name);
-    navigator.clipboard.writeText(html).then(() => {
-      setCopiedEmailHtml(true);
-      setTimeout(() => setCopiedEmailHtml(false), 2500);
-    });
+    if (!navigator.clipboard) {
+      showToast('Urklipp stöds inte i den här webbläsaren.', 'warning');
+      return;
+    }
+    navigator.clipboard.writeText(html).then(
+      () => {
+        setCopiedEmailHtml(true);
+        setTimeout(() => setCopiedEmailHtml(false), 2500);
+      },
+      () => showToast('Kunde inte kopiera till urklipp.', 'error')
+    );
   };
 
   const sendProtocolEmail = async (): Promise<{ success: boolean; error?: string; messageId?: string | null }> => {
@@ -85,17 +150,20 @@ export function ProtokollScreen() {
     if (!recipient) {
       return { success: false, error: 'Kandidatens e-postadress saknas.' };
     }
+    // Demokandidaterna är påhittade – inga riktiga mejl skickas i demoläge
+    if (isDemoMode()) {
+      return { success: false, error: 'Demoläge: inget mejl skickas till påhittade kandidater.' };
+    }
 
     try {
       const html = generateEmailProtocolHtml(state, profile?.name);
-      const license = state.properties.licenseType || 'B';
       const res = await fetch('/api/send-protocol', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
         body: JSON.stringify({
           to: recipient,
           toName: state.properties.studentName,
-          subject: `Resultat från ditt körprov (Behörighet ${license})`,
+          subject: 'Resultat från ditt körprov',
           html,
         }),
       });
@@ -174,45 +242,83 @@ export function ProtokollScreen() {
   // i dialogen: (1) resultatet stämmer, (2) rapportering till Transportstyrelsen,
   // (3) mejl till kandidaten. Skickar faktiskt mejlet (om e-post finns) istället
   // för att bara påstå att det görs, sparar protokollet och nollställer provet.
+  // Dialogen hålls öppen med spinner tills allt är klart.
   const handleComplete = async () => {
+    if (finalizingRef.current) return;
+    finalizingRef.current = true;
     setIsFinalizing(true);
 
-    if (state.properties.email) {
-      const emailResult = await sendProtocolEmail();
-      if (!emailResult.success) {
+    try {
+      if (state.properties.email) {
+        const emailResult = await sendProtocolEmail();
+        if (!emailResult.success) {
+          showToast(
+            `Protokollet sparas ändå, men mejlet gick inte att skicka (${emailResult.error || 'okänt fel'}).`,
+            'warning'
+          );
+        }
+      }
+
+      const saveResult = await saveTest();
+      if (!saveResult.success) {
         showToast(
-          `Protokollet sparas ändå, men mejlet gick inte att skicka (${emailResult.error || 'okänt fel'}).`,
+          `Protokollet är sparat lokalt, men molnsynk misslyckades (${saveResult.error || 'okänt fel'}). Synkas automatiskt när anslutningen är tillbaka.`,
           'warning'
         );
+      } else {
+        showToast('Protokollet sparat, rapporterat och synkat.', 'success');
       }
-    }
 
-    const saveResult = await saveTest();
-    if (!saveResult.success) {
-      showToast(
-        `Protokollet är sparat lokalt, men molnsynk misslyckades (${saveResult.error || 'okänt fel'}). Synkas automatiskt när anslutningen är tillbaka.`,
-        'warning'
-      );
-    } else {
-      showToast('Protokollet sparat, rapporterat och synkat.', 'success');
+      triggerHaptic('success');
+      setShowConfirmModal(false);
+      resetCurrentTest();
+      navigate('/');
+    } catch (e: any) {
+      // Provet nollställs inte – inget går förlorat, inspektören kan försöka igen
+      showToast(`Kunde inte slutföra: ${e?.message || 'okänt fel'}. Försök igen.`, 'error');
+    } finally {
+      finalizingRef.current = false;
+      setIsFinalizing(false);
     }
-
-    setIsFinalizing(false);
-    resetCurrentTest();
-    navigate('/');
   };
+
+  const openConfirm = () => {
+    triggerHaptic('medium');
+    setConfirmResultChecked(false);
+    setConfirmReportChecked(false);
+    setConfirmEmailChecked(false);
+    setShowConfirmModal(true);
+  };
+
+  // Esc stänger öppna dialoger (men aldrig mitt under slutförandet)
+  useEffect(() => {
+    if (!showConfirmModal && !showEmailModal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (showEmailModal) setShowEmailModal(false);
+      else if (!finalizingRef.current) setShowConfirmModal(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showConfirmModal, showEmailModal]);
+
+  // Förhandsvisningen av mejlet byggs bara när dialogen är öppen
+  const emailPreviewHtml = useMemo(
+    () => (showEmailModal ? generateEmailProtocolHtml(state, profile?.name) : ''),
+    [showEmailModal, state, profile?.name]
+  );
 
   const licenseType = state.properties.licenseType || 'B';
   const HEAVY_LICENSES = ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'];
-  
+
   const isSafetyCheckRequired = [...HEAVY_LICENSES, 'BE'].includes(licenseType);
-  
+
   const isOmprovSakerhet = state.properties.testType === 'Omprov säkerhetskontroll';
   const isOmprovKorning = state.properties.testType === 'Omprov körning';
-  
+
   let isPassed = false;
   let isFailed = false;
-  
+
   if (isOmprovSakerhet) {
     if (state.result.safetyCheckResult === 'Godkänt') isPassed = true;
     if (state.result.safetyCheckResult === 'Underkänt') isFailed = true;
@@ -223,7 +329,7 @@ export function ProtokollScreen() {
     // Normal / Förstaprov / General Omprov
     const safetyCheckPassedOrNotNeeded = !isSafetyCheckRequired || state.result.safetyCheckResult === 'Godkänt';
     const drivingPassed = state.result.drivingResult === 'Godkänt';
-    
+
     isPassed = drivingPassed && safetyCheckPassedOrNotNeeded;
     isFailed = state.result.drivingResult === 'Underkänt' || (isSafetyCheckRequired && state.result.safetyCheckResult === 'Underkänt');
   }
@@ -234,14 +340,43 @@ export function ProtokollScreen() {
     isFailed = true;
   }
 
-  const drivingFail = state.result.drivingFailure;
-  const safetyFail = state.result.safetyCheckFailure;
+  const verdict: Verdict = state.result.testAborted ? 'aborted' : isPassed ? 'pass' : isFailed ? 'fail' : 'pending';
+  const verdictStyle = VERDICT_STYLE[verdict];
+  const VerdictIcon = verdictStyle.icon;
+
+  const hasEmail = Boolean(state.properties.email);
+  const allConfirmed = confirmResultChecked && confirmReportChecked && (!hasEmail || confirmEmailChecked);
+  const testDate = state.properties.testDate || new Date().toLocaleDateString('sv-SE');
+
+  const exportActions = [
+    { key: 'share', label: 'Dela', icon: Share2, onClick: () => setShowShareModal(true), title: 'Dela unik länk och QR-kod till kandidaten' },
+    { key: 'print', label: 'Skriv ut', icon: Printer, onClick: handlePrint, title: 'Skriv ut protokollet' },
+    { key: 'pdf', label: isGeneratingPdf ? 'Öppnar…' : 'PDF', icon: isGeneratingPdf ? Loader2 : FileDown, onClick: handleDownloadPDF, disabled: isGeneratingPdf, spin: isGeneratingPdf, title: 'Öppnar utskriften – välj "Spara som PDF"' },
+    { key: 'email', label: 'Mejl', icon: Mail, onClick: () => setShowEmailModal(true), title: 'Förhandsgranska och ladda ned mejlet med protokollet' },
+    { key: 'html', label: isGeneratingHtml ? 'Skapar…' : 'HTML', icon: isGeneratingHtml ? Loader2 : Code2, onClick: handleDownloadHTML, disabled: isGeneratingHtml, spin: isGeneratingHtml, title: 'Ladda ned protokollet som HTML-fil' },
+  ];
+
+  const deliveryMessage = (() => {
+    if (sendStatus === 'error' && sendError) return { tone: 'text-red-600 dark:text-red-400', text: sendError, spin: false };
+    if (sendStatus === 'sent') {
+      switch (deliveryStatus) {
+        case 'checking': return { tone: 'text-blue-600 dark:text-blue-400', text: 'Skickat, kontrollerar leverans…', spin: true };
+        case 'delivered': return { tone: 'text-emerald-600 dark:text-emerald-400', text: '✓ Levererat till kandidatens inkorg.', spin: false };
+        case 'bounced': return { tone: 'text-red-600 dark:text-red-400', text: '✗ Levererades inte (studsade) – kontrollera e-postadressen.', spin: false };
+        case 'blocked': return { tone: 'text-red-600 dark:text-red-400', text: '✗ Blockerades av mottagarens mejlserver.', spin: false };
+        case 'spam': return { tone: 'text-amber-600 dark:text-amber-400', text: '⚠ Markerades som skräppost hos mottagaren.', spin: false };
+        case 'pending': return { tone: 'text-amber-600 dark:text-amber-400', text: 'Skickat – leveransstatus inte bekräftad än (kan ta någon minut).', spin: false };
+      }
+    }
+    if (sendStatus === 'idle' && !hasEmail) return { tone: 'text-amber-600 dark:text-amber-400', text: 'Ingen e-postadress angiven för kandidaten.', spin: false };
+    return null;
+  })();
 
   return (
-    <div className="bg-[#f2f4f7] min-h-full py-3 sm:py-8 print:bg-white print:py-0 print:p-0 w-full text-black font-sans leading-normal">
-      
+    <div className="min-h-full pb-4 print:bg-white print:py-0 print:p-0 w-full font-sans leading-normal">
+
       {/* Officiell utskriftsmall för PDF / Skriv ut (syns bara vid utskrift) */}
-      <div className="hidden print:block w-full bg-white print:m-0 print:p-0">
+      <div className="hidden print:block w-full bg-white text-black print:m-0 print:p-0">
         {activeTab === 'larare' ? (
           <div className="p-8 max-w-[760px] mx-auto">
             <TrafiklararProtokollView state={state} inspectorName={profile?.name} />
@@ -251,430 +386,471 @@ export function ProtokollScreen() {
         )}
       </div>
 
-      {/* Dynamic top tool-bar to match standalone Web App wrapper (hidden during printing) */}
-      <div className="max-w-[730px] mx-auto mb-4 flex flex-col gap-2.5 print:hidden px-2 sm:px-0">
-        {/* Rad 1: tillbaka, dela länk och slutför */}
-        <div className="flex items-center justify-between gap-3">
+      <div className="max-w-[760px] mx-auto space-y-4 print:hidden">
+
+        {/* Rubrik */}
+        <header className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => navigate('/korprov/resultat')}
-            className="h-9 pl-2 pr-3 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer"
+            aria-label="Tillbaka till resultat"
+            className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-ink-2 hover:text-ink hover:bg-surface-2 transition-colors cursor-pointer shrink-0"
           >
-            <ArrowLeft size={16} /> Tillbaka
+            <ArrowLeft size={20} />
           </button>
+          <AppLogo variant="icon" size="sm" className="shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[13px] text-ink-3 font-medium leading-tight">Körprov · Slutför</p>
+            <h1 className="text-xl sm:text-2xl font-semibold text-ink tracking-tight leading-tight">Beslut &amp; protokoll</h1>
+          </div>
+        </header>
 
-          <div className="flex items-center gap-2">
+        {/* Sammanfattning av beslutet */}
+        <section
+          aria-label="Beslut"
+          className="relative bg-surface border border-line rounded-card shadow-lift overflow-hidden"
+        >
+          <span className={`absolute inset-y-0 left-0 w-1 ${verdictStyle.bar}`} aria-hidden="true" />
+          <div className="pl-5 pr-4 sm:pl-6 sm:pr-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`inline-flex items-center gap-1.5 h-7 pl-2 pr-2.5 rounded-full ring-1 ring-inset text-[13px] font-semibold ${verdictStyle.badge}`}>
+                  <VerdictIcon size={15} strokeWidth={2.5} />
+                  {verdictStyle.label}
+                </span>
+                {state.properties.testType && (
+                  <span className="text-[13px] text-ink-3 font-medium">{state.properties.testType}</span>
+                )}
+              </div>
+              <p className="mt-2 text-lg font-semibold text-ink truncate">
+                {state.properties.studentName || 'Namn saknas'}
+              </p>
+              <dl className="mt-0.5 flex flex-wrap gap-x-4 gap-y-0.5 text-[13px] text-ink-2">
+                <div className="flex gap-1"><dt className="sr-only">Personnummer</dt><dd className="tabular-nums">{state.properties.personalNumber || 'Personnr saknas'}</dd></div>
+                <div className="flex gap-1"><dt className="text-ink-3">Behörighet</dt><dd className="font-medium text-ink">{licenseType}{state.properties.transmission ? ` · ${state.properties.transmission}` : ''}</dd></div>
+                <div className="flex gap-1"><dt className="text-ink-3">Datum</dt><dd className="tabular-nums">{testDate}</dd></div>
+              </dl>
+            </div>
+
             <button
               type="button"
-              onClick={() => setShowShareModal(true)}
-              className="h-9 px-3.5 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 text-[#002f6c] dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
-              title="Dela unik länk eller QR-kod till kandidaten"
+              onClick={() => navigate('/korprov/resultat')}
+              className="self-start sm:self-center h-9 px-3 rounded-control text-[13px] font-medium text-ink-2 hover:text-ink border border-line hover:bg-surface-2 flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
             >
-              <Share2 size={14} className="text-blue-600 dark:text-blue-400" />
-              <span>Dela länk & QR</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setConfirmResultChecked(false);
-                setConfirmReportChecked(false);
-                setConfirmEmailChecked(false);
-                setShowConfirmModal(true);
-              }}
-              className="h-9 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
-            >
-              <Check size={16} strokeWidth={2.75} /> Spara och slutför
+              <PenLine size={14} /> Ändra resultat
             </button>
           </div>
-        </div>
+        </section>
 
-        {/* Rad 2: vy och export */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="inline-flex p-0.5 rounded-lg bg-slate-200/70 dark:bg-slate-800 self-start" role="tablist">
-            {([['beslut', 'Officiellt protokoll'], ['larare', 'Lärarprotokoll'], ['email', 'E-post till kandidaten']] as const).map(([id, label]) => (
+        {/* Vyval och export */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="grid grid-cols-3 sm:inline-flex p-1 rounded-control bg-surface-2 border border-line" role="tablist" aria-label="Protokollvy">
+            {TABS.map(({ id, label, short, icon: Icon }) => {
+              const active = activeTab === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => { triggerHaptic('light'); setActiveTab(id); }}
+                  className={`h-9 px-3 rounded-[9px] text-[13px] font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
+                    active
+                      ? 'bg-surface text-ink font-semibold shadow-lift'
+                      : 'text-ink-2 hover:text-ink'
+                  }`}
+                >
+                  <Icon size={15} className={active ? 'text-navy dark:text-blue-400' : ''} />
+                  <span className="sm:hidden">{short}</span>
+                  <span className="hidden sm:inline">{label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="grid grid-cols-5 sm:flex items-center gap-1">
+            {exportActions.map(({ key, label, icon: Icon, onClick, disabled, spin, title }) => (
               <button
-                key={id}
+                key={key}
                 type="button"
-                role="tab"
-                aria-selected={activeTab === id}
-                onClick={() => setActiveTab(id)}
-                className={`h-8 px-3 rounded-md text-[13px] font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === id
-                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-semibold'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
+                onClick={onClick}
+                disabled={disabled}
+                title={title}
+                aria-label={title}
+                className="h-12 sm:h-9 sm:px-2.5 rounded-control text-[11px] sm:text-[13px] font-medium text-ink-2 hover:text-ink hover:bg-surface-2 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 whitespace-nowrap cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-wait"
               >
+                <Icon size={16} className={`${spin ? 'animate-spin' : ''} ${key === 'share' ? 'text-navy dark:text-blue-400' : 'text-ink-3'}`} />
                 {label}
               </button>
             ))}
           </div>
-
-          <div className="grid grid-cols-5 sm:flex items-stretch rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 divide-x divide-slate-200 dark:divide-slate-700 overflow-hidden w-full sm:w-auto">
-            {[
-              { label: 'Dela länk', icon: <Share2 size={15} className="text-blue-600 dark:text-blue-400" />, onClick: () => setShowShareModal(true), title: 'Dela unik länk och QR-kod till kandidaten' },
-              { label: 'Skriv ut', icon: <Printer size={15} />, onClick: handlePrint, title: 'Skriv ut protokollet' },
-              { label: isGeneratingPdf ? 'Öppnar…' : 'PDF', icon: isGeneratingPdf ? <Loader2 size={15} className="animate-spin" /> : <FileDown size={15} />, onClick: handleDownloadPDF, disabled: isGeneratingPdf, title: 'Öppnar utskriften – välj "Spara som PDF"' },
-              { label: 'E-post', icon: <Mail size={15} />, onClick: () => setShowEmailModal(true), title: 'Förhandsgranska och ladda ned mejlet med protokollet' },
-              { label: isGeneratingHtml ? 'Skapar…' : 'HTML', icon: isGeneratingHtml ? <Loader2 size={15} className="animate-spin" /> : <Code2 size={15} />, onClick: handleDownloadHTML, disabled: isGeneratingHtml, title: 'Ladda ned protokollet som HTML-fil' },
-            ].map(btn => (
-              <button
-                key={btn.title}
-                type="button"
-                onClick={btn.onClick}
-                disabled={btn.disabled}
-                title={btn.title}
-                className="h-12 sm:h-9 px-1 sm:px-3 text-[11px] sm:text-[13px] font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 whitespace-nowrap cursor-pointer disabled:opacity-60 disabled:cursor-wait"
-              >
-                <span className="text-slate-500 dark:text-slate-400">{btn.icon}</span>
-                {btn.label}
-              </button>
-            ))}
-          </div>
         </div>
-      </div>
 
-      {/* Main Document Canvas */}
-      <div 
-        className="max-w-[730px] mx-auto bg-white w-full sm:rounded-2xl border-y sm:border border-gray-200 sm:shadow-lg p-4 sm:p-8 md:p-10 text-black print:hidden relative"
-        style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}
-      >
-        
-        {/* Email mock helper view */}
+        {/* E-post: avsändarinfo och utskick */}
         {activeTab === 'email' && (
-          <div className="mb-4 border border-gray-200 bg-gray-50 p-4 rounded-xl space-y-3 text-xs text-gray-700 print:hidden" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
-            <div className="flex items-center justify-between pb-2 border-b border-gray-200">
-              <span className="font-bold text-gray-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <Mail size={14} className="text-violet-600" />
-                Automatisk HTML-mejl förhandsvisning
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
+          <section className="bg-surface border border-line rounded-card shadow-lift overflow-hidden">
+            <div className="px-4 sm:px-5 py-3 border-b border-line flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-[15px] font-semibold text-ink flex items-center gap-2">
+                <Mail size={16} className="text-violet-600 dark:text-violet-400" /> Mejl till kandidaten
+              </h2>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
                   onClick={() => setShowCustomEmailComposer(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 font-bold cursor-pointer"
                   title="Skicka fritextmejl, intyg, kallelse eller rapport i sidans officiella design"
+                  className="h-8 px-2.5 rounded-control text-[13px] font-medium text-ink-2 hover:text-ink hover:bg-surface-2 flex items-center gap-1.5 cursor-pointer"
                 >
-                  <Mail size={13} />
-                  <span>Fritextmejl & mallar</span>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
+                  <PenLine size={14} /> Fritext & mallar
+                </button>
+                <button
+                  type="button"
                   onClick={handleCopyEmailHTML}
-                  className="bg-white hover:bg-violet-50 text-violet-700 border-violet-200 text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 font-bold"
-                >
-                  {copiedEmailHtml ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
-                  <span>{copiedEmailHtml ? 'Kopierat' : 'Kopiera HTML-kod'}</span>
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleDownloadEmailHTML}
-                  disabled={isGeneratingEmailHtml}
-                  className="bg-violet-600 hover:bg-violet-700 text-white text-xs h-8 px-3 rounded-lg flex items-center gap-1.5 font-bold disabled:opacity-70 disabled:cursor-wait transition-opacity"
-                >
-                  {isGeneratingEmailHtml && <Loader2 size={13} className="animate-spin" />}
-                  <span>{isGeneratingEmailHtml ? 'Genererar...' : 'Ladda ned HTML-mejl'}</span>
-                </Button>
-              </div>
-            </div>
-            <div className="flex border-b border-gray-200 pb-1">
-              <span className="w-16 font-bold text-gray-400 uppercase tracking-wider text-[9px]">Från:</span>
-              <span className="text-gray-950 font-semibold">ProvProtokoll Förarprov &lt;info@rasmusl.se&gt;</span>
-            </div>
-            <div className="flex border-b border-gray-200 pb-1">
-              <span className="w-16 font-bold text-gray-400 uppercase tracking-wider text-[9px]">Till:</span>
-              <span className="text-blue-600 font-medium">{state.properties.email || 'kandidat@exempel.se'}</span>
-            </div>
-            <div className="flex border-b border-gray-200 pb-1">
-              <span className="w-16 font-bold text-gray-400 uppercase tracking-wider text-[9px]">Datum:</span>
-              <span className="text-gray-800">{state.properties.testDate || new Date().toLocaleDateString('sv-SE')} – {new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}</span>
-            </div>
-            <div className="flex items-center">
-              <span className="w-16 font-bold text-gray-400 uppercase tracking-wider text-[9px]">Ämne:</span>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="px-1.5 py-0.5 bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 text-[10px] font-black rounded uppercase tracking-wider">
-                  ! Hög prio
-                </span>
-                <span className="text-black font-bold text-[12px]">
-                  Resultat från ditt körprov (Behörighet {state.properties.licenseType || 'B'})
-                </span>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-gray-200 flex items-center justify-between gap-3">
-              <div className="text-[11px] text-gray-500">
-                {sendStatus === 'error' && sendError && (
-                  <span className="text-red-600 font-semibold">{sendError}</span>
-                )}
-                {sendStatus === 'sent' && deliveryStatus === 'checking' && (
-                  <span className="text-blue-600 font-semibold flex items-center gap-1.5">
-                    <Loader2 size={12} className="animate-spin" /> Skickat, kontrollerar leverans...
-                  </span>
-                )}
-                {sendStatus === 'sent' && deliveryStatus === 'delivered' && (
-                  <span className="text-emerald-600 font-semibold">✓ Levererat till kandidatens inkorg.</span>
-                )}
-                {sendStatus === 'sent' && deliveryStatus === 'bounced' && (
-                  <span className="text-red-600 font-semibold">✗ Levererades inte (studsade) – kontrollera e-postadressen.</span>
-                )}
-                {sendStatus === 'sent' && deliveryStatus === 'blocked' && (
-                  <span className="text-red-600 font-semibold">✗ Blockerades av mottagarens mejlserver.</span>
-                )}
-                {sendStatus === 'sent' && deliveryStatus === 'spam' && (
-                  <span className="text-amber-600 font-semibold">⚠ Markerades som skräppost hos mottagaren.</span>
-                )}
-                {sendStatus === 'sent' && deliveryStatus === 'pending' && (
-                  <span className="text-amber-600 font-semibold">Skickat – leveransstatus inte bekräftad än (kan ta någon minut).</span>
-                )}
-                {sendStatus === 'idle' && !state.properties.email && (
-                  <span className="text-amber-600 font-semibold">Ingen e-postadress angiven för kandidaten.</span>
-                )}
-              </div>
-              <Button
-                size="sm"
-                onClick={handleSendEmail}
-                disabled={sendStatus === 'sending' || !state.properties.email}
-                className={`text-white text-xs h-9 px-4 rounded-lg flex items-center gap-1.5 font-bold shrink-0 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity ${
-                  sendStatus === 'sent' ? 'bg-emerald-600 hover:bg-emerald-600' : 'bg-emerald-600 hover:bg-emerald-700'
-                }`}
-              >
-                {sendStatus === 'sending' && <Loader2 size={14} className="animate-spin" />}
-                {sendStatus === 'sent' && <MailCheck size={14} />}
-                {sendStatus === 'error' && <MailX size={14} />}
-                {sendStatus === 'idle' && <Send size={14} />}
-                <span>
-                  {sendStatus === 'sending' ? 'Skickar...' : sendStatus === 'sent' ? 'Skickat igen' : sendStatus === 'error' ? 'Försök igen' : 'Skicka till kandidaten'}
-                </span>
-              </Button>
-            </div>
-            <div className="pt-2 pb-1 border-t border-gray-200 text-gray-800 text-xs leading-relaxed space-y-2">
-              <p>Hej {state.properties.studentName || 'Kandidat'}!</p>
-              <p>Här kommer beslutet för ditt nyligen genomförda körprov. Provresultat och fullständigt protokoll finner du i dokumentet nedan.</p>
-              <p>Med vänlig hälsning,<br /><span className="font-bold">Digitalt Provprotokoll Sverige</span></p>
-              <div className="h-px bg-gray-300 my-2" />
-            </div>
-          </div>
-        )}
-
-        {/* Document Content: Lärarens interna protokoll eller TRV Officiellt beslut */}
-        {activeTab === 'larare' ? (
-          <TrafiklararProtokollView state={state} inspectorName={profile?.name} />
-        ) : (
-          <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
-            <OfficialPrintLayout />
-          </div>
-        )}
-      </div>
-
-      {/* HTML Email Modal */}
-      {showEmailModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6">
-          <div 
-            className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm transition-opacity" 
-            onClick={() => setShowEmailModal(false)}
-          />
-          
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 w-full max-w-3xl max-h-[90vh] flex flex-col relative z-10 shadow-2xl rounded-2xl overflow-hidden animate-in zoom-in-95 duration-150">
-            {/* Modal Header */}
-            <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-zinc-800 flex items-center justify-between bg-slate-50 dark:bg-zinc-850">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 flex items-center justify-center">
-                  <Mail size={18} />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-gray-900 dark:text-white uppercase tracking-tight">
-                    Genererat HTML-e-postmeddelande
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-slate-400">
-                    Klar för att klistras in i e-postklient (Outlook, Gmail) eller skickas direkt.
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowEmailModal(false)}
-                className="w-8 h-8 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-700 flex items-center justify-center text-gray-500 cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Email Preview Frame */}
-            <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-zinc-950">
-              <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-2">
-                <iframe
-                  title="HTML Email Preview"
-                  srcDoc={generateEmailProtocolHtml(state, profile?.name)}
-                  className="w-full min-h-[500px] rounded-lg border-0"
-                />
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-4 border-t border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-wrap items-center justify-between gap-3">
-              <div className="text-xs text-gray-500 dark:text-slate-400">
-                Skickas till: <strong className="text-gray-900 dark:text-white">{state.properties.email || 'Saknar angiven e-post'}</strong>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleCopyEmailHTML}
-                  className="border-gray-300 dark:border-zinc-700 text-xs font-bold flex items-center gap-1.5 h-10 px-4 rounded-xl"
+                  className="h-8 px-2.5 rounded-control text-[13px] font-medium text-ink-2 hover:text-ink hover:bg-surface-2 flex items-center gap-1.5 cursor-pointer"
                 >
                   {copiedEmailHtml ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                  <span>{copiedEmailHtml ? 'HTML-kod kopierad' : 'Kopiera HTML-kod'}</span>
-                </Button>
-                <Button
+                  {copiedEmailHtml ? 'Kopierat' : 'Kopiera HTML'}
+                </button>
+                <button
+                  type="button"
                   onClick={handleDownloadEmailHTML}
-                  className="bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold flex items-center gap-1.5 h-10 px-5 rounded-xl shadow-sm"
+                  disabled={isGeneratingEmailHtml}
+                  className="h-8 px-2.5 rounded-control text-[13px] font-medium text-ink-2 hover:text-ink hover:bg-surface-2 flex items-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
                 >
-                  <span>Ladda ned .html-fil</span>
-                </Button>
+                  {isGeneratingEmailHtml ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
+                  {isGeneratingEmailHtml ? 'Skapar…' : 'Ladda ned'}
+                </button>
+              </div>
+            </div>
+
+            <dl className="px-4 sm:px-5 py-2 text-[13px] divide-y divide-line">
+              {[
+                ['Från', <span className="text-ink font-medium">Trafikverket Förarprov &lt;info@rasmusl.se&gt;</span>],
+                ['Till', <span className={hasEmail ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-ink-3 italic'}>{state.properties.email || 'Ingen e-post angiven'}</span>],
+                ['Ämne', (
+                  <span className="flex items-center gap-1.5 flex-wrap">
+                    <span className="px-1.5 py-0.5 bg-blue-100 text-[#002f6c] dark:bg-blue-500/15 dark:text-blue-300 text-[10px] font-bold rounded uppercase tracking-wider">Officiellt</span>
+                    <span className="text-ink font-semibold">Resultat från ditt körprov</span>
+                  </span>
+                )],
+              ].map(([k, v]) => (
+                <div key={k as string} className="flex items-baseline gap-3 py-2">
+                  <dt className="w-12 shrink-0 text-ink-3">{k}</dt>
+                  <dd className="min-w-0 break-words">{v}</dd>
+                </div>
+              ))}
+            </dl>
+
+            <div className="px-4 sm:px-5 py-3 border-t border-line bg-surface-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <p className="text-[13px] min-h-[1.25rem]" aria-live="polite">
+                {deliveryMessage && (
+                  <span className={`font-medium flex items-center gap-1.5 ${deliveryMessage.tone}`}>
+                    {deliveryMessage.spin && <Loader2 size={13} className="animate-spin" />}
+                    {deliveryMessage.text}
+                  </span>
+                )}
+              </p>
+              <button
+                type="button"
+                onClick={handleSendEmail}
+                disabled={sendStatus === 'sending' || !hasEmail}
+                className="h-10 px-4 rounded-control bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold flex items-center justify-center gap-1.5 shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {sendStatus === 'sending' && <Loader2 size={15} className="animate-spin" />}
+                {sendStatus === 'sent' && <MailCheck size={15} />}
+                {sendStatus === 'error' && <MailX size={15} />}
+                {sendStatus === 'idle' && <Send size={15} />}
+                {sendStatus === 'sending' ? 'Skickar…' : sendStatus === 'sent' ? 'Skicka igen' : sendStatus === 'error' ? 'Försök igen' : 'Skicka till kandidaten'}
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* Dokumentet – protokolldesignen är oförändrad, bara ramen runt är ny */}
+        <div>
+          <div className="flex items-center justify-between px-1 mb-2 text-[12px] text-ink-3 font-medium">
+            <span>Förhandsgranskning</span>
+            <span>{activeTab === 'larare' ? 'Internt · lämnas inte ut' : activeTab === 'email' ? 'Som mejlet ser ut i kandidatens inkorg' : 'Som kandidaten ser det'}</span>
+          </div>
+          <div
+            data-protocol
+            className="bg-white w-full rounded-card border border-line shadow-float p-4 sm:p-8 md:p-10 text-black relative"
+            style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}
+          >
+            {activeTab === 'email' && (
+              <div className="mb-6 text-black text-[11pt] leading-normal font-sans">
+                <p className="m-0 mb-4">Hej!</p>
+                <p className="m-0 mb-4">Du har nyligen gjort körprov hos oss. Resultatet kan du läsa nedan.</p>
+                <p className="m-0 mb-5">Vänliga hälsningar,<br /><strong>Trafikverket Förarprov</strong></p>
+                <hr className="border-0 border-t border-black m-0 mb-6" />
+              </div>
+            )}
+
+            {activeTab === 'larare' ? (
+              <TrafiklararProtokollView state={state} inspectorName={profile?.name} />
+            ) : (
+              <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+                <OfficialPrintLayout />
+              </div>
+            )}
+
+            {activeTab === 'email' && (
+              <div className="mt-8 pt-4 border-t border-gray-200 text-gray-500 text-[9.5pt] leading-relaxed font-sans">
+                <p className="m-0 mb-1">Har du frågor? Läs mer på <a href="https://www.trafikverket.se" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">www.trafikverket.se</a> eller ring Trafikverkets kundtjänst på 0771-17 18 19.</p>
+                <p className="m-0 text-gray-400 text-[8.5pt]">Detta är ett automatiskt genererat meddelande med anledning av genomfört förarprov.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Fast åtgärdsrad längst ner – samma mönster som Resultat */}
+      <Portal>
+        <div className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] md:bottom-0 z-40 print:hidden border-t border-line bg-surface/95 backdrop-blur-md">
+          <div className="max-w-[760px] mx-auto px-3 sm:px-4 py-2.5 flex items-center gap-2 md:pb-[max(0.625rem,env(safe-area-inset-bottom))]">
+            <div className="min-w-0 flex-1 flex items-center gap-2">
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${verdictStyle.bar}`} aria-hidden="true" />
+              <div className="min-w-0 leading-tight">
+                <p className="text-[13px] font-semibold text-ink truncate">{verdictStyle.label}</p>
+                <p className="text-[12px] text-ink-3 truncate">{state.properties.studentName || 'Kandidat'} · {licenseType}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowShareModal(true)}
+              aria-label="Dela länk och QR-kod"
+              className="h-11 w-11 sm:w-auto sm:px-3.5 rounded-control border border-line text-ink-2 hover:text-ink hover:bg-surface-2 flex items-center justify-center gap-1.5 text-sm font-medium cursor-pointer transition-colors shrink-0"
+            >
+              <Share2 size={16} /> <span className="hidden sm:inline">Dela</span>
+            </button>
+            <button
+              type="button"
+              onClick={openConfirm}
+              disabled={isFinalizing}
+              className="h-11 px-4 sm:px-5 rounded-control bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-sm font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer transition-all shrink-0 disabled:opacity-60 disabled:cursor-wait"
+            >
+              {isFinalizing ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={2.75} />}
+              Spara och slutför
+            </button>
+          </div>
+        </div>
+      </Portal>
+
+      {/* HTML-mejl: förhandsvisning */}
+      {showEmailModal && (
+        <Portal>
+          <div
+            className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-150"
+            onClick={() => setShowEmailModal(false)}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="email-preview-title"
+              className="bg-surface border border-line w-full sm:max-w-3xl max-h-[92vh] flex flex-col shadow-2xl rounded-t-sheet sm:rounded-card overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="w-9 h-9 rounded-control bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300 flex items-center justify-center shrink-0">
+                    <Mail size={18} />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 id="email-preview-title" className="text-base font-semibold text-ink">HTML-mejl</h3>
+                    <p className="text-[13px] text-ink-3 truncate">Klistra in i Outlook/Gmail eller skicka direkt.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowEmailModal(false)}
+                  aria-label="Stäng"
+                  className="w-10 h-10 -mr-2 rounded-full hover:bg-surface-2 flex items-center justify-center text-ink-3 hover:text-ink cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-3 sm:p-4 bg-canvas">
+                <iframe
+                  title="Förhandsvisning av mejlet"
+                  srcDoc={emailPreviewHtml}
+                  sandbox=""
+                  className="w-full min-h-[500px] rounded-control border border-line bg-white"
+                />
+              </div>
+
+              <div className="px-5 py-3 border-t border-line flex flex-wrap items-center justify-between gap-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                <p className="text-[13px] text-ink-3 min-w-0 truncate">
+                  Till: <strong className="text-ink font-medium">{state.properties.email || 'Ingen e-post angiven'}</strong>
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCopyEmailHTML}
+                    className="h-10 px-3.5 rounded-control border border-line text-ink-2 hover:text-ink hover:bg-surface-2 text-sm font-medium flex items-center gap-1.5 cursor-pointer"
+                  >
+                    {copiedEmailHtml ? <Check size={15} className="text-emerald-600" /> : <Copy size={15} />}
+                    {copiedEmailHtml ? 'Kopierad' : 'Kopiera'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDownloadEmailHTML}
+                    disabled={isGeneratingEmailHtml}
+                    className="h-10 px-4 rounded-control bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+                  >
+                    {isGeneratingEmailHtml ? <Loader2 size={15} className="animate-spin" /> : <FileDown size={15} />}
+                    Ladda ned .html
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
 
-      {/* Dynamic reporting confirmation dialog */}
+      {/* Bekräfta rapportering */}
       {showConfirmModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div 
-            className="absolute inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm transition-opacity" 
-            onClick={() => setShowConfirmModal(false)}
-          />
-          
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-850 w-full max-w-md p-6 relative z-10 shadow-2xl rounded-xl animate-in zoom-in-95 duration-150">
-            <div className="flex items-start gap-4">
-              <div className={`p-3 shrink-0 rounded-xl ${
-                isPassed 
-                  ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-450' 
-                  : 'bg-red-50 dark:bg-red-950/30 text-[#DD1D25] dark:text-red-400'
-              }`}>
-                {isPassed ? <FileCheck className="w-6 h-6 shrink-0" /> : <AlertTriangle className="w-6 h-6 shrink-0" />}
-              </div>
-              
-              <div className="space-y-3 w-full">
-                <h3 className="text-lg font-black text-gray-950 dark:text-white uppercase tracking-tight font-display">
-                  Bekräfta rapportering
-                </h3>
-
-                <div className="bg-gray-50 dark:bg-zinc-800/40 p-3.5 text-xs text-gray-500 dark:text-zinc-400 font-medium space-y-1.5 rounded-lg border border-gray-150 dark:border-zinc-800">
-                  <div className="flex justify-between items-center">
-                    <span className="uppercase text-[10px] tracking-wider text-gray-400">Kandidat:</span>
-                    <strong className="text-gray-900 dark:text-zinc-150">{state.properties.studentName || 'Saknas'}</strong>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="uppercase text-[10px] tracking-wider text-gray-400 font-mono">Personnr:</span>
-                    <strong className="text-gray-900 dark:text-zinc-150 font-mono">{state.properties.personalNumber || 'Saknas'}</strong>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="uppercase text-[10px] tracking-wider text-gray-400">Behörighet:</span>
-                    <strong className="text-gray-900 dark:text-zinc-150">{state.properties.licenseType || 'B'} ({state.properties.transmission})</strong>
-                  </div>
-                  <div className="flex justify-between items-center pt-1 border-t border-gray-200/50 dark:border-zinc-800">
-                    <span className="uppercase text-[10px] tracking-wider text-gray-400">Slutbetyg:</span>
-                    <strong className={`font-black text-xs ${isPassed ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#DD1D25] dark:text-red-400'}`}>
-                      {isPassed ? 'GODKÄNT' : 'UNDERKÄNT'}
-                    </strong>
-                  </div>
+        <Portal>
+          <div
+            className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm animate-in fade-in duration-150"
+            onClick={() => { if (!isFinalizing) setShowConfirmModal(false); }}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="confirm-title"
+              className="bg-surface border border-line w-full sm:max-w-md shadow-2xl rounded-t-sheet sm:rounded-card overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-5 pt-5 pb-4 flex items-start gap-3">
+                <span className={`p-2 rounded-control shrink-0 ${
+                  isPassed
+                    ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400'
+                    : 'bg-red-100 text-[#D42220] dark:bg-red-500/15 dark:text-red-400'
+                }`}>
+                  {isPassed ? <FileCheck size={20} /> : <AlertTriangle size={20} />}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h3 id="confirm-title" className="text-lg font-semibold text-ink">Bekräfta och rapportera</h3>
+                  <p className="text-[13px] text-ink-3">Kontrollera uppgifterna innan beslutet skickas.</p>
                 </div>
+              </div>
+
+              <div className="px-5 space-y-3">
+                <dl className="rounded-control border border-line bg-surface-2 px-3.5 py-1 text-[13px] divide-y divide-line">
+                  {[
+                    ['Kandidat', state.properties.studentName || 'Saknas', ''],
+                    ['Personnr', state.properties.personalNumber || 'Saknas', 'tabular-nums'],
+                    ['Behörighet', `${licenseType}${state.properties.transmission ? ` (${state.properties.transmission})` : ''}`, ''],
+                  ].map(([k, v, cls]) => (
+                    <div key={k} className="flex justify-between gap-3 py-2">
+                      <dt className="text-ink-3">{k}</dt>
+                      <dd className={`text-ink font-medium text-right truncate ${cls}`}>{v}</dd>
+                    </div>
+                  ))}
+                  <div className="flex justify-between items-center gap-3 py-2">
+                    <dt className="text-ink-3">Slutbetyg</dt>
+                    <dd className={`inline-flex items-center gap-1 h-6 px-2 rounded-full ring-1 ring-inset text-[12px] font-semibold ${verdictStyle.badge}`}>
+                      <VerdictIcon size={13} strokeWidth={2.5} /> {isPassed ? 'Godkänt' : 'Underkänt'}
+                    </dd>
+                  </div>
+                </dl>
 
                 {/* Obligatoriska bekräftelserutor så man inte råkar skicka fel resultat av misstag */}
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-zinc-400">Bekräftelse</span>
+                  <span className="text-[13px] font-medium text-ink-2">Bekräftelse</span>
                   <button
                     type="button"
+                    disabled={isFinalizing}
                     onClick={() => {
-                      const allReady = confirmResultChecked && confirmReportChecked && (!state.properties.email || confirmEmailChecked);
-                      const next = !allReady;
+                      const next = !allConfirmed;
                       setConfirmResultChecked(next);
                       setConfirmReportChecked(next);
-                      if (state.properties.email) setConfirmEmailChecked(next);
+                      if (hasEmail) setConfirmEmailChecked(next);
                     }}
-                    className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                    className="text-[13px] font-semibold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer disabled:opacity-50"
                   >
-                    {(confirmResultChecked && confirmReportChecked && (!state.properties.email || confirmEmailChecked)) ? 'Avmarkera alla' : 'Bocka för alla'}
+                    {allConfirmed ? 'Avmarkera alla' : 'Bocka för alla'}
                   </button>
                 </div>
 
-                <div className="space-y-2 pt-0.5">
-                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={confirmResultChecked}
-                      onChange={(e) => setConfirmResultChecked(e.target.checked)}
-                      className="mt-0.5 w-4 h-4 shrink-0 accent-emerald-600 cursor-pointer"
-                    />
-                    <span className="text-xs text-gray-700 dark:text-zinc-300 font-semibold leading-snug">
-                      Jag har kontrollerat att slutbetyget{' '}
-                      <strong className={isPassed ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#DD1D25] dark:text-red-400'}>
-                        {isPassed ? 'GODKÄNT' : 'UNDERKÄNT'}
-                      </strong>{' '}
-                      är korrekt för {state.properties.studentName || 'kandidaten'}.
-                    </span>
-                  </label>
+                <fieldset disabled={isFinalizing} className="space-y-2">
+                  {[
+                    {
+                      checked: confirmResultChecked,
+                      set: setConfirmResultChecked,
+                      disabled: false,
+                      text: (
+                        <>
+                          Slutbetyget{' '}
+                          <strong className={isPassed ? 'text-emerald-700 dark:text-emerald-400' : 'text-[#D42220] dark:text-red-400'}>
+                            {isPassed ? 'GODKÄNT' : 'UNDERKÄNT'}
+                          </strong>{' '}
+                          är korrekt för {state.properties.studentName || 'kandidaten'}.
+                        </>
+                      ),
+                    },
+                    {
+                      checked: confirmReportChecked,
+                      set: setConfirmReportChecked,
+                      disabled: false,
+                      text: 'Rapportera beslutet till Transportstyrelsen. Det registreras permanent och kan inte ändras i efterhand här.',
+                    },
+                    {
+                      checked: confirmEmailChecked,
+                      set: setConfirmEmailChecked,
+                      disabled: !hasEmail,
+                      text: hasEmail
+                        ? <>Skicka protokollet till <strong className="text-ink font-semibold break-all">{state.properties.email}</strong></>
+                        : 'Ingen e-postadress angiven – mejl kan inte skickas.',
+                    },
+                  ].map((item, i) => (
+                    <label
+                      key={i}
+                      className={`flex items-start gap-3 p-3 rounded-control border transition-colors ${
+                        item.disabled
+                          ? 'border-line opacity-60 cursor-not-allowed'
+                          : item.checked
+                            ? 'border-emerald-500/50 bg-emerald-50/60 dark:bg-emerald-500/10 cursor-pointer'
+                            : 'border-line hover:bg-surface-2 cursor-pointer'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={item.checked}
+                        onChange={(e) => item.set(e.target.checked)}
+                        disabled={item.disabled}
+                        className="mt-0.5 w-[18px] h-[18px] shrink-0 accent-emerald-600 cursor-pointer disabled:cursor-not-allowed"
+                      />
+                      <span className="text-[13px] text-ink-2 leading-snug">{item.text}</span>
+                    </label>
+                  ))}
+                </fieldset>
+              </div>
 
-                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={confirmReportChecked}
-                      onChange={(e) => setConfirmReportChecked(e.target.checked)}
-                      className="mt-0.5 w-4 h-4 shrink-0 accent-emerald-600 cursor-pointer"
-                    />
-                    <span className="text-xs text-gray-700 dark:text-zinc-300 font-semibold leading-snug">
-                      Jag vill godkänna och rapportera detta beslut till Transportstyrelsen. Detta registreras permanent och kan inte ändras i efterhand via det här gränssnittet.
-                    </span>
-                  </label>
-
-                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={confirmEmailChecked}
-                      onChange={(e) => setConfirmEmailChecked(e.target.checked)}
-                      disabled={!state.properties.email}
-                      className="mt-0.5 w-4 h-4 shrink-0 accent-emerald-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-                    />
-                    <span className="text-xs text-gray-700 dark:text-zinc-300 font-semibold leading-snug">
-                      {state.properties.email
-                        ? <>Skicka protokollet till kandidatens e-post: <strong className="text-gray-900 dark:text-zinc-150">{state.properties.email}</strong></>
-                        : 'Ingen e-postadress angiven för kandidaten – mejl kan inte skickas.'
-                      }
-                    </span>
-                  </label>
-                </div>
+              <div className="px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmModal(false)}
+                  disabled={isFinalizing}
+                  className="h-11 px-5 rounded-control border border-line text-ink-2 hover:text-ink hover:bg-surface-2 text-sm font-medium cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Avbryt
+                </button>
+                <button
+                  type="button"
+                  onClick={handleComplete}
+                  disabled={!allConfirmed || isFinalizing}
+                  className={`h-11 px-6 rounded-control text-white text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isPassed ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-[#D42220] hover:bg-[#b51d1b]'
+                  }`}
+                >
+                  {isFinalizing ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                  {isFinalizing ? 'Sparar och skickar…' : 'Sänd beslut'}
+                </button>
               </div>
             </div>
-
-            <div className="mt-6 flex flex-col sm:flex-row gap-2 justify-end">
-              <button
-                type="button"
-                onClick={() => setShowConfirmModal(false)}
-                disabled={isFinalizing}
-                className="w-full sm:w-auto px-5 py-2.5 bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 border border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Avbryt
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowConfirmModal(false);
-                  handleComplete();
-                }}
-                disabled={!confirmResultChecked || !confirmReportChecked || (!!state.properties.email && !confirmEmailChecked) || isFinalizing}
-                className={`w-full sm:w-auto px-6 py-2.5 text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer rounded-xl flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  isPassed
-                    ? 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500'
-                    : 'bg-[#DD1D25] hover:bg-[#b51d1b]'
-                }`}
-              >
-                {isFinalizing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                <span>{isFinalizing ? 'Skickar...' : 'Sänd beslut'}</span>
-              </button>
-            </div>
           </div>
-        </div>
+        </Portal>
       )}
 
       {/* Dela unik länk modal */}
@@ -694,7 +870,7 @@ export function ProtokollScreen() {
           toName: state.properties.studentName,
           licenseType: state.properties.licenseType,
           testDate: state.properties.testDate,
-          examiner: profile?.name,
+          examiner: state.properties.examiner?.trim() || profile?.name,
           result: state.result.drivingResult || 'Godkänt'
         }}
       />

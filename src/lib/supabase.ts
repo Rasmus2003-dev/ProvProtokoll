@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { AppState } from '../types';
+import { isDemoMode } from './demoMode';
 
 // Read Supabase credentials from env or fallback to local storage configuration
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || localStorage.getItem('supabase_url') || 'https://demo-provprotokoll.supabase.co';
@@ -12,6 +13,10 @@ export const isSupabaseConfigured = () => {
 };
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Protokoll, elevregister m.m. går till molnet – utom i demoläge, där allt
+// stannar på enheten. Inloggningen använder alltid isSupabaseConfigured().
+export const isCloudDataEnabled = () => isSupabaseConfigured() && !isDemoMode();
 
 export interface SavedProtocolRow {
   id: string;
@@ -32,7 +37,8 @@ export interface SavedProtocolRow {
  * Save protocol to Supabase with automatic local fallback & offline sync queue
  */
 export async function saveProtocolToBackend(state: AppState, examinerName?: string): Promise<{ success: boolean; id: string; error?: string }> {
-  const protocolId = 'PROV-' + Date.now();
+  // Samma prov ska alltid få samma id, så att ett nytt synkförsök skriver över i stället för att dubblera
+  const protocolId = state.protocolId || 'PROV-' + Date.now();
   const payload = {
     id: protocolId,
     created_at: new Date().toISOString(),
@@ -44,13 +50,14 @@ export async function saveProtocolToBackend(state: AppState, examinerName?: stri
     tachograph: state.properties.tachograph || 'Med färdskrivare',
     driving_result: state.result.drivingResult,
     safety_result: state.result.safetyCheckResult,
-    examiner: examinerName || state.properties.examiner || 'Okänd provförrättare',
+    examiner: state.properties.examiner?.trim() || examinerName || 'Okänd provförrättare',
     full_state: state
   };
 
   // Always save in local backend store for instant offline persistence
   try {
-    const existing = JSON.parse(localStorage.getItem('provprotokoll_saved_db') || '[]');
+    const existing = JSON.parse(localStorage.getItem('provprotokoll_saved_db') || '[]')
+      .filter((row: SavedProtocolRow) => row.id !== protocolId);
     existing.unshift(payload);
     // Inspelade rutter tar plats – behåll dem bara för de senaste protokollen lokalt
     // (molnet och exporterade säkerhetskopior har kvar hela rutten).
@@ -65,11 +72,11 @@ export async function saveProtocolToBackend(state: AppState, examinerName?: stri
   }
 
   // If Supabase credentials exist, sync directly to Cloud Supabase
-  if (isSupabaseConfigured()) {
+  if (isCloudDataEnabled()) {
     try {
       const { data, error } = await supabase
         .from('protocols')
-        .insert([payload])
+        .upsert([payload], { onConflict: 'id' })
         .select();
 
       if (error) {
@@ -83,6 +90,7 @@ export async function saveProtocolToBackend(state: AppState, examinerName?: stri
   }
 
   // Also sync with node backend /api/protocols if available
+  if (isDemoMode()) return { success: true, id: protocolId };
   try {
     await fetch('/api/protocols', {
       method: 'POST',
@@ -119,7 +127,7 @@ export async function importProtocols(rows: SavedProtocolRow[]): Promise<{ added
     throw new Error('Lagringen på enheten är full – importen kunde inte sparas lokalt.');
   }
 
-  if (isSupabaseConfigured() && toAdd.length > 0) {
+  if (isCloudDataEnabled() && toAdd.length > 0) {
     try {
       await supabase.from('protocols').upsert(toAdd, { onConflict: 'id', ignoreDuplicates: true });
     } catch (err) {
@@ -134,7 +142,7 @@ export async function importProtocols(rows: SavedProtocolRow[]): Promise<{ added
  * Fetch all saved protocols from backend / local database
  */
 export async function fetchAllProtocols(): Promise<SavedProtocolRow[]> {
-  if (isSupabaseConfigured()) {
+  if (isCloudDataEnabled()) {
     try {
       const { data, error } = await supabase
         .from('protocols')
@@ -181,7 +189,7 @@ export async function fetchProtocolsPage(query: ProtocolQuery = {}): Promise<Pro
   const pageSize = query.pageSize ?? 25;
   const search = query.search?.trim() || '';
 
-  if (isSupabaseConfigured()) {
+  if (isCloudDataEnabled()) {
     try {
       let builder = supabase
         .from('protocols')
@@ -255,7 +263,7 @@ export interface ProtocolStats {
  * för att hämta alla rader till klienten för att räkna dem där.
  */
 export async function fetchProtocolStats(): Promise<ProtocolStats> {
-  if (isSupabaseConfigured()) {
+  if (isCloudDataEnabled()) {
     try {
       const [totalRes, passedRes, licenseRes] = await Promise.all([
         supabase.from('protocols').select('id', { count: 'exact', head: true }),
@@ -304,7 +312,7 @@ export async function fetchProtocolStats(): Promise<ProtocolStats> {
  * unsubscribe-funktion.
  */
 export function subscribeToProtocols(onChange: () => void): () => void {
-  if (!isSupabaseConfigured()) {
+  if (!isCloudDataEnabled()) {
     return () => {};
   }
 
@@ -332,7 +340,7 @@ export async function deleteProtocolFromBackend(id: string): Promise<boolean> {
   } catch (_) {}
 
   // Delete from Supabase
-  if (isSupabaseConfigured()) {
+  if (isCloudDataEnabled()) {
     try {
       await supabase.from('protocols').delete().eq('id', id);
     } catch (_) {}

@@ -250,7 +250,7 @@ export function RouteMap({
   }, [focusEventId, events]);
 
   return (
-    <div className={`relative w-full rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 isolate ${className}`}>
+    <div className={`relative w-full rounded-control overflow-hidden border border-gray-200 dark:border-slate-700 isolate ${className}`}>
       <div ref={containerRef} className="absolute inset-0" />
       {/* Karta / Satellit */}
       <div className="absolute top-2.5 right-2.5 z-[1000] flex rounded-lg bg-white/95 dark:bg-slate-900/95 shadow-md border border-black/10 dark:border-white/10 p-0.5 backdrop-blur-sm">

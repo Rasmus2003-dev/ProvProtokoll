@@ -1,4 +1,5 @@
 import React, { Suspense } from 'react';
+import { DemoModeBar } from './components/DemoModeSwitch';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppProvider } from './store/ProvContext';
 import { LoginScreen } from './screens/LoginScreen';
@@ -72,7 +73,8 @@ function AppContent() {
   }
 
   // Publik kandidatvy för körprovsprotokoll (delad unik länk) – kräver ingen inspektörsinloggning
-  if (location.pathname.startsWith('/p') || location.pathname.startsWith('/kandidat')) {
+  // Obs: exakt "/p" eller "/p/…" – annars fångas även "/profil" upp här
+  if (/^\/p(\/|$)/.test(location.pathname) || location.pathname.startsWith('/kandidat')) {
     return (
       <ErrorBoundary key={location.pathname}>
         <Suspense fallback={<RouteLoading />}>
@@ -88,8 +90,9 @@ function AppContent() {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#f8f9fa] dark:bg-[#0b1120] text-gray-900 dark:text-gray-100 relative">
+    <div id="app-shell" className="flex flex-col h-dvh overflow-hidden bg-canvas text-ink relative">
       <OfflineIndicator />
+      <DemoModeBar />
       <TopAppBar />
       {/* Ingen dra-för-att-uppdatera mitt i ett prov – en oavsiktlig dragning ska inte ladda om appen */}
       <PullToRefresh disabled={isTestStepPath(location.pathname)}>
@@ -129,8 +132,8 @@ function AppContent() {
 
       {/* Inloggningen täcker hela appen tills sessionen är verifierad */}
       {auth.status === 'checking' && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-          <div className="w-8 h-8 border-[3px] border-slate-200 dark:border-slate-700 border-t-[#002f6c] dark:border-t-blue-500 rounded-full animate-spin" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-canvas">
+          <div className="w-8 h-8 border-[3px] border-line border-t-navy dark:border-t-blue-500 rounded-full animate-spin" />
         </div>
       )}
       {auth.status === 'signed-out' && (

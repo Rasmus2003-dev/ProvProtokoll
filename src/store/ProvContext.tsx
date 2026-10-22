@@ -24,7 +24,7 @@ const defaultState: AppState = {
     personalNumber: '',
     email: '',
     examiner: '',
-    testDate: new Date().toISOString().split('T')[0],
+    testDate: new Date().toLocaleDateString('sv-SE'),
     testType: 'Förstaprov',
     licenseType: 'B',
     transmission: 'Manuell',
@@ -145,7 +145,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         personalNumber: '',
         email: '',
         examiner: profile?.name || '',
-        testDate: new Date().toISOString().split('T')[0],
+        testDate: new Date().toLocaleDateString('sv-SE'),
         testType: 'Förstaprov',
         licenseType: 'B',
         transmission: 'Manuell',
@@ -198,27 +198,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  // Tar bort ett prov ur kön när det väl ligger i molnet
+  const dropFromQueue = (protocolId: string) => {
+    setSyncQueue((prev) => {
+      const updated = prev.filter(t => t.protocolId !== protocolId);
+      writeJSON('provprotokoll-sync-queue', updated);
+      return updated;
+    });
+  };
+
   const saveTest = async (): Promise<{ success: boolean; error?: string }> => {
-    // Add current active test state to queue and history
+    // Provet får ett fast id direkt, så att det aldrig kan sparas två gånger
+    const saved: AppState = { ...state, protocolId: state.protocolId || `PROV-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` };
+
+    // Säkra lokalt först: historik + kö (kön töms när molnet tagit emot provet)
     setTestHistory((prev) => {
-      const updated = [...prev, state];
+      const updated = [...prev.filter(t => t.protocolId !== saved.protocolId), saved];
       writeJSON('provprotokoll-test-history', updated);
       return updated;
     });
     setSyncQueue((prev) => {
-      const updated = [...prev, state];
+      const updated = [...prev.filter(t => t.protocolId !== saved.protocolId), saved];
       writeJSON('provprotokoll-sync-queue', updated);
       return updated;
     });
 
-    // Save directly to Supabase & backend database. Protokollet är redan
-    // säkrat lokalt ovan (historik + syncQueue) oavsett vad som händer här,
-    // men anroparen ska kunna informera inspektören om molnsynken misslyckades.
     try {
-      const result = await saveProtocolToBackend(state, profile?.name);
+      const result = await saveProtocolToBackend(saved, profile?.name);
       if (result.error) {
         return { success: false, error: result.error };
       }
+      dropFromQueue(saved.protocolId!);
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err?.message || 'Nätverksfel vid molnsynk' };
@@ -236,7 +246,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
 
     const stillFailing: AppState[] = [];
-    for (const queuedTest of remaining) {
+    for (const queued of remaining) {
+      // Äldre köade prov saknar id – ge dem ett nu, så att ett nytt försök inte dubblerar
+      const queuedTest = queued.protocolId ? queued : { ...queued, protocolId: `PROV-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` };
       try {
         const result = await saveProtocolToBackend(queuedTest, profile?.name);
         if (result.error) {

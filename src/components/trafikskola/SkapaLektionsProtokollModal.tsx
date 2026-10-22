@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useBackToClose } from '../../hooks/useBackToClose';
 import { 
   X, 
   Plus, 
@@ -52,6 +53,8 @@ export function SkapaLektionsProtokollModal({
   onClose,
   onSaved
 }: SkapaLektionsProtokollModalProps) {
+  // Androids bakåtknapp stänger dialogen
+  useBackToClose(true, onClose);
   const { showToast } = useToast();
 
   const [studentId, setStudentId] = useState(selectedStudent?.id || students[0]?.id || '');
@@ -148,16 +151,16 @@ export function SkapaLektionsProtokollModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl w-full max-w-3xl my-auto shadow-2xl overflow-hidden animate-in zoom-in-95">
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-card w-full max-w-3xl my-auto shadow-2xl overflow-hidden animate-in zoom-in-95">
         
         {/* Header */}
         <div className="p-4 sm:p-5 bg-gradient-to-r from-[#002f6c] to-blue-800 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-control bg-white/10 flex items-center justify-center">
               <GraduationCap size={20} className="text-white" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-black tracking-tight">
+              <h2 className="text-base sm:text-lg font-bold tracking-tight">
                 Skapa Körlektionsprotokoll
               </h2>
               <p className="text-xs text-blue-200">
@@ -189,7 +192,7 @@ export function SkapaLektionsProtokollModal({
                   const s = students.find(stud => stud.id === e.target.value);
                   if (s) setLektionNr(s.totalLessons + 1);
                 }}
-                className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-bold"
+                className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs font-bold"
               >
                 {students.map(s => (
                   <option key={s.id} value={s.id}>
@@ -208,7 +211,7 @@ export function SkapaLektionsProtokollModal({
                 min={1}
                 value={lektionNr}
                 onChange={(e) => setLektionNr(parseInt(e.target.value) || 1)}
-                className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-bold"
+                className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs font-bold"
               />
             </div>
 
@@ -219,7 +222,7 @@ export function SkapaLektionsProtokollModal({
               <select
                 value={lektionstyp}
                 onChange={(e) => setLektionstyp(e.target.value as any)}
-                className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-bold"
+                className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs font-bold"
               >
                 <option value="Grundövning">Grundövning (Manövrering)</option>
                 <option value="Stadstrafik & Samspel">Stadstrafik & Samspel</option>
@@ -241,7 +244,7 @@ export function SkapaLektionsProtokollModal({
                 type="date"
                 value={datum}
                 onChange={(e) => setDatum(e.target.value)}
-                className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-bold"
+                className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs font-bold"
               />
             </div>
 
@@ -253,7 +256,7 @@ export function SkapaLektionsProtokollModal({
                 type="time"
                 value={tid}
                 onChange={(e) => setTid(e.target.value)}
-                className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-bold"
+                className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs font-bold"
               />
             </div>
 
@@ -264,7 +267,7 @@ export function SkapaLektionsProtokollModal({
               <select
                 value={langdMinuter}
                 onChange={(e) => setLangdMinuter(parseInt(e.target.value))}
-                className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-bold"
+                className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs font-bold"
               >
                 <option value={40}>40 min</option>
                 <option value={50}>50 min (Enkellektion)</option>
@@ -280,7 +283,7 @@ export function SkapaLektionsProtokollModal({
               <select
                 value={selectedVehicle}
                 onChange={(e) => setSelectedVehicle(e.target.value)}
-                className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-bold"
+                className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs font-bold"
               >
                 {skola.vehicles.map(v => (
                   <option key={v.id} value={`${v.model} (${v.regNr})`}>
@@ -295,7 +298,7 @@ export function SkapaLektionsProtokollModal({
           <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-slate-800">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 dark:text-white flex items-center gap-1.5">
+                <h3 className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
                   <BookOpen size={14} className="text-[#002f6c] dark:text-blue-400" />
                   Moment som övades under lektionen
                 </h3>
@@ -309,7 +312,7 @@ export function SkapaLektionsProtokollModal({
             </div>
 
             {/* Quick selector chips */}
-            <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-2 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-200 dark:border-slate-700">
+            <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-2 bg-gray-50 dark:bg-slate-800/50 rounded-control border border-gray-200 dark:border-slate-700">
               {STR_MOMENT_CHOICES.map(c => {
                 const isSelected = ovadeMoment.some(m => m.momentNr === c.momentNr);
                 return (
@@ -332,8 +335,8 @@ export function SkapaLektionsProtokollModal({
 
             {/* Selected moments evaluation card */}
             {ovadeMoment.length > 0 && (
-              <div className="space-y-2 border border-blue-200 dark:border-blue-900/50 bg-blue-50/30 dark:bg-blue-950/20 p-3 rounded-xl">
-                <div className="text-[11px] font-bold text-blue-900 dark:text-blue-300 uppercase tracking-wider">
+              <div className="space-y-2 border border-blue-200 dark:border-blue-900/50 bg-blue-50/30 dark:bg-blue-950/20 p-3 rounded-control">
+                <div className="text-[11px] font-bold text-blue-900 dark:text-blue-300 ">
                   Betygssättning per moment:
                 </div>
                 <div className="space-y-2">
@@ -349,7 +352,7 @@ export function SkapaLektionsProtokollModal({
                           <button
                             type="button"
                             onClick={() => updateMomentNiva(m.momentNr, 1)}
-                            className={`px-2 py-0.5 text-[10px] font-bold rounded cursor-pointer ${
+                            className={`px-2 py-0.5 text-[11px] font-bold rounded cursor-pointer ${
                               m.niva === 1 ? 'bg-amber-500 text-white' : 'text-gray-600 dark:text-gray-400'
                             }`}
                           >
@@ -358,7 +361,7 @@ export function SkapaLektionsProtokollModal({
                           <button
                             type="button"
                             onClick={() => updateMomentNiva(m.momentNr, 2)}
-                            className={`px-2 py-0.5 text-[10px] font-bold rounded cursor-pointer ${
+                            className={`px-2 py-0.5 text-[11px] font-bold rounded cursor-pointer ${
                               m.niva === 2 ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400'
                             }`}
                           >
@@ -367,7 +370,7 @@ export function SkapaLektionsProtokollModal({
                           <button
                             type="button"
                             onClick={() => updateMomentNiva(m.momentNr, 3)}
-                            className={`px-2 py-0.5 text-[10px] font-bold rounded cursor-pointer ${
+                            className={`px-2 py-0.5 text-[11px] font-bold rounded cursor-pointer ${
                               m.niva === 3 ? 'bg-emerald-600 text-white' : 'text-gray-600 dark:text-gray-400'
                             }`}
                           >
@@ -401,7 +404,7 @@ export function SkapaLektionsProtokollModal({
                   rows={2}
                   value={styrkor}
                   onChange={(e) => setStyrkor(e.target.value)}
-                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs resize-none"
+                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs resize-none"
                 />
               </div>
 
@@ -413,7 +416,7 @@ export function SkapaLektionsProtokollModal({
                   rows={2}
                   value={utvecklingsomraden}
                   onChange={(e) => setUtvecklingsomraden(e.target.value)}
-                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs resize-none"
+                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs resize-none"
                 />
               </div>
             </div>
@@ -427,7 +430,7 @@ export function SkapaLektionsProtokollModal({
                 value={radHandledare}
                 onChange={(e) => setRadHandledare(e.target.value)}
                 placeholder="T.ex. Öva på cirkulationsplatser och spegelrutiner i lugna områden..."
-                className="w-full h-9 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-medium"
+                className="w-full h-9 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs font-medium"
               />
             </div>
 
@@ -439,7 +442,7 @@ export function SkapaLektionsProtokollModal({
                 <select
                   value={betygHelhet}
                   onChange={(e) => setBetygHelhet(e.target.value as any)}
-                  className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-bold"
+                  className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs font-bold"
                 >
                   <option value="Bra genomfört">Bra genomfört</option>
                   <option value="Godkänd nivå">Godkänd nivå</option>
@@ -455,7 +458,7 @@ export function SkapaLektionsProtokollModal({
                   type="text"
                   value={nastaSteg}
                   onChange={(e) => setNastaSteg(e.target.value)}
-                  className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-bold"
+                  className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs font-bold"
                 />
               </div>
             </div>
@@ -466,13 +469,13 @@ export function SkapaLektionsProtokollModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-bold hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer"
+              className="px-4 py-2 border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300 rounded-control text-xs font-bold hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer"
             >
               Avbryt
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 bg-[#002f6c] hover:bg-[#00224f] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer transition-all active:scale-95"
+              className="px-5 py-2.5 bg-[#002f6c] hover:bg-[#00224f] text-white rounded-control text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer transition-all active:scale-95"
             >
               <FileCheck size={15} />
               <span>Spara & Generera Lektionskort</span>

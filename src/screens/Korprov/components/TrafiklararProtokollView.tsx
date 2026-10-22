@@ -32,7 +32,7 @@ export function TrafiklararProtokollView({ state, inspectorName }: TrafiklararPr
   const studentName = state.properties.studentName || 'Elev/Kandidat';
   const personalNumber = state.properties.personalNumber || '';
   const testDate = state.properties.testDate || new Date().toISOString().split('T')[0];
-  const teacher = inspectorName || state.properties.examiner || 'Trafiklärare';
+  const teacher = state.properties.examiner?.trim() || inspectorName || 'Trafiklärare';
 
   const isPassed = state.result.drivingResult === 'Godkänt' && !state.result.testAborted;
   const drivingFail = state.result.drivingFailure;
@@ -96,7 +96,7 @@ export function TrafiklararProtokollView({ state, inspectorName }: TrafiklararPr
   ];
 
   return (
-    <div className="space-y-6 print:m-0 print:p-0">
+    <div data-protocol className="space-y-6 print:m-0 print:p-0">
       
       {/* Lärar-specifik åtgärdslist */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-slate-100 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-2xl print:hidden">
@@ -184,6 +184,9 @@ export function TrafiklararProtokollView({ state, inspectorName }: TrafiklararPr
           <div>
             <span className="text-[10px] font-bold uppercase text-gray-400 block">Behörighet / Bil:</span>
             <strong className="text-gray-950">{licenseType} ({state.properties.transmission})</strong>
+            {state.properties.tachograph === 'Utan färdskrivare' && ['C1', 'C', 'C1E', 'CE', 'D1', 'D', 'D1E', 'DE'].includes(licenseType) && (
+              <span className="mt-1 inline-block text-[11px] font-semibold px-1.5 py-0.5 rounded border border-gray-400 text-gray-800">Utan färdskrivare</span>
+            )}
           </div>
           <div>
             <span className="text-[10px] font-bold uppercase text-gray-400 block">Lärare:</span>

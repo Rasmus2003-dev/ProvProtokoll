@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useBackToClose } from '../hooks/useBackToClose';
 import { 
   X, 
   Send, 
@@ -36,6 +37,8 @@ interface CandidateMessagesModalProps {
 }
 
 export function CandidateMessagesModal({ isOpen, onClose, candidate, onReply }: CandidateMessagesModalProps) {
+  // Androids bakåtknapp stänger dialogen
+  useBackToClose(isOpen, onClose);
   const { showToast } = useToast();
   const [messages, setMessages] = useState<CandidateMessage[]>([]);
   const [simulatedText, setSimulatedText] = useState('');
@@ -104,24 +107,24 @@ export function CandidateMessagesModal({ isOpen, onClose, candidate, onReply }: 
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-150 flex flex-col max-h-[92vh] overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-sheet max-w-2xl w-full p-5 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-150 flex flex-col max-h-[92vh] overflow-hidden">
         
         {/* Header */}
         <div className="flex items-center justify-between pb-3.5 border-b border-gray-100 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 rounded-2xl border border-emerald-200 dark:border-emerald-900/50 shadow-2xs">
+            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 rounded-card border border-emerald-200 dark:border-emerald-900/50 shadow-2xs">
               <MessageSquare size={20} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-black text-gray-900 dark:text-white leading-tight">
+                <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
                   Mejldialog & Svar
                 </h3>
-                <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-[#002f6c] dark:text-blue-300 text-[10px] font-extrabold rounded-md uppercase">
+                <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-[#002f6c] dark:text-blue-300 text-[11px] font-bold rounded-md ">
                   {candidate.name}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 font-mono">
+              <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 tabular-nums">
                 {candidate.email || 'Ingen e-post sparad'} {candidate.personalNumber ? `• ${candidate.personalNumber}` : ''}
               </p>
             </div>
@@ -129,7 +132,7 @@ export function CandidateMessagesModal({ isOpen, onClose, candidate, onReply }: 
 
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer shrink-0"
+            className="w-8 h-8 flex items-center justify-center rounded-control bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer shrink-0"
           >
             <X size={16} />
           </button>
@@ -139,7 +142,7 @@ export function CandidateMessagesModal({ isOpen, onClose, candidate, onReply }: 
         <div className="py-4 overflow-y-auto space-y-3.5 flex-1 pr-1 custom-scrollbar">
           {messages.length === 0 ? (
             <div className="text-center py-10 px-4 space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-gray-400">
+              <div className="w-12 h-12 rounded-card bg-gray-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-gray-400">
                 <Mail size={24} />
               </div>
               <p className="text-sm font-bold text-gray-700 dark:text-slate-300">
@@ -172,14 +175,14 @@ export function CandidateMessagesModal({ isOpen, onClose, candidate, onReply }: 
                   </div>
 
                   <div
-                    className={`max-w-[85%] rounded-2xl p-4 shadow-sm border ${
+                    className={`max-w-[85%] rounded-card p-4 shadow-sm border ${
                       isInbound
                         ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/60 text-gray-900 dark:text-slate-100 rounded-tl-xs'
                         : 'bg-[#002f6c] dark:bg-blue-600 text-white border-transparent rounded-tr-xs shadow-md'
                     }`}
                   >
                     {msg.subject && (
-                      <div className={`text-xs font-black mb-1.5 pb-1 border-b ${
+                      <div className={`text-xs font-bold mb-1.5 pb-1 border-b ${
                         isInbound ? 'text-emerald-900 dark:text-emerald-300 border-emerald-100 dark:border-emerald-900/50' : 'text-blue-100 border-white/15'
                       }`}>
                         {msg.subject}
@@ -197,7 +200,7 @@ export function CandidateMessagesModal({ isOpen, onClose, candidate, onReply }: 
 
         {/* Simulate Reply Testing Drawer */}
         {showSimulateForm ? (
-          <div className="p-3 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-200 dark:border-slate-700 space-y-2 mb-3">
+          <div className="p-3 bg-gray-50 dark:bg-slate-800/50 rounded-card border border-gray-200 dark:border-slate-700 space-y-2 mb-3">
             <div className="flex items-center justify-between text-xs font-bold text-gray-700 dark:text-slate-300">
               <span className="flex items-center gap-1.5">
                 <Sparkles size={14} className="text-amber-500" />
@@ -242,13 +245,13 @@ export function CandidateMessagesModal({ isOpen, onClose, candidate, onReply }: 
                 value={simulatedText}
                 onChange={(e) => setSimulatedText(e.target.value)}
                 placeholder="Eller skriv ett eget provsvar från kandidaten..."
-                className="flex-1 h-9 px-3 text-xs rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white outline-none focus:border-blue-500"
+                className="flex-1 h-9 px-3 text-xs rounded-control border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white outline-none focus:border-blue-500"
               />
               <button
                 type="button"
                 onClick={() => handleSimulateReply()}
                 disabled={!simulatedText.trim()}
-                className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 disabled:opacity-50 cursor-pointer"
+                className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-control hover:bg-emerald-700 disabled:opacity-50 cursor-pointer"
               >
                 Skicka in
               </button>
@@ -262,7 +265,7 @@ export function CandidateMessagesModal({ isOpen, onClose, candidate, onReply }: 
             <button
               type="button"
               onClick={() => setShowSimulateForm(!showSimulateForm)}
-              className="px-3 py-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-control text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
               title="Testa hur det ser ut när eleven svarar på mejlet"
             >
               <Sparkles size={14} className="text-amber-500" />
@@ -274,7 +277,7 @@ export function CandidateMessagesModal({ isOpen, onClose, candidate, onReply }: 
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              className="px-4 py-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-control text-xs font-bold transition-all cursor-pointer"
             >
               Stäng
             </button>
@@ -282,7 +285,7 @@ export function CandidateMessagesModal({ isOpen, onClose, candidate, onReply }: 
             <button
               type="button"
               onClick={handleStartReply}
-              className="px-5 py-2.5 bg-gradient-to-r from-[#002f6c] to-blue-700 hover:from-[#00204a] hover:to-blue-800 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-md active:scale-95"
+              className="px-5 py-2.5 bg-gradient-to-r from-[#002f6c] to-blue-700 hover:from-[#00204a] hover:to-blue-800 text-white rounded-control text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-md active:scale-95"
             >
               <Send size={14} />
               <span>Svara {candidate.name.split(' ')[0]}</span>

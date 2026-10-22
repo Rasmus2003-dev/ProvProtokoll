@@ -2,6 +2,8 @@ import { useMemo, useRef, useState } from 'react';
 import { Clock, Search, X, ShieldCheck, RotateCcw, Car, AlertTriangle, Info, Check, Eye, EyeOff } from 'lucide-react';
 import { LICENSE_GUIDES, LicenseGuideItem } from '../../data/licenseGuidesData';
 import { Highlight, matches, useSlashFocus, useStoredState } from './Highlight';
+import { docForLicense } from './TdokViewer';
+import { LATHUNDAR_DATA } from '../../data/lathundarData';
 
 const CATEGORY_LABELS: Record<LicenseGuideItem['category'], string> = {
   bil: 'Bil',
@@ -99,7 +101,7 @@ export function LicenseGuideView({ license, onLicenseChange, extraNote }: Licens
       <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-none">
         {groups.map(([label, licenses]) => (
           <div key={label} className="shrink-0">
-            <div className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1 px-0.5">{label}</div>
+            <div className="text-[11px] font-bold text-gray-400 mb-1 px-0.5">{label}</div>
             <div className="flex gap-1.5">
               {licenses.map(lic => (
                 <button
@@ -108,7 +110,7 @@ export function LicenseGuideView({ license, onLicenseChange, extraNote }: Licens
                   onClick={() => selectLicense(lic)}
                   aria-pressed={lic === guide.license}
                   title={startedLicenses.has(lic) ? `${lic} – påbörjad checklista` : LICENSE_GUIDES[lic]?.name}
-                  className={`relative min-w-11 h-10 px-3 rounded-xl text-sm font-black transition-all cursor-pointer ${
+                  className={`relative min-w-11 h-10 px-3 rounded-control text-sm font-bold transition-all cursor-pointer ${
                     lic === guide.license
                       ? 'bg-[#002f6c] dark:bg-blue-600 text-white shadow-sm ring-2 ring-blue-500/20'
                       : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'
@@ -125,31 +127,38 @@ export function LicenseGuideView({ license, onLicenseChange, extraNote }: Licens
         ))}
       </div>
 
-      {/* Rubrik + körtid */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-stretch">
-        <div className="rounded-2xl bg-gradient-to-br from-[#002f6c] to-[#00204a] text-white p-5 flex flex-col justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 text-blue-200 text-xs font-bold">
-              <Car size={14} /> {guide.name}
+      {/* Dokumenthuvud i TDOK-stil */}
+      {(() => {
+        const base = LATHUNDAR_DATA.find(d => d.id === docForLicense(guide.license));
+        const meta: [string, string][] = [
+          ['Dokumenttyp', 'Lathund'],
+          ['Dokumentdatum', '2026-09-01'],
+          ['Behörighet', `${guide.license} – ${guide.name}`],
+          ['Version', '1.0'],
+          ['Bygger på', base ? `${base.tdok}, ${base.title}` : 'Rutinbeskrivning för körprov'],
+          ['Gäller för', 'Förarprövare'],
+        ];
+        return (
+          <header className="rounded-card border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+            <div className="px-5 py-4 flex items-start justify-between gap-4 border-b border-gray-300 dark:border-slate-700">
+              <div>
+                <p className="text-[12px] font-semibold text-gray-500 dark:text-slate-400">ProvProtokoll · Lathund</p>
+                <h2 className="text-2xl sm:text-[28px] font-bold text-gray-950 dark:text-white leading-tight mt-0.5">Körprov {guide.license}</h2>
+                <p className="text-sm text-gray-600 dark:text-slate-300 mt-1">Kort sammanfattning att ha med i bilen. Vid tveksamhet gäller rutinbeskrivningen.</p>
+              </div>
+              <Car size={22} className="text-gray-400 shrink-0 mt-1" />
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight mt-1">Körprov {guide.license}</h2>
-          </div>
-          <div className="flex flex-wrap gap-2 text-[11px] font-bold">
-            <span className="px-2.5 py-1 rounded-lg bg-white/15">{guide.safetyCheck.items.length} kontrollpunkter</span>
-            <span className="px-2.5 py-1 rounded-lg bg-white/15">{guide.maneuverItems.length} manövrer</span>
-            <span className="px-2.5 py-1 rounded-lg bg-white/15">{guide.trafficItems.length} trafikmoment</span>
-          </div>
-        </div>
-        <div className="rounded-2xl border-2 border-blue-200 dark:border-blue-900/60 bg-blue-50 dark:bg-blue-950/30 p-4 md:max-w-sm flex gap-3">
-          <Clock size={22} className="text-[#002f6c] dark:text-blue-400 shrink-0 mt-0.5" />
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-blue-800 dark:text-blue-300">Körtid</div>
-            <p className="text-sm font-semibold text-blue-950 dark:text-blue-100 leading-snug mt-0.5">
-              <Highlight text={guide.driveTime} query={query} />
-            </p>
-          </div>
-        </div>
-      </div>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 text-[13px]">
+              {meta.map(([k, v], i) => (
+                <div key={k} className={`px-5 py-2.5 border-gray-200 dark:border-slate-800 ${i < meta.length - 2 ? 'border-b' : ''} ${i % 2 === 0 ? 'sm:border-r' : ''}`}>
+                  <dt className="text-[11px] font-semibold text-gray-500 dark:text-slate-400">{k}</dt>
+                  <dd className="font-medium text-gray-900 dark:text-slate-100">{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </header>
+        );
+      })()}
 
       {/* Sök + bockräknare */}
       <div className="flex flex-col sm:flex-row gap-2.5">
@@ -162,18 +171,18 @@ export function LicenseGuideView({ license, onLicenseChange, extraNote }: Licens
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Escape' && query) { e.stopPropagation(); setQuery(''); } }}
             placeholder={`Sök i lathunden för ${guide.license}...`}
-            className="w-full h-11 pl-10 pr-10 text-sm [&::-webkit-search-cancel-button]:hidden rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500"
+            className="w-full h-11 pl-10 pr-10 text-sm [&::-webkit-search-cancel-button]:hidden rounded-control border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500"
           />
           {query ? (
             <button type="button" onClick={() => setQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-gray-700 cursor-pointer" aria-label="Rensa sökning">
               <X size={15} />
             </button>
           ) : (
-            <kbd className="hidden sm:block absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700 text-[10px] font-mono text-gray-400 pointer-events-none">/</kbd>
+            <kbd className="hidden sm:block absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700 text-[11px] tabular-nums text-gray-400 pointer-events-none">/</kbd>
           )}
         </div>
         <div className="flex gap-2 shrink-0 print:hidden">
-          <div className="relative flex items-center gap-2 h-11 px-3.5 rounded-xl bg-gray-100 dark:bg-slate-800 text-xs font-bold text-gray-700 dark:text-slate-300 overflow-hidden flex-1 sm:flex-none">
+          <div className="relative flex items-center gap-2 h-11 px-3.5 rounded-control bg-gray-100 dark:bg-slate-800 text-xs font-bold text-gray-700 dark:text-slate-300 overflow-hidden flex-1 sm:flex-none">
             <span className="absolute inset-y-0 left-0 bg-emerald-500/15 transition-all" style={{ width: `${progress}%` }} aria-hidden />
             <Check size={14} className="text-emerald-600 relative" />
             <span className="relative">{totalChecked} / {totalItems} avbockade</span>
@@ -187,7 +196,7 @@ export function LicenseGuideView({ license, onLicenseChange, extraNote }: Licens
             type="button"
             onClick={() => setHideDone(v => !v)}
             aria-pressed={hideDone}
-            className={`h-11 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors ${
+            className={`h-11 px-3 rounded-control text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors ${
               hideDone ? 'bg-[#002f6c] dark:bg-blue-600 text-white' : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700'
             }`}
             title="Visa bara det som återstår"
@@ -197,108 +206,89 @@ export function LicenseGuideView({ license, onLicenseChange, extraNote }: Licens
         </div>
       </div>
 
-      {/* Viktiga krav – alltid synliga överst */}
-      {highlights.length > 0 && (
-        <div className="rounded-2xl border-2 border-amber-300 dark:border-amber-800/70 bg-amber-50 dark:bg-amber-950/30 p-4 space-y-2">
-          <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-amber-800 dark:text-amber-300">
-            <AlertTriangle size={15} /> Måste ingå
-          </div>
-          <ul className="space-y-1.5">
-            {highlights.map((h, i) => (
-              <li key={i} className="flex gap-2 text-sm font-semibold text-amber-950 dark:text-amber-100 leading-snug">
-                <span className="text-amber-600 shrink-0">▸</span>
-                <span><Highlight text={h} query={query} /></span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* Dokumentets avsnitt, numrerade som i en rutinbeskrivning */}
+      <article className="rounded-card border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 sm:px-8 py-6 space-y-8 text-[15px] text-gray-800 dark:text-slate-200 leading-relaxed">
+        {(!query || matches(guide.driveTime, query)) && (
+          <section>
+            <h3 className="text-lg font-bold text-gray-950 dark:text-white flex gap-3 font-sans tracking-normal"><span className="tabular-nums text-gray-400">1</span> Körtid och omfattning</h3>
+            <p className="mt-2 flex gap-2.5"><Clock size={17} className="text-gray-400 shrink-0 mt-1" /><span><Highlight text={guide.driveTime} query={query} /></span></p>
+          </section>
+        )}
 
-      {/* Tre checklistor */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {highlights.length > 0 && (
+          <section>
+            <h3 className="text-lg font-bold text-gray-950 dark:text-white flex gap-3 font-sans tracking-normal"><span className="tabular-nums text-gray-400">2</span> Detta måste ingå</h3>
+            <div className="mt-2 border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 space-y-1.5">
+              {highlights.map((h, i) => (
+                <p key={i} className="flex gap-2.5 font-semibold text-amber-950 dark:text-amber-100">
+                  <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-1" />
+                  <span><Highlight text={h} query={query} /></span>
+                </p>
+              ))}
+            </div>
+          </section>
+        )}
+
         {sections.map((section, sIdx) => {
+          const num = sIdx + 3;
           const visible = section.items
-            .map((item, idx) => ({ item, key: `${guide.license}-${section.key}-${idx}` }))
+            .map((item, idx) => ({ item, idx, key: `${guide.license}-${section.key}-${idx}` }))
             .filter(({ item, key }) => matches(item, query) && !(hideDone && checked[key]));
           const done = section.items.filter((_, idx) => checked[`${guide.license}-${section.key}-${idx}`]).length;
-          const allDone = done === section.items.length && done > 0;
           if (query && visible.length === 0) return null;
           return (
-            <div key={section.key} className={`rounded-2xl border border-gray-200 dark:border-slate-800 border-t-4 ${section.accent} bg-white dark:bg-slate-900 p-4 sm:p-5 space-y-3 shadow-xs`}>
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Del {sIdx + 1}</div>
-                  <h3 className="text-base font-black text-gray-900 dark:text-white leading-tight">{section.title}</h3>
-                </div>
-                <span className={`text-[11px] font-black px-2 py-1 rounded-lg shrink-0 ${
-                  allDone
-                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
-                    : 'bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-400'
-                }`}>
-                  {done}/{section.items.length}
-                </span>
+            <section key={section.key}>
+              <div className="flex items-baseline justify-between gap-3">
+                <h3 className="text-lg font-bold text-gray-950 dark:text-white flex gap-3 font-sans tracking-normal"><span className="tabular-nums text-gray-400">{num}</span> {section.title}</h3>
+                <span className="text-[12px] font-semibold text-gray-500 dark:text-slate-400 tabular-nums shrink-0">{done} av {section.items.length}</span>
               </div>
-              <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">{section.subtitle}</p>
-              {visible.length === 0 && allDone && (
-                <p className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 text-sm font-bold text-emerald-800 dark:text-emerald-300">
-                  <Check size={15} strokeWidth={3} /> Allt avbockat
-                </p>
+              <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">{section.subtitle}</p>
+              {visible.length === 0 && done === section.items.length && done > 0 && (
+                <p className="mt-2 flex items-center gap-2 text-sm font-semibold text-emerald-700 dark:text-emerald-400"><Check size={15} strokeWidth={3} /> Allt avbockat</p>
               )}
-              <ul className="space-y-1.5">
-                {visible.map(({ item, key }) => {
+              <ol className="mt-3 divide-y divide-gray-100 dark:divide-slate-800 border-y border-gray-100 dark:border-slate-800">
+                {visible.map(({ item, idx, key }) => {
                   const isChecked = Boolean(checked[key]);
                   return (
                     <li key={key}>
                       <button
                         type="button"
                         onClick={() => toggle(key)}
-                        className={`w-full text-left flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
-                          isChecked
-                            ? 'bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50'
-                            : 'bg-gray-50/60 dark:bg-slate-800/40 border-transparent hover:border-gray-200 dark:hover:border-slate-700'
-                        }`}
+                        aria-pressed={isChecked}
+                        className="w-full text-left flex items-start gap-3 py-2.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/40"
                       >
+                        <span className="tabular-nums text-[13px] text-gray-400 w-8 shrink-0 pt-0.5">{num}.{idx + 1}</span>
+                        <span className={`flex-1 ${isChecked ? 'text-gray-400 dark:text-slate-500 line-through decoration-gray-300' : ''}`}>
+                          <Highlight text={item} query={query} />
+                        </span>
                         <span className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
-                          isChecked ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900'
+                          isChecked ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 dark:border-slate-600'
                         }`}>
                           {isChecked && <Check size={12} strokeWidth={3.5} />}
-                        </span>
-                        <span className={`text-sm leading-snug ${isChecked ? 'text-gray-500 dark:text-slate-400 line-through decoration-gray-300' : 'text-gray-800 dark:text-gray-100 font-medium'}`}>
-                          <Highlight text={item} query={query} />
                         </span>
                       </button>
                     </li>
                   );
                 })}
-              </ul>
-            </div>
+              </ol>
+            </section>
           );
         })}
-      </div>
 
-      {/* Omprov & anmärkningar */}
-      {(notes.length > 0 || extraNote) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {notes.length > 0 && (
-            <div className="rounded-2xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20 p-4 space-y-1.5">
-              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-blue-800 dark:text-blue-300">
-                <Info size={14} /> Bra att veta / omprov
-              </div>
+        {(notes.length > 0 || extraNote) && (
+          <section>
+            <h3 className="text-lg font-bold text-gray-950 dark:text-white flex gap-3 font-sans tracking-normal"><span className="tabular-nums text-gray-400">{sections.length + 3}</span> Bra att veta</h3>
+            <ul className="mt-2 space-y-1.5">
               {notes.map((n, i) => (
-                <p key={i} className="text-sm text-blue-950 dark:text-blue-100 leading-snug">• <Highlight text={n} query={query} /></p>
+                <li key={i} className="flex gap-2.5"><Info size={16} className="text-blue-600 dark:text-blue-400 shrink-0 mt-1" /><span><Highlight text={n} query={query} /></span></li>
               ))}
-            </div>
-          )}
-          {extraNote && (
-            <div className="rounded-2xl border border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 p-4 space-y-1.5">
-              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-gray-600 dark:text-slate-300">
-                <ShieldCheck size={14} /> Hastighet & säkerhetsmarginal
-              </div>
-              <p className="text-sm text-gray-800 dark:text-slate-200 leading-snug">{extraNote}</p>
-            </div>
-          )}
-        </div>
-      )}
+              {extraNote && (
+                <li className="flex gap-2.5"><ShieldCheck size={16} className="text-gray-500 shrink-0 mt-1" /><span>{extraNote}</span></li>
+              )}
+            </ul>
+          </section>
+        )}
+      </article>
 
       {query && highlights.length === 0 && notes.length === 0 && sections.every(s => !s.items.some(i => matches(i, query))) && !matches(guide.driveTime, query) && (
         <p className="text-sm text-center text-gray-500 dark:text-slate-400 py-6">Inga träffar för "{query}" i lathunden för {guide.license}.</p>

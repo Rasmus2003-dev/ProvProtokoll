@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../../components/ui/Button';
 import { useAppStore } from '../../store/ProvContext';
 import { cn, triggerHaptic } from '../../lib/utils';
 import { TEST_CONTENT, ALL_SAFETY_ITEMS } from '../../data/testContentCatalog';
-import { AlertCircle, ShieldAlert, Search, X, Maximize, Minimize, BookOpen, Dice5, PenLine } from 'lucide-react';
-import { FailureForm } from './components/FailureForm';
+import { AlertCircle, ShieldAlert, Search, X, Maximize, Minimize, BookOpen, Dice5, PenLine, ChevronRight } from 'lucide-react';
 import { NavigatorPanel } from '../../components/route/NavigatorPanel';
 import { EventDialog, EventDialogResult } from '../../components/route/EventDialog';
 import { createDrivingEvent, withEvent } from '../../lib/drivingEvents';
@@ -194,34 +192,6 @@ export function KorningScreen() {
     }));
   };
 
-  const setSafetyCheckResult = (value: 'Godkänt' | 'Underkänt' | '-') => {
-    updateState((prev) => ({
-      ...prev,
-      result: {
-        ...(prev.result || {}),
-        safetyCheckResult: value,
-        ...(value === 'Underkänt' ? {
-          safetyCheckFailure: {
-            primaryCause: prev.result?.safetyCheckFailure?.primaryCause?.area 
-              ? prev.result.safetyCheckFailure.primaryCause 
-              : { area: 'Fordonskännedom', deficiencies: [] },
-            consequences: prev.result?.safetyCheckFailure?.consequences || [],
-            situations: prev.result?.safetyCheckFailure?.situations || [],
-            interventionOccurred: false,
-            testAborted: false,
-          }
-        } : {
-          safetyCheckFailure: {
-            primaryCause: { area: '', deficiencies: [] },
-            consequences: [],
-            situations: [],
-            interventionOccurred: false,
-            testAborted: false,
-          }
-        })
-      }
-    }));
-  };
 
   const safetyCheckResultRelevant = HEAVY_LICENSES.includes(licenseType) || licenseType === 'BE';
 
@@ -356,7 +326,7 @@ export function KorningScreen() {
         aria-label={`Anteckning för ${item}`}
       >
         {noteCount > 0 ? (
-          <span className="min-w-5 h-5 px-1.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10px] font-bold flex items-center justify-center">
+          <span className="min-w-5 h-5 px-1.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold flex items-center justify-center">
             {noteCount}
           </span>
         ) : (
@@ -388,7 +358,7 @@ export function KorningScreen() {
 
 
         {/* Ren textnavigering: Start  Egenskaper  Inledning  Körning  Resultat */}
-        <div className="w-full overflow-x-auto hide-scrollbar flex items-center justify-start sm:justify-center gap-4 sm:gap-10 text-xs sm:text-base font-normal text-gray-400 dark:text-zinc-500 select-none pt-1 px-2">
+        <div className="w-full overflow-x-auto hide-scrollbar flex items-center justify-start sm:justify-center gap-4 sm:gap-10 text-xs sm:text-base font-normal text-gray-400 dark:text-zinc-500 select-none pt-1 pl-2 pr-12">
           <button onClick={() => navigate('/korprov/start')} className="hover:text-gray-700 dark:hover:text-zinc-300 transition-colors whitespace-nowrap">Start</button>
           <button onClick={() => navigate('/korprov/egenskaper')} className="hover:text-gray-700 dark:hover:text-zinc-300 transition-colors whitespace-nowrap">Egenskaper</button>
           <button onClick={() => navigate('/korprov/inledning')} className="hover:text-gray-700 dark:hover:text-zinc-300 transition-colors whitespace-nowrap">Inledning</button>
@@ -402,7 +372,7 @@ export function KorningScreen() {
         <div className="flex items-center gap-3">
           <div className="text-xs sm:text-sm text-gray-600 dark:text-zinc-400 font-medium">
             Kandidat: <strong className="text-gray-950 dark:text-white font-bold">{state.properties.studentName || 'Förnamn Efternamn'}</strong>
-            <span className="ml-2 px-2 py-0.5 rounded text-[11px] font-black bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200">
+            <span className="ml-2 px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200">
               {state.properties.testType?.includes('Bedömningsprov') ? `Bedömningsprov (${licenseType})` : licenseType}
             </span>
           </div>
@@ -441,34 +411,34 @@ export function KorningScreen() {
           <button
             type="button"
             onClick={() => setIsLathundOpen(true)}
-            className="px-3 py-2 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/60 shadow-xs"
-            title={`Öppna lathund för behörighet ${licenseType}`}
+            className="h-9 px-3 rounded-control border border-line bg-surface text-ink-2 hover:text-ink hover:bg-surface-2 text-[13px] font-medium transition-colors cursor-pointer flex items-center gap-1.5 select-none"
+            title={`Lathund för ${licenseType}`}
           >
-            <BookOpen size={14} className="text-amber-600 dark:text-amber-400" />
-            <span>Lathund ({licenseType})</span>
+            <BookOpen size={15} className="text-ink-3" />
+            <span>Lathund</span>
           </button>
 
           <button
             type="button"
             onClick={() => setIsQuestionModalOpen(true)}
-            className="px-3 py-2 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-amber-500 shadow-xs active:scale-95"
-            title={`Slumpa funktionsfråga för behörighet ${licenseType} (enkelt språk)`}
+            className="h-9 px-3 rounded-control border border-line bg-surface text-ink-2 hover:text-ink hover:bg-surface-2 text-[13px] font-medium transition-colors cursor-pointer flex items-center gap-1.5 select-none"
+            title={`Slumpa en funktionsfråga för ${licenseType}`}
           >
-            <Dice5 size={14} className="text-white" />
-            <span>Funktionsfråga ({licenseType})</span>
+            <Dice5 size={15} className="text-ink-3" />
+            <span>Funktionsfråga</span>
           </button>
 
           <button
             type="button"
             onClick={setIntervention}
             className={cn(
-              "px-3.5 py-2 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none active:scale-95",
+              "h-9 px-3 rounded-control border text-[13px] font-medium transition-colors cursor-pointer flex items-center gap-1.5 select-none",
               state.result?.interventionOccurred
-                ? "bg-amber-100 text-amber-900 border-amber-400 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-700 shadow-sm"
-                : "bg-white dark:bg-zinc-900 text-gray-600 dark:text-zinc-400 border-gray-300 dark:border-zinc-700 hover:bg-gray-50"
+                ? "bg-amber-50 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-800"
+                : "bg-surface text-ink-2 border-line hover:text-ink hover:bg-surface-2"
             )}
           >
-            <AlertCircle size={15} className={state.result?.interventionOccurred ? "text-amber-700 dark:text-amber-300" : "text-gray-400"} />
+            <AlertCircle size={15} className={state.result?.interventionOccurred ? "text-amber-700 dark:text-amber-300" : "text-ink-3"} />
             <span>
               {state.result?.interventionOccurred ? '+ Ingripande' : 'Ingripande'}
               {interventionCount > 0 && ` (${interventionCount})`}
@@ -479,14 +449,14 @@ export function KorningScreen() {
             type="button"
             onClick={setAborted}
             className={cn(
-              "px-3.5 py-2 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none active:scale-95",
+              "h-9 px-3 rounded-control border text-[13px] font-medium transition-colors cursor-pointer flex items-center gap-1.5 select-none",
               state.result?.testAborted
-                ? "bg-red-100 text-red-900 border-red-400 dark:bg-red-950/60 dark:text-red-200 dark:border-red-700 shadow-sm"
-                : "bg-white dark:bg-zinc-900 text-gray-600 dark:text-zinc-400 border-gray-300 dark:border-zinc-700 hover:bg-gray-50"
+                ? "bg-red-50 text-red-900 border-red-300 dark:bg-red-950/40 dark:text-red-200 dark:border-red-800"
+                : "bg-surface text-ink-2 border-line hover:text-ink hover:bg-surface-2"
             )}
           >
-            <ShieldAlert size={15} className={state.result?.testAborted ? "text-red-700 dark:text-red-300" : "text-gray-400"} />
-            <span>Avbrutet {state.result?.testAborted ? "✓" : ""}</span>
+            <ShieldAlert size={15} className={state.result?.testAborted ? "text-red-700 dark:text-red-300" : "text-ink-3"} />
+            <span>{state.result?.testAborted ? 'Avbrutet ✓' : 'Avbryt provet'}</span>
           </button>
         </div>
       </div>
@@ -506,7 +476,7 @@ export function KorningScreen() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Sök moment..."
-            className="w-full h-11 pl-10 pr-14 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500 transition-colors shadow-2xs"
+            className="w-full h-11 pl-10 pr-14 text-sm rounded-control border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:outline-none focus:border-[#002f6c] dark:focus:border-blue-500 transition-colors shadow-2xs"
           />
           <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
             {searchTerm ? (
@@ -519,7 +489,7 @@ export function KorningScreen() {
                 <X size={15} />
               </button>
             ) : (
-              <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono text-gray-400 bg-gray-100 dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-700 select-none pointer-events-none">
+              <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[11px] tabular-nums text-gray-400 bg-gray-100 dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-700 select-none pointer-events-none">
                 /
               </kbd>
             )}
@@ -527,14 +497,14 @@ export function KorningScreen() {
         </div>
 
         {/* Filter-flikar: Alla / Provade / Kvar */}
-        <div className="flex items-center gap-1 bg-gray-100 dark:bg-slate-800/80 p-1 rounded-xl border border-gray-200/80 dark:border-slate-700 shrink-0 self-start sm:self-auto">
+        <div className="flex items-center gap-1 bg-gray-100 dark:bg-slate-800/80 p-1 rounded-control border border-gray-200/80 dark:border-slate-700 shrink-0 self-start sm:self-auto">
           <button
             type="button"
             onClick={() => { triggerHaptic('light'); setFilterMode('all'); }}
             className={cn(
               "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
               filterMode === 'all'
-                ? "bg-white dark:bg-slate-900 text-[#002f6c] dark:text-blue-400 shadow-2xs font-black"
+                ? "bg-white dark:bg-slate-900 text-[#002f6c] dark:text-blue-400 shadow-2xs font-bold"
                 : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"
             )}
           >
@@ -546,7 +516,7 @@ export function KorningScreen() {
             className={cn(
               "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5",
               filterMode === 'tested'
-                ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-2xs font-black"
+                ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-2xs font-bold"
                 : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"
             )}
           >
@@ -559,7 +529,7 @@ export function KorningScreen() {
             className={cn(
               "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5",
               filterMode === 'untested'
-                ? "bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400 shadow-2xs font-black"
+                ? "bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400 shadow-2xs font-bold"
                 : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"
             )}
           >
@@ -574,15 +544,15 @@ export function KorningScreen() {
       )}
 
       {filterMode === 'tested' && selectedDrivingCount === 0 && (
-        <div className="text-center py-8 px-4 bg-gray-50 dark:bg-slate-800/30 rounded-2xl border border-dashed border-gray-200 dark:border-slate-800">
+        <div className="text-center py-8 px-4 bg-gray-50 dark:bg-slate-800/30 rounded-card border border-dashed border-gray-200 dark:border-slate-800">
           <p className="text-sm font-semibold text-gray-600 dark:text-slate-300">Inga moment markerade ännu.</p>
           <p className="text-xs text-gray-400 mt-1">Klicka på ett moment för att bocka av det under körningen.</p>
         </div>
       )}
 
       {filterMode === 'untested' && (drivingItemsAll.length - selectedDrivingCount) === 0 && (
-        <div className="text-center py-8 px-4 bg-emerald-50/60 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/50">
-          <p className="text-sm font-black text-emerald-800 dark:text-emerald-300">Alla moment har prövats!</p>
+        <div className="text-center py-8 px-4 bg-emerald-50/60 dark:bg-emerald-950/20 rounded-card border border-emerald-200/80 dark:border-emerald-800/50">
+          <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">Alla moment har prövats!</p>
           <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">Samtliga moment för {licenseType} är avbockade.</p>
         </div>
       )}
@@ -615,17 +585,17 @@ export function KorningScreen() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                   Säkerhetskontroll
                 </h3>
                 {HEAVY_LICENSES.includes(licenseType) && (
-                  <span className="text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-900">
-                    Tung Behörighet
+                  <span className="text-[11px] font-medium text-ink-3 px-2 py-0.5 rounded-md border border-line">
+                    Tung behörighet
                   </span>
                 )}
               </div>
               <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-                Välj de ingående moment inom säkerhetskontrollen som ingått i provet.
+                Bocka i det ni gått igenom i säkerhetskontrollen.
               </p>
             </div>
 
@@ -633,27 +603,25 @@ export function KorningScreen() {
               <button
                 type="button"
                 onClick={clearAllSafety}
-                className="px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-700 text-gray-500 hover:text-red-600 hover:border-red-200 dark:text-zinc-400 dark:hover:text-red-400 bg-white dark:bg-zinc-900 hover:bg-red-50 dark:hover:bg-red-900/20 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                className="h-9 px-3 rounded-control text-[13px] font-medium text-ink-2 hover:text-ink hover:bg-surface-2 transition-colors cursor-pointer"
               >
                 Rensa
               </button>
               <button
                 type="button"
                 onClick={selectAllSafety}
-                className="px-3.5 py-2.5 rounded-xl border border-[#002f6c]/20 dark:border-blue-500/30 text-[#002f6c] dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                className="h-9 px-3 rounded-control border border-line text-[13px] font-medium text-ink-2 hover:text-ink hover:bg-surface-2 transition-colors cursor-pointer"
               >
                 Markera alla
               </button>
-
-              {/* Funktionsfråga knapp (slumpad fråga på enkelt språk) */}
               <button
                 type="button"
                 onClick={() => setIsQuestionModalOpen(true)}
-                className="px-4 py-2.5 bg-linear-to-r from-amber-500 via-amber-600 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shadow-md hover:shadow-lg cursor-pointer active:scale-95 shrink-0 border border-amber-400/40"
-                title={`Slumpa funktionsfråga för ${licenseType}`}
+                className="h-9 px-3 rounded-control border border-line bg-surface text-[13px] font-medium text-ink hover:bg-surface-2 transition-colors cursor-pointer flex items-center gap-1.5"
+                title={`Slumpa en funktionsfråga för ${licenseType}`}
               >
-                <Dice5 size={16} className="animate-spin-once" />
-                <span>🎲 Slumpa funktionsfråga ({licenseType})</span>
+                <Dice5 size={15} className="text-ink-3" />
+                Ställ en funktionsfråga
               </button>
             </div>
           </div>
@@ -676,63 +644,9 @@ export function KorningScreen() {
           </div>
 
           {safetyCheckResultRelevant && (
-            <div className="pt-6 border-t border-gray-100 dark:border-white/5 space-y-3">
-              <h4 className="text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-widest">Resultat säkerhetskontroll</h4>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                <button
-                  type="button"
-                  onClick={() => setSafetyCheckResult('Godkänt')}
-                  className={cn(
-                    "px-4 py-3.5 border-2 text-sm w-full min-h-[44px] flex items-center justify-center gap-2 font-bold rounded-xl transition-all cursor-pointer",
-                    state.result?.safetyCheckResult === 'Godkänt'
-                      ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800/60 shadow-sm"
-                      : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  )}
-                >
-                  Godkänd
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSafetyCheckResult('Underkänt')}
-                  className={cn(
-                    "px-4 py-3.5 border-2 text-sm w-full min-h-[44px] flex items-center justify-center gap-2 font-bold rounded-xl transition-all cursor-pointer",
-                    state.result?.safetyCheckResult === 'Underkänt'
-                      ? "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-300 dark:border-red-800/60 shadow-sm"
-                      : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  )}
-                >
-                  Underkänd
-                </button>
-                <div className="col-span-2 sm:col-span-1">
-                  <button
-                    type="button"
-                    onClick={() => setSafetyCheckResult('-')}
-                    className={cn(
-                      "px-4 py-3.5 border-2 text-sm w-full min-h-[44px] flex items-center justify-center gap-2 font-bold rounded-xl transition-all cursor-pointer",
-                      state.result?.safetyCheckResult === '-'
-                        ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-800/60 shadow-sm"
-                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
-                    )}
-                  >
-                    Ej genomförd
-                  </button>
-                </div>
-              </div>
-
-              {state.result?.safetyCheckResult === 'Underkänt' && (
-                <div className="animate-fade-in pt-2">
-                  <FailureForm
-                    title="Bristförteckning – Säkerhetskontroll"
-                    data={state.result.safetyCheckFailure}
-                    onChange={(data) => updateState((prev) => ({
-                      ...prev,
-                      result: { ...(prev.result || {}), safetyCheckFailure: data }
-                    }))}
-                    type="safety"
-                  />
-                </div>
-              )}
-            </div>
+            <p className="text-[13px] text-ink-3 pt-2">
+              Resultatet för säkerhetskontrollen sätter du under Resultat.
+            </p>
           )}
         </div>
       )}
@@ -744,34 +658,23 @@ export function KorningScreen() {
         </div>
       )}
 
-      {/* Navigation & Controls footer matches the clean Swedish myndighets style */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-10 border-t border-gray-200 dark:border-white/5 mt-12 print:hidden">
-        <div className="flex gap-4 w-full sm:w-auto">
-          <Button 
-            variant="ghost" 
-            onClick={clearAll} 
-            className="text-gray-500 hover:text-red-600 hover:bg-red-50 dark:text-gray-400 dark:hover:text-red-400 dark:hover:bg-red-900/20 rounded-xl px-6 font-bold tracking-widest uppercase text-xs h-12"
-          >
-            Nollställ
-          </Button>
-          <Button 
-            variant="secondary" 
-            onClick={selectAll} 
-            className="rounded-xl px-6 font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 tracking-widest uppercase text-xs h-12"
-          >
-            Markera alla
-          </Button>
-        </div>
-        
-        <div className="flex gap-4 w-full sm:w-auto">
-          <Button 
-            onClick={handleNext} 
-            size="lg" 
-            className="rounded-2xl px-10 h-14 bg-[#002f6c] hover:bg-[#00204a] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-black text-sm tracking-widest uppercase shadow-lg shadow-blue-900/20 whitespace-nowrap cursor-pointer transition-all hover:scale-[1.02]"
-          >
-            Fortsätt till Resultat
-          </Button>
-        </div>
+      {/* Sidfot: en tydlig väg vidare, inget mer */}
+      <div className="flex items-center justify-between gap-4 pt-8 border-t border-line mt-10 print:hidden">
+        <button
+          type="button"
+          onClick={() => { if (window.confirm('Ta bort alla bockar i momenten?')) clearAll(); }}
+          className="h-10 px-2 text-[13px] font-medium text-ink-3 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
+        >
+          Nollställ moment
+        </button>
+        <button
+          type="button"
+          onClick={handleNext}
+          className="h-12 px-6 rounded-control bg-navy hover:bg-navy-deep dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-semibold text-[15px] flex items-center gap-1.5 cursor-pointer transition-colors active:scale-[0.98]"
+        >
+          Fortsätt till resultat
+          <ChevronRight size={18} />
+        </button>
       </div>
       <EventDialog
         open={dialog !== null}
@@ -811,9 +714,9 @@ export function KorningScreen() {
 
       {/* Flytande snabbmeny för surfplatta & mobil vid skrollning */}
       {showFloatingBar && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-xl w-[calc(100vw-2rem)] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-gray-200 dark:border-slate-800 shadow-xl rounded-2xl p-2.5 flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5 duration-200 print:hidden">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-xl w-[calc(100vw-2rem)] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-gray-200 dark:border-slate-800 shadow-xl rounded-card p-2.5 flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5 duration-200 print:hidden">
           <div className="flex items-center gap-2.5 min-w-0">
-            <span className="text-xs font-black uppercase bg-[#002f6c] dark:bg-blue-600 text-white px-2 py-1 rounded-md shrink-0">
+            <span className="text-xs font-bold bg-[#002f6c] dark:bg-blue-600 text-white px-2 py-1 rounded-md shrink-0">
               {licenseType}
             </span>
             <div className="min-w-0">
@@ -821,7 +724,7 @@ export function KorningScreen() {
                 {selectedDrivingCount}/{drivingItemsAll.length} moment ({drivingProgress}%)
               </div>
               {interventionCount > 0 && (
-                <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                <div className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
                   {interventionCount} ingripande{interventionCount > 1 ? 'n' : ''}
                 </div>
               )}
@@ -831,24 +734,8 @@ export function KorningScreen() {
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={() => setIsQuestionModalOpen(true)}
-              className="p-2 rounded-xl bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300/50 cursor-pointer"
-              title="Slumpa funktionsfråga"
-            >
-              <Dice5 size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsLathundOpen(true)}
-              className="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-300/40 cursor-pointer"
-              title="Öppna lathund"
-            >
-              <BookOpen size={16} />
-            </button>
-            <button
-              type="button"
               onClick={() => { triggerHaptic('medium'); handleNext(); }}
-              className="px-4 py-2 bg-[#002f6c] hover:bg-[#00204a] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
+              className="px-4 py-2 bg-[#002f6c] hover:bg-[#00204a] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-bold rounded-control shadow-md cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
             >
               <span>Resultat</span>
               <span>→</span>

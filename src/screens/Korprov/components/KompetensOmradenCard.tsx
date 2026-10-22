@@ -1,262 +1,240 @@
-import React, { useState } from 'react';
-import { Maximize2, X, Monitor, CheckCircle, Info } from 'lucide-react';
+import { useEffect, useState, type ComponentType, type SVGProps } from 'react';
+import { useBackToClose } from '../../../hooks/useBackToClose';
+import { X, Monitor, ChevronDown, CarFront, Leaf, Signpost, ShieldCheck } from 'lucide-react';
 import { AppLogo } from '../../../components/icons/AppLogo';
+import { Portal } from '../../../components/Portal';
+
+// Ratt i samma linjestil som övriga ikoner (finns inte i ikonbiblioteket)
+function SteeringWheel(props: SVGProps<SVGSVGElement> & { size?: number }) {
+  const { size = 24, ...rest } = props;
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...rest}>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="2.2" />
+      <path d="M12 14.2V21" />
+      <path d="M9.9 11.4 3.4 9.8" />
+      <path d="m14.1 11.4 6.5-1.6" />
+    </svg>
+  );
+}
+
+type Icon = ComponentType<{ size?: number; className?: string; strokeWidth?: number }>;
 
 export interface CompetenceArea {
   id: string;
   name: string;
+  /** Kort beskrivning, skriven till kandidaten */
   description: string;
   subDetails: string[];
-  icon: React.ReactNode;
+  icon: Icon;
+  /** Färgton för ikonen: bakgrund och förgrund */
+  tone: string;
 }
-
-// Custom SVGs matching the official tablet system
-export const CompetenceIcons = {
-  Fordonskannedom: (
-    <svg className="w-8 h-8 sm:w-10 sm:h-10 text-[#002f6c] dark:text-blue-400" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-4h14v4z" />
-      <circle cx="7.5" cy="15" r="1.5" />
-      <circle cx="16.5" cy="15" r="1.5" />
-    </svg>
-  ),
-  Manovrering: (
-    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#002f6c] dark:bg-blue-600 flex items-center justify-center text-white shadow-xs">
-      <svg className="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="9" />
-        <circle cx="12" cy="12" r="3" />
-        <line x1="12" y1="3" x2="12" y2="9" />
-        <line x1="4.2" y1="16.5" x2="9.4" y2="13.5" />
-        <line x1="19.8" y1="16.5" x2="14.6" y2="13.5" />
-      </svg>
-    </div>
-  ),
-  Miljomedveten: (
-    <svg className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M17 8C8 10 59 16.17 3.82 21.34l1.41 1.41c.39.39 1.02.39 1.41 0L12 17.41c6.26-6.26 6-12.41 5-9.41z" opacity="0" />
-      <path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.8 4.28 2.23 6.01L3.82 19.41c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.41-1.41C8.37 20.47 10.15 21 12 21c4.97 0 9-4.03 9-9 0-4.97-4.03-9-9-9zm-1 14.5v-2.1c-2.03-.43-3.62-2.02-4.05-4.05H4.85c.48 3.19 3.07 5.72 6.15 6.15z" />
-      <path d="M21 3C10.5 3 4 10 4 21c7 0 17-6.5 17-18z" />
-    </svg>
-  ),
-  Trafikregler: (
-    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-600 dark:bg-red-700 flex items-center justify-center text-white shadow-xs">
-      <svg className="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9L7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3C14.8 12 16.8 13 19 13v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7z" />
-      </svg>
-    </div>
-  ),
-  Trafiksakerhet: (
-    <svg className="w-8 h-8 sm:w-10 sm:h-10 text-amber-700 dark:text-amber-500" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 2L1 21h22L12 2zm1 16h-2v-2h2v2zm0-4h-2v-4h2v4z" />
-    </svg>
-  )
-};
 
 export const KOMPETENS_OMRADEN: CompetenceArea[] = [
   {
     id: 'fordonskannedom',
     name: 'Fordonskännedom',
-    description: 'Teknisk kontroll, säkerhetskontroll och instrumenthantering.',
+    description: 'Du känner ditt fordon och kan kontrollera att det är säkert att köra.',
     subDetails: [
-      'Säkerhetskontroll (belysning, däck, bromsar, vätskor)',
-      'Reglage och instrumentering',
-      'Kännedom om fordonets funktioner & varningar'
+      'Göra en säkerhetskontroll – till exempel belysning, däck, bromsar och vätskor',
+      'Använda reglage och instrument på rätt sätt',
+      'Förstå fordonets varningslampor och stödsystem',
     ],
-    icon: CompetenceIcons.Fordonskannedom
+    icon: CarFront,
+    tone: 'bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300',
   },
   {
     id: 'manovrering',
     name: 'Manövrering',
-    description: 'Fysisk hantering, växlars användning, manöverprov och krypkorning.',
+    description: 'Du hanterar fordonet mjukt, säkert och med kontroll.',
     subDetails: [
-      'Körställning och pedalsamspel',
-      'Backning, vändning, parkering & start i lutning',
-      'Hastighetsanpassning & bromsteknik'
+      'Bra körställning och samspel mellan pedaler och ratt',
+      'Backa, vända, parkera och starta i backe',
+      'Bromsa i tid och anpassa farten mjukt',
     ],
-    icon: CompetenceIcons.Manovrering
+    icon: SteeringWheel,
+    tone: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300',
   },
   {
     id: 'miljomedveten',
     name: 'Miljömedveten körning',
-    description: 'Sparsam körning, växelval, framförhållning och tomgångskörning.',
+    description: 'Du kör sparsamt och planerar körningen så att det blir jämnt och lugnt.',
     subDetails: [
-      'Eco-driving och sparsam körning',
-      'Rätt växelval och motorbromsning',
-      'Framförhållning som minskar onödiga stopp'
+      'Välja rätt växel och använda motorbromsen',
+      'Planera i god tid så att du slipper onödiga stopp',
+      'Undvika tomgång och hårda accelerationer',
     ],
-    icon: CompetenceIcons.Miljomedveten
+    icon: Leaf,
+    tone: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
   },
   {
     id: 'trafikregler',
     name: 'Trafikregler',
-    description: 'Tillämpning av vägmärken, väjningsregler, hastighetsgränser och placering.',
+    description: 'Du följer reglerna och gör det tydligt för andra vad du tänker göra.',
     subDetails: [
-      'Väjningsplikt och högerregel',
-      'Korsningar, cirkulationsplatser & körfältsbyten',
-      'Vägmärken, signaler & vägmarkeringar'
+      'Väjningsplikt, stopplikt och högerregeln',
+      'Korsningar, cirkulationsplatser och körfältsbyten',
+      'Vägmärken, trafiksignaler och vägmarkeringar',
     ],
-    icon: CompetenceIcons.Trafikregler
+    icon: Signpost,
+    tone: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
   },
   {
     id: 'trafiksakerhet',
     name: 'Trafiksäkerhet och beteende',
-    description: 'Riskmedvetenhet, avsökning, samspel och säkerhetsmarginaler.',
+    description: 'Du ser riskerna i tid, samspelar med andra och håller bra marginaler.',
     subDetails: [
-      'Uppmärksamhet & avsökning i trafikmiljön',
-      'Samspel med oskyddade trafikanter & medtrafikanter',
-      'Säkerhetsavstånd framåt och i sidled'
+      'Ha uppsikt åt alla håll och upptäcka risker tidigt',
+      'Ta hänsyn till gående, cyklister och andra trafikanter',
+      'Hålla avstånd framåt och åt sidorna',
     ],
-    icon: CompetenceIcons.Trafiksakerhet
-  }
+    icon: ShieldCheck,
+    tone: 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300',
+  },
 ];
 
+function AreaIcon({ area, size = 'md' }: { area: CompetenceArea; size?: 'md' | 'lg' }) {
+  const Icon = area.icon;
+  return (
+    <span className={`shrink-0 flex items-center justify-center rounded-[14px] ${area.tone} ${size === 'lg' ? 'w-16 h-16' : 'w-11 h-11'}`}>
+      <Icon size={size === 'lg' ? 32 : 22} strokeWidth={2} />
+    </span>
+  );
+}
+
 export function KompetensOmradenCard() {
-  const [isAspirantModalOpen, setIsAspirantModalOpen] = useState(false);
+  const [presenting, setPresenting] = useState(false);
+  const [openArea, setOpenArea] = useState<string | null>(null);
+  // Androids bakåtknapp stänger öppna dialoger
+  useBackToClose(presenting, () => setPresenting(false));
+
+  // Esc stänger visningen för kandidaten
+  useEffect(() => {
+    if (!presenting) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setPresenting(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [presenting]);
 
   return (
     <div className="space-y-4">
-      {/* Top Banner Box */}
-      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-xs relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <section className="bg-surface border border-line rounded-card p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
-              <h3 className="text-base font-black text-[#002f6c] dark:text-blue-400 tracking-tight">
-                De 5 Kompetensområdena
-              </h3>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">
-              Provets helhetsbedömning baseras på följande fem områden enligt Transportstyrelsens föreskrifter.
+            <h2 className="text-lg font-semibold text-ink">De fem kompetensområdena</h2>
+            <p className="text-[13px] text-ink-2 mt-0.5">
+              Det här bedömer du under provet. Visa gärna kandidaten innan ni kör.
             </p>
           </div>
-
           <button
-            onClick={() => setIsAspirantModalOpen(true)}
-            className="shrink-0 w-full sm:w-auto px-4 py-2.5 min-h-10 bg-[#002f6c] hover:bg-[#00204a] text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm hover:scale-[1.02] cursor-pointer"
+            type="button"
+            onClick={() => setPresenting(true)}
+            className="shrink-0 w-full sm:w-auto h-11 px-4 bg-navy hover:bg-navy-deep dark:bg-blue-600 dark:hover:bg-blue-500 text-white rounded-control text-sm font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer"
           >
             <Monitor size={16} />
-            <span>Visa för kandidat (helskärm)</span>
+            Visa för kandidaten
           </button>
         </div>
 
-        {/* 5 Areas List Matching the photo */}
-        <div className="mt-5 space-y-3">
-          {KOMPETENS_OMRADEN.map((area, index) => (
-            <div
-              key={area.id}
-              className="p-3.5 bg-gray-50/80 dark:bg-zinc-800/50 hover:bg-blue-50/40 dark:hover:bg-zinc-800 rounded-xl border border-gray-100 dark:border-zinc-800 transition-all flex items-center gap-4"
-            >
-              {/* Icon */}
-              <div className="shrink-0 flex items-center justify-center w-10 h-10">
-                {area.icon}
+        <ul className="mt-4 space-y-2">
+          {KOMPETENS_OMRADEN.map((area) => {
+            const open = openArea === area.id;
+            return (
+              <li key={area.id} className={`rounded-control border transition-colors ${open ? 'border-line bg-surface-2/60' : 'border-transparent hover:bg-surface-2/60'}`}>
+                <button
+                  type="button"
+                  onClick={() => setOpenArea(open ? null : area.id)}
+                  aria-expanded={open}
+                  className="w-full p-2.5 flex items-center gap-3.5 text-left cursor-pointer"
+                >
+                  <AreaIcon area={area} />
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-[15px] font-semibold text-ink leading-snug">{area.name}</span>
+                    <span className={`block text-[13px] text-ink-2 mt-0.5 ${open ? '' : 'line-clamp-1'}`}>{area.description}</span>
+                  </span>
+                  <ChevronDown size={18} className={`shrink-0 text-ink-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+                </button>
+                {open && (
+                  <ul className="pb-3 pl-[70px] pr-3 space-y-1.5 animate-in fade-in duration-150">
+                    {area.subDetails.map(sub => (
+                      <li key={sub} className="flex gap-2.5 text-[14px] text-ink-2 leading-relaxed">
+                        <span className="mt-2 w-1.5 h-1.5 rounded-full bg-ink-3 shrink-0" />
+                        <span>{sub}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        <p className="text-[13px] text-ink-3 mt-3">
+          Enstaka små misstag som inte påverkar trafiksäkerheten gör inte att kandidaten blir underkänd.
+        </p>
+      </section>
+
+      {/* Helskärm att vända mot kandidaten */}
+      {presenting && (
+        <Portal>
+          <div className="fixed inset-0 z-[120] bg-white dark:bg-slate-950 overflow-y-auto animate-in fade-in duration-200" role="dialog" aria-modal="true" aria-labelledby="kompetens-titel">
+            <div className="max-w-5xl mx-auto px-5 sm:px-10 py-6 sm:py-10 min-h-full flex flex-col">
+              <div className="flex items-center justify-between gap-4">
+                <AppLogo variant="provprotokoll" size="md" />
+                <button
+                  type="button"
+                  onClick={() => setPresenting(false)}
+                  aria-label="Stäng"
+                  className="w-11 h-11 rounded-full border border-gray-200 dark:border-slate-700 text-gray-500 hover:text-gray-900 dark:text-slate-400 dark:hover:text-white flex items-center justify-center cursor-pointer"
+                >
+                  <X size={20} />
+                </button>
               </div>
 
-              {/* Title & Desc */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-gray-400 dark:text-zinc-500 font-mono">0{index + 1}.</span>
-                  <h4 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white tracking-tight leading-snug truncate">
-                    {area.name}
-                  </h4>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-zinc-400 line-clamp-1 mt-0.5">
-                  {area.description}
+              <div className="mt-8 sm:mt-12 max-w-2xl">
+                <h2 id="kompetens-titel" className="text-3xl sm:text-5xl font-bold text-gray-950 dark:text-white leading-tight">
+                  Det här tittar vi på under provet
+                </h2>
+                <p className="mt-3 text-lg sm:text-xl text-gray-600 dark:text-slate-300 leading-relaxed">
+                  Du bedöms som helhet utifrån fem områden. Du behöver inte köra perfekt – det viktiga är att du kör säkert.
                 </p>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
-      {/* FULLSCREEN ASPIRANT PRESENTATION MODAL - CLEAN DESIGN */}
-      {isAspirantModalOpen && (
-        <div className="fixed inset-0 z-50 bg-[#f4f6f9] dark:bg-slate-950 flex flex-col p-4 sm:p-8 animate-in fade-in duration-200 overflow-y-auto">
-          
-          {/* Top Bar: ProvProtokoll Aspirant Presentation */}
-          <div className="max-w-5xl mx-auto w-full flex items-center justify-between border-b border-gray-200 dark:border-slate-800 pb-4 shrink-0">
-            <div className="flex items-center gap-4">
-              <AppLogo variant="provprotokoll" size="sm" />
-              <div className="hidden sm:block pl-2 border-l border-gray-200 dark:border-slate-700">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 block">
-                  Informationsvy för kandidaten
-                </span>
-                <h2 className="text-base font-black text-gray-900 dark:text-white uppercase tracking-tight">
-                  Körprovets fem kompetensområden
-                </h2>
+              <ol className="mt-8 sm:mt-10 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                {KOMPETENS_OMRADEN.map((area, i) => (
+                  <li key={area.id} className={`rounded-[24px] border border-gray-200 dark:border-slate-800 bg-gray-50/70 dark:bg-slate-900 p-5 sm:p-6 ${i === KOMPETENS_OMRADEN.length - 1 ? 'md:col-span-2' : ''}`}>
+                    <div className="flex items-start gap-4">
+                      <AreaIcon area={area} size="lg" />
+                      <div className="min-w-0">
+                        <span className="text-sm font-semibold text-gray-400 dark:text-slate-500 tabular-nums">{i + 1}</span>
+                        <h3 className="text-xl sm:text-2xl font-bold text-gray-950 dark:text-white leading-snug">{area.name}</h3>
+                        <p className="mt-1 text-base sm:text-lg text-gray-700 dark:text-slate-300 leading-relaxed">{area.description}</p>
+                      </div>
+                    </div>
+                    <ul className="mt-4 space-y-2 pl-1">
+                      {area.subDetails.map(sub => (
+                        <li key={sub} className="flex gap-3 text-[15px] sm:text-base text-gray-700 dark:text-slate-300 leading-relaxed">
+                          <span className="mt-2.5 w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0" />
+                          <span>{sub}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
+              </ol>
+
+              <div className="mt-auto pt-8 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setPresenting(false)}
+                  className="h-12 px-8 rounded-full bg-navy hover:bg-navy-deep dark:bg-blue-600 text-white font-semibold text-[15px] cursor-pointer"
+                >
+                  Klar
+                </button>
               </div>
             </div>
-
-            <button
-              onClick={() => setIsAspirantModalOpen(false)}
-              className="px-4 py-2 bg-white dark:bg-slate-900 hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-200 rounded-lg border border-gray-300 dark:border-slate-700 transition-colors cursor-pointer flex items-center gap-2 text-xs font-bold shadow-xs"
-            >
-              <X size={16} />
-              <span>Stäng helskärm</span>
-            </button>
           </div>
-
-          {/* Aspirant View Body */}
-          <div className="flex-1 max-w-5xl mx-auto w-full py-6 space-y-4">
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-gray-300 text-sm font-medium shadow-xs">
-              Under körprovet genomför förarprövaren en samlad helhetsbedömning baserad på hur du tillämpar kunskaper och färdigheter inom följande fem kompetensområden enligt Transportstyrelsens föreskrifter:
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {KOMPETENS_OMRADEN.map((area, index) => (
-                <div
-                  key={area.id}
-                  className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-5 shadow-xs flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2 border-b border-gray-100 dark:border-slate-800/80 pb-3 mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="shrink-0">
-                          {area.icon}
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-black uppercase tracking-wider text-[#c40000] block">
-                            Område {index + 1}
-                          </span>
-                          <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight leading-snug">
-                            {area.name}
-                          </h3>
-                        </div>
-                      </div>
-                      <span className="text-xs font-mono font-bold text-gray-400 bg-gray-50 dark:bg-slate-800 px-2 py-0.5 rounded border border-gray-100 dark:border-slate-700">
-                        0{index + 1}
-                      </span>
-                    </div>
-
-                    <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
-                      {area.description}
-                    </p>
-                  </div>
-
-                  {/* Key points */}
-                  <div className="pt-2 space-y-1.5 border-t border-gray-100 dark:border-slate-800/60">
-                    {area.subDetails.map((sub, sIdx) => (
-                      <div key={sIdx} className="flex items-start gap-2 text-xs font-medium text-gray-800 dark:text-gray-200">
-                        <span className="text-[#c40000] font-bold shrink-0">•</span>
-                        <span>{sub}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Footer Bar */}
-          <div className="pt-4 border-t border-gray-200 dark:border-slate-800 max-w-5xl mx-auto w-full flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500 dark:text-gray-400 shrink-0">
-            <span>Enstaka brister som är av liten betydelse för trafiksäkerheten leder ej till underkännande.</span>
-            <button
-              onClick={() => setIsAspirantModalOpen(false)}
-              className="w-full sm:w-auto px-6 py-2.5 bg-[#002f6c] hover:bg-[#00204a] text-white font-bold rounded-lg transition-all shadow-xs cursor-pointer"
-            >
-              Återgå till Provstart
-            </button>
-          </div>
-
-        </div>
+        </Portal>
       )}
     </div>
   );

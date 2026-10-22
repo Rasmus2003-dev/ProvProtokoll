@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useBackToClose } from '../hooks/useBackToClose';
+import { AppLogo } from '../components/icons/AppLogo';
 import { useAppStore } from '../store/ProvContext';
 import { 
   FileCheck, AlertTriangle, Calendar, FileText, Cloud, RefreshCw, Trash2, Search, 
   ClipboardList, TrendingUp, X, ChevronLeft, ChevronRight, Download, Upload, Navigation,
-  Printer, Table, Clock, Sparkles
+  Printer, Table, Clock, Sparkles, PenLine
 } from 'lucide-react';
 import { printProtocol } from '../lib/generateProtocolHtml';
 import { useToast } from '../components/Toast';
@@ -20,7 +22,7 @@ import {
   subscribeToProtocols,
   SavedProtocolRow,
   ProtocolStats,
-  isSupabaseConfigured
+  isCloudDataEnabled
 } from '../lib/supabase';
 import { PrivacyGuard } from '../components/PrivacyGuard';
 import { calculateDailyStats, exportProtocolsToCsv, printDailyReport } from '../lib/exportUtils';
@@ -29,6 +31,9 @@ const PAGE_SIZE = 25;
 
 export function HistorikScreen() {
   const { testHistory, profile } = useAppStore();
+  const [signatureItem, setSignatureItem] = useState<{ state: AppState; name: string } | null>(null);
+  // Androids bakåtknapp stänger öppna dialoger
+  useBackToClose(signatureItem !== null, () => setSignatureItem(null));
   const { showToast } = useToast();
   const [rows, setRows] = useState<SavedProtocolRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -275,18 +280,19 @@ export function HistorikScreen() {
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl sm:text-3xl font-display font-black text-gray-950 dark:text-white uppercase tracking-tight">
-              Protokollhistorik
+            <h1 className="text-2xl sm:text-3xl font-heading font-bold text-gray-950 dark:text-white tracking-tight flex items-center gap-3">
+              <AppLogo variant="icon" size="sm" className="shrink-0" />
+              Protokoll
             </h1>
-            {isSupabaseConfigured() && (
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1">
+            {isCloudDataEnabled() && (
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1">
                 <Cloud size={12} />
-                Synkad live
+                Uppdateras direkt
               </span>
             )}
           </div>
           <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xl">
-            Sök och ladda ned tidigare körprovsprotokoll, exportera dagsrapporter till Excel/CSV samt arkivera.
+            Här hittar du alla prov du gjort. Sök, skriv ut eller ta ut en dagsrapport.
           </p>
         </div>
 
@@ -294,7 +300,7 @@ export function HistorikScreen() {
           <button
             onClick={handleExportCsv}
             disabled={isExporting}
-            className="px-3.5 py-2 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            className="px-3.5 py-2 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 rounded-control text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             title="Exportera protokoll till Excel-kompatibel CSV-fil"
           >
             <Table size={14} />
@@ -303,7 +309,7 @@ export function HistorikScreen() {
           <button
             onClick={handleExport}
             disabled={isExporting}
-            className="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            className="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 rounded-control text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             title="Ladda ner alla protokoll som en säkerhetskopia (JSON-fil)"
           >
             <Download size={14} />
@@ -311,7 +317,7 @@ export function HistorikScreen() {
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 rounded-control text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
             title="Återställ protokoll från en säkerhetskopia"
           >
             <Upload size={14} />
@@ -327,7 +333,7 @@ export function HistorikScreen() {
           <button
             onClick={() => { loadPage(); loadStats(); }}
             disabled={loading}
-            className="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            className="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 rounded-control text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin text-blue-600' : ''} />
             <span>Uppdatera</span>
@@ -336,14 +342,14 @@ export function HistorikScreen() {
       </div>
 
       {/* Dagens sammanfattning Banner */}
-      <div className="bg-linear-to-br from-[#002f6c] to-[#001f48] text-white rounded-2xl p-4 sm:p-5 mb-5 shadow-md border border-blue-900/30">
+      <div className="bg-linear-to-br from-[#002f6c] to-[#001f48] text-white rounded-card p-4 sm:p-5 mb-5 shadow-md border border-blue-900/30">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[11px] font-black uppercase tracking-wider text-blue-200">Dagens Provsammanfattning</span>
+              <span className="text-[11px] font-bold text-blue-200">Dagens Provsammanfattning</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
               {new Date().toLocaleDateString('sv-SE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </h2>
             <div className="text-xs text-blue-200 flex flex-wrap items-center gap-3 pt-0.5">
@@ -357,7 +363,7 @@ export function HistorikScreen() {
           <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end">
             <button
               onClick={handlePrintDaily}
-              className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border border-white/20 shadow-xs cursor-pointer"
+              className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-control text-xs font-bold transition-all flex items-center justify-center gap-2 border border-white/20 shadow-xs cursor-pointer"
             >
               <Printer size={15} />
               <span>Skriv ut dagsrapport</span>
@@ -367,28 +373,28 @@ export function HistorikScreen() {
 
         {/* 4 Mini Stat Pills for Today */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-4 pt-4 border-t border-white/15">
-          <div className="bg-white/10 rounded-xl p-3 text-center">
-            <div className="text-2xl font-black">{dailyStats.total}</div>
-            <div className="text-[10px] uppercase font-bold text-blue-200 mt-0.5">Genomförda idag</div>
+          <div className="bg-white/10 rounded-control p-3 text-center">
+            <div className="text-2xl font-bold">{dailyStats.total}</div>
+            <div className="text-[11px] font-bold text-blue-200 mt-0.5">Genomförda idag</div>
           </div>
 
-          <div className="bg-white/10 rounded-xl p-3 text-center">
-            <div className={`text-2xl font-black ${dailyStats.passRate >= 80 ? 'text-emerald-300' : dailyStats.passRate >= 50 ? 'text-amber-300' : 'text-red-300'}`}>
+          <div className="bg-white/10 rounded-control p-3 text-center">
+            <div className={`text-2xl font-bold ${dailyStats.passRate >= 80 ? 'text-emerald-300' : dailyStats.passRate >= 50 ? 'text-amber-300' : 'text-red-300'}`}>
               {dailyStats.total > 0 ? `${dailyStats.passRate}%` : '–'}
             </div>
-            <div className="text-[10px] uppercase font-bold text-blue-200 mt-0.5">Godkänt-grad idag</div>
+            <div className="text-[11px] font-bold text-blue-200 mt-0.5">Godkänt-grad idag</div>
           </div>
 
-          <div className="bg-white/10 rounded-xl p-3 text-center">
-            <div className="text-2xl font-black">
+          <div className="bg-white/10 rounded-control p-3 text-center">
+            <div className="text-2xl font-bold">
               {dailyStats.passed} <span className="text-sm font-normal text-blue-200">/ {dailyStats.failed}</span>
             </div>
-            <div className="text-[10px] uppercase font-bold text-blue-200 mt-0.5">Godkända / Underkända</div>
+            <div className="text-[11px] font-bold text-blue-200 mt-0.5">Godkända / Underkända</div>
           </div>
 
-          <div className="bg-white/10 rounded-xl p-3 text-center">
-            <div className="text-2xl font-black">~{dailyStats.averageMinutes} <span className="text-sm font-normal text-blue-200">min</span></div>
-            <div className="text-[10px] uppercase font-bold text-blue-200 mt-0.5">Snitt körtid</div>
+          <div className="bg-white/10 rounded-control p-3 text-center">
+            <div className="text-2xl font-bold">~{dailyStats.averageMinutes} <span className="text-sm font-normal text-blue-200">min</span></div>
+            <div className="text-[11px] font-bold text-blue-200 mt-0.5">Snitt körtid</div>
           </div>
         </div>
       </div>
@@ -396,43 +402,43 @@ export function HistorikScreen() {
       {/* Statistik-panel */}
       {hasAnyRecords && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-white/10 rounded-2xl p-4 flex items-center gap-3 shadow-xs">
-            <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 shrink-0">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-white/10 rounded-card p-4 flex items-center gap-3 shadow-xs">
+            <div className="p-2.5 rounded-control bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 shrink-0">
               <ClipboardList size={18} />
             </div>
             <div className="min-w-0">
-              <div className="text-lg font-black text-gray-900 dark:text-white leading-none">{stats.total}</div>
-              <div className="text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide truncate">Totalt prov</div>
+              <div className="text-lg font-bold text-gray-900 dark:text-white leading-none">{stats.total}</div>
+              <div className="text-[11px] font-bold text-gray-500 dark:text-slate-400 truncate">Totalt prov</div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-white/10 rounded-2xl p-4 flex items-center gap-3 shadow-xs">
-            <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shrink-0">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-white/10 rounded-card p-4 flex items-center gap-3 shadow-xs">
+            <div className="p-2.5 rounded-control bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shrink-0">
               <TrendingUp size={18} />
             </div>
             <div className="min-w-0">
-              <div className="text-lg font-black text-gray-900 dark:text-white leading-none">{stats.passRate}%</div>
-              <div className="text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide truncate">Godkänt-kvot</div>
+              <div className="text-lg font-bold text-gray-900 dark:text-white leading-none">{stats.passRate}%</div>
+              <div className="text-[11px] font-bold text-gray-500 dark:text-slate-400 truncate">Godkänt-kvot</div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-white/10 rounded-2xl p-4 flex items-center gap-3 shadow-xs">
-            <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shrink-0">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-white/10 rounded-card p-4 flex items-center gap-3 shadow-xs">
+            <div className="p-2.5 rounded-control bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shrink-0">
               <FileCheck size={18} />
             </div>
             <div className="min-w-0">
-              <div className="text-lg font-black text-gray-900 dark:text-white leading-none">{stats.passed}</div>
-              <div className="text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide truncate">Godkända</div>
+              <div className="text-lg font-bold text-gray-900 dark:text-white leading-none">{stats.passed}</div>
+              <div className="text-[11px] font-bold text-gray-500 dark:text-slate-400 truncate">Godkända</div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-white/10 rounded-2xl p-4 flex items-center gap-3 shadow-xs">
-            <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/40 text-[#DD1D25] dark:text-red-400 shrink-0">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-white/10 rounded-card p-4 flex items-center gap-3 shadow-xs">
+            <div className="p-2.5 rounded-control bg-red-50 dark:bg-red-950/40 text-[#DD1D25] dark:text-red-400 shrink-0">
               <AlertTriangle size={18} />
             </div>
             <div className="min-w-0">
-              <div className="text-lg font-black text-gray-900 dark:text-white leading-none">{stats.failed}</div>
-              <div className="text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide truncate">Underkända</div>
+              <div className="text-lg font-bold text-gray-900 dark:text-white leading-none">{stats.failed}</div>
+              <div className="text-[11px] font-bold text-gray-500 dark:text-slate-400 truncate">Underkända</div>
             </div>
           </div>
         </div>
@@ -447,15 +453,15 @@ export function HistorikScreen() {
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Sök namn eller personnummer..."
-              className="w-full h-11 pl-10 pr-4 text-sm bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+              placeholder="Namn eller personnummer"
+              className="w-full h-11 pl-10 pr-4 text-sm bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-control dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
             />
           </div>
 
           <select
             value={resultFilter}
             onChange={(e) => setResultFilter(e.target.value as 'all' | 'passed' | 'failed')}
-            className="h-11 px-3.5 text-sm font-semibold bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl dark:text-white outline-none focus:border-blue-500 cursor-pointer"
+            className="h-11 px-3.5 text-sm font-semibold bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-control dark:text-white outline-none focus:border-blue-500 cursor-pointer"
           >
             <option value="all">Alla resultat</option>
             <option value="passed">Godkänt</option>
@@ -465,7 +471,7 @@ export function HistorikScreen() {
           <select
             value={licenseFilter}
             onChange={(e) => setLicenseFilter(e.target.value)}
-            className="h-11 px-3.5 text-sm font-semibold bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl dark:text-white outline-none focus:border-blue-500 cursor-pointer"
+            className="h-11 px-3.5 text-sm font-semibold bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-control dark:text-white outline-none focus:border-blue-500 cursor-pointer"
           >
             <option value="all">Alla behörigheter</option>
             {stats.availableLicenses.map(lic => (
@@ -476,7 +482,7 @@ export function HistorikScreen() {
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
-              className="h-11 px-3.5 flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-xl transition-colors cursor-pointer shrink-0"
+              className="h-11 px-3.5 flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-control transition-colors cursor-pointer shrink-0"
             >
               <X size={14} />
               <span className="hidden sm:inline">Rensa</span>
@@ -485,29 +491,29 @@ export function HistorikScreen() {
         </div>
       )}
 
-      <div className="flex-1 rounded-2xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden flex flex-col">
+      <div className="flex-1 rounded-card bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden flex flex-col">
         {!hasAnyRecords ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gray-50/50 dark:bg-slate-900/40">
-            <div className="w-16 h-16 bg-gray-100 dark:bg-white/5 rounded-2xl flex items-center justify-center mb-4 text-gray-400">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-white/5 rounded-card flex items-center justify-center mb-4 text-gray-400">
               <Calendar className="w-8 h-8" />
             </div>
             <h3 className="text-lg font-bold text-gray-900 dark:text-white">Inga sparade protokoll än</h3>
             <p className="text-sm text-gray-500 max-w-sm mt-2">
-              När du slutför ett prov och klickar på "Spara & Slutför" sparas protokollet automatiskt i backend/Supabase.
+              Protokollen hamnar här när du trycker på Spara och slutför efter ett prov.
             </p>
           </div>
         ) : displayItems.length === 0 && !loading ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gray-50/50 dark:bg-slate-900/40">
-            <div className="w-16 h-16 bg-gray-100 dark:bg-white/5 rounded-2xl flex items-center justify-center mb-4 text-gray-400">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-white/5 rounded-card flex items-center justify-center mb-4 text-gray-400">
               <Search className="w-8 h-8" />
             </div>
             <h3 className="text-lg font-bold text-gray-900 dark:text-white">Inga träffar</h3>
             <p className="text-sm text-gray-500 max-w-sm mt-2">
-              Inga protokoll matchar din sökning eller dina filter.
+              Inget protokoll matchar sökningen.
             </p>
             <button
               onClick={clearFilters}
-              className="mt-4 px-4 py-2 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 text-[#002f6c] dark:text-blue-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              className="mt-4 px-4 py-2 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 text-[#002f6c] dark:text-blue-300 rounded-control text-xs font-bold transition-all cursor-pointer"
             >
               Rensa filter
             </button>
@@ -517,7 +523,7 @@ export function HistorikScreen() {
             {displayItems.map((item) => (
               <div key={item.id} className="p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                 {/* Status Indicator */}
-                <div className={`p-3 shrink-0 rounded-xl flex items-center justify-center ${
+                <div className={`p-3 shrink-0 rounded-control flex items-center justify-center ${
                   item.isPassed
                     ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-450'
                     : 'bg-red-50 dark:bg-red-950/30 text-[#DD1D25] dark:text-red-400'
@@ -528,17 +534,17 @@ export function HistorikScreen() {
                 {/* Test Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <span className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight truncate">
+                    <span className="text-sm font-bold text-gray-900 dark:text-white tracking-tight truncate">
                       {item.studentName}
                     </span>
                     <PrivacyGuard className="inline-block">
-                      <span className="text-xs bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded font-mono">
+                      <span className="text-xs bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded tabular-nums">
                         {item.personalNumber}
                       </span>
                     </PrivacyGuard>
                     {item.isCloud && (
-                      <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded flex items-center gap-1">
-                        <Cloud size={10} /> Cloud
+                      <span className="text-[11px] font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded flex items-center gap-1">
+                        <Cloud size={10} /> Molnet
                       </span>
                     )}
                   </div>
@@ -549,11 +555,11 @@ export function HistorikScreen() {
                       {item.testDate}
                     </div>
                     <div className="flex items-center gap-1">
-                      <span className="text-[10px] uppercase font-bold text-gray-400">Behörighet:</span>
+                      <span className="text-[11px] font-bold text-gray-400">Behörighet:</span>
                       <span className="text-gray-700 dark:text-gray-300 font-bold">{item.licenseType} ({item.transmission})</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <span className="text-[10px] uppercase font-bold text-gray-400">Testtyp:</span>
+                      <span className="text-[11px] font-bold text-gray-400">Testtyp:</span>
                       <span className="text-gray-700 dark:text-gray-300">{item.testType || 'Körprov'}</span>
                     </div>
                   </div>
@@ -561,13 +567,24 @@ export function HistorikScreen() {
 
                 {/* Actions & Result Pill */}
                 <div className="shrink-0 flex items-center justify-between sm:justify-end gap-2.5 w-full sm:w-auto mt-2 sm:mt-0">
-                  <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                  <div className={`px-3 py-1 rounded-full text-[11px] font-bold border ${
                     item.isPassed
                       ? 'border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
                       : 'border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
                   }`}>
                     {item.isPassed ? 'Godkänt' : 'Underkänt'}
                   </div>
+
+                  {item.state?.euLicenseDeclaration && (
+                    <button
+                      onClick={() => setSignatureItem({ state: item.state, name: item.studentName })}
+                      className="px-3 py-2 min-h-[40px] bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                      title="Kandidatens intygande om körkort i annat EU-land"
+                    >
+                      <PenLine size={14} />
+                      <span>{item.state.euLicenseDeclaration.status === 'signed' ? 'EES-intyg' : 'EES-intyg (överhoppat)'}</span>
+                    </button>
+                  )}
 
                   {hasRouteData(item.state) && (
                     <button
@@ -583,7 +600,7 @@ export function HistorikScreen() {
                   <button
                     onClick={() => printProtocol(item.state, profile?.name)}
                     className="px-3 py-2 min-h-[40px] bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
-                    title="Öppnar utskriftsdialogen - välj 'Spara som PDF' för att ladda ner"
+                    title="Välj Spara som PDF i utskriftsrutan om du vill ha en fil"
                   >
                     <FileText size={14} />
                     <span>Skriv ut / PDF</span>
@@ -627,6 +644,43 @@ export function HistorikScreen() {
           </div>
         )}
       </div>
+
+      {/* Kandidatens signatur – visas bara här, inte i protokollet */}
+      {signatureItem && signatureItem.state.euLicenseDeclaration && (() => {
+        const d = signatureItem.state.euLicenseDeclaration!;
+        return (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSignatureItem(null)}>
+            <div role="dialog" aria-modal="true" className="w-full sm:max-w-md bg-surface border border-line rounded-t-sheet sm:rounded-card shadow-2xl p-5" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-ink">EES-intyg</h3>
+                  <p className="text-[13px] text-ink-3">{signatureItem.name} · {signatureItem.state.properties.testDate}</p>
+                </div>
+                <button type="button" onClick={() => setSignatureItem(null)} aria-label="Stäng" className="w-10 h-10 -mr-2 rounded-full hover:bg-surface-2 flex items-center justify-center text-ink-3 cursor-pointer">
+                  <X size={18} />
+                </button>
+              </div>
+              {d.status === 'signed' ? (
+                <>
+                  <p className="mt-4 text-[14px] text-ink-2 leading-relaxed">
+                    Jag, <strong className="text-ink">{signatureItem.name}</strong>, intygar på heder och samvete att jag inte har ett körkort som är utfärdat i en annan EES-stat, och att jag inte har ett körkort där som är återkallat eller spärrat.
+                  </p>
+                  <div className="mt-3 rounded-control border border-line bg-white p-2">
+                    {d.signature && <img src={d.signature} alt={`Signatur av ${signatureItem.name}`} className="w-full h-36 object-contain" />}
+                  </div>
+                  {d.signedAt && (
+                    <p className="mt-2 text-[12px] text-ink-3">Signerat {new Date(d.signedAt).toLocaleString('sv-SE', { dateStyle: 'long', timeStyle: 'short' })}</p>
+                  )}
+                </>
+              ) : (
+                <p className="mt-4 text-[14px] text-ink-2">
+                  Intygandet hoppades över. Skäl: <strong className="text-ink">{d.skipReason || 'inget angivet'}</strong>
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       <RouteReviewModal
         open={reviewItem !== null}

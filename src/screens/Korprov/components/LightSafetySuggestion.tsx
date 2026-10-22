@@ -36,7 +36,7 @@ export function LightSafetySuggestion() {
   if (tasks.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20">
+    <div className="rounded-control border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20">
       <div className="flex items-center gap-2 px-3.5 py-2">
         <button
           type="button"
@@ -73,7 +73,7 @@ export function LightSafetySuggestion() {
                     always ? 'border-emerald-300 dark:border-emerald-800' : 'border-emerald-100 dark:border-emerald-900/40'
                   }`}
                 >
-                  <div className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700/80 dark:text-emerald-400/80 flex items-center gap-1.5">
+                  <div className="text-[11px] font-semibold text-emerald-700/80 dark:text-emerald-400/80 flex items-center gap-1.5">
                     {i + 1}. {always ? 'Ska alltid ingå' : t!.area === 'Urval' ? 'Extra' : t!.area}
                   </div>
                   <div className="text-[13px] font-medium text-slate-800 dark:text-slate-100 leading-snug mt-0.5">{t!.task}</div>

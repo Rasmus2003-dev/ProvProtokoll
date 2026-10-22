@@ -68,7 +68,7 @@ const DEFAULT_SAMPLE_STUDENTS: StudentProfile[] = [
   {
     id: 'elev-emma',
     name: 'Emma Lindqvist',
-    personalNumber: '20040512-1422',
+    personalNumber: '20040572-1428',
     phone: '070-512 88 19',
     licenseType: 'B',
     transmission: 'Manuell',
@@ -87,7 +87,7 @@ const DEFAULT_SAMPLE_STUDENTS: StudentProfile[] = [
   {
     id: 'elev-lucas',
     name: 'Lucas Bergström',
-    personalNumber: '20050819-3891',
+    personalNumber: '20050879-3897',
     phone: '073-891 22 40',
     licenseType: 'B',
     transmission: 'Automat',
@@ -106,7 +106,7 @@ const DEFAULT_SAMPLE_STUDENTS: StudentProfile[] = [
   {
     id: 'elev-sofia',
     name: 'Sofia Al-Mansoor',
-    personalNumber: '20031104-5820',
+    personalNumber: '20031164-5826',
     phone: '072-401 99 33',
     licenseType: 'B',
     transmission: 'Manuell',
@@ -121,7 +121,7 @@ const DEFAULT_SAMPLE_STUDENTS: StudentProfile[] = [
   {
     id: 'elev-ali',
     name: 'Ali Hassan',
-    personalNumber: '19980214-7711',
+    personalNumber: '19980274-7717',
     phone: '076-119 44 88',
     licenseType: 'C',
     transmission: 'Automat',
@@ -279,21 +279,21 @@ export function TrafikskolaScreen() {
     <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-5">
       
       {/* Top Banner: Skolans Identitet & Snabbnavigering */}
-      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-card p-4 sm:p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#002f6c] to-blue-700 text-white flex items-center justify-center font-black text-xl shadow-md shrink-0">
+          <div className="w-12 h-12 rounded-card bg-gradient-to-br from-[#002f6c] to-blue-700 text-white flex items-center justify-center font-bold text-xl shadow-md shrink-0">
             S
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md border border-blue-200 dark:border-blue-900">
+              <span className="text-[11px] font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md border border-blue-200 dark:border-blue-900">
                 {skola.name}
               </span>
               <span className="text-xs text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1">
                 <ShieldCheck size={13} /> STR Auktoriserad ({skola.strNumber})
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
               Trafikskola — Elever & Körprotokoll
             </h1>
           </div>
@@ -303,7 +303,7 @@ export function TrafikskolaScreen() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setShowCreateProtocolModal(true)}
-            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95"
+            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-control transition-all shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95"
             title="Skapa nytt lektionsprotokoll"
           >
             <FileText size={15} />
@@ -322,7 +322,7 @@ export function TrafikskolaScreen() {
               });
               setShowEmailComposer(true);
             }}
-            className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 text-[#002f6c] dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+            className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 text-[#002f6c] dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-bold rounded-control transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
             title="Skicka fritextmejl eller mall till elev"
           >
             <Mail size={15} />
@@ -331,7 +331,7 @@ export function TrafikskolaScreen() {
 
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-3.5 py-2 bg-[#002f6c] hover:bg-[#00224f] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95"
+            className="px-3.5 py-2 bg-[#002f6c] hover:bg-[#00224f] text-white text-xs font-bold rounded-control transition-all shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95"
           >
             <Plus size={15} />
             <span>Ny elev</span>
@@ -385,9 +385,9 @@ export function TrafikskolaScreen() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           
           {/* Left Column: Student Selector (4 cols) */}
-          <div className="lg:col-span-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
+          <div className="lg:col-span-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-card p-4 shadow-sm space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-slate-800">
-              <h2 className="text-xs font-black uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+              <h2 className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                 <Users size={14} className="text-[#002f6c]" />
                 Inskrivna Elever ({students.length})
               </h2>
@@ -400,7 +400,7 @@ export function TrafikskolaScreen() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Sök elev eller personnr..."
-                className="w-full h-10 pl-9 pr-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-gray-900 dark:text-white focus:outline-none focus:border-blue-600"
+                className="w-full h-10 pl-9 pr-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-control text-xs font-semibold text-gray-900 dark:text-white focus:outline-none focus:border-blue-600"
               />
             </div>
 
@@ -417,7 +417,7 @@ export function TrafikskolaScreen() {
                     <div
                       key={stud.id}
                       onClick={() => setActiveStudentId(stud.id)}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                      className={`p-3 rounded-control border transition-all cursor-pointer ${
                         isAct 
                           ? 'bg-blue-50/80 dark:bg-blue-950/40 border-blue-300 dark:border-blue-800 shadow-xs' 
                           : 'bg-gray-50/70 dark:bg-slate-800/60 hover:bg-gray-100 border-gray-200/80 dark:border-slate-800'
@@ -432,17 +432,17 @@ export function TrafikskolaScreen() {
                             <div className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
                               <span>{stud.name}</span>
                               {unreadReplies > 0 && (
-                                <span className="px-1.5 py-0.2 bg-emerald-500 text-white text-[9px] font-black rounded-md animate-pulse">
+                                <span className="px-1.5 py-0.2 bg-emerald-500 text-white text-[11px] font-bold rounded-md animate-pulse">
                                   Svar!
                                 </span>
                               )}
                             </div>
-                            <div className="text-[10px] text-gray-400 font-mono">
+                            <div className="text-[11px] text-gray-400 tabular-nums">
                               {stud.personalNumber} • {stud.licenseType}
                             </div>
                           </div>
                         </div>
-                        <span className="text-[10px] font-mono font-bold text-blue-700 dark:text-blue-400">
+                        <span className="text-[11px] tabular-nums font-bold text-blue-700 dark:text-blue-400">
                           {percent}%
                         </span>
                       </div>
@@ -462,18 +462,18 @@ export function TrafikskolaScreen() {
             <div className="lg:col-span-8 space-y-4">
               
               {/* Student Header Card */}
-              <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
+              <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-card p-5 shadow-sm space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-100 dark:border-slate-800">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h2 className="text-lg font-black text-gray-900 dark:text-white">
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-white">
                         {activeStudent.name}
                       </h2>
-                      <span className="px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 text-[10px] font-bold uppercase">
+                      <span className="px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 text-[11px] font-bold ">
                         Körkort {activeStudent.licenseType} ({activeStudent.transmission})
                       </span>
                     </div>
-                    <div className="text-xs text-gray-400 font-mono mt-0.5">
+                    <div className="text-xs text-gray-400 tabular-nums mt-0.5">
                       Personnr: {activeStudent.personalNumber} • Tel: {activeStudent.phone} • Lärare: {activeStudent.teacher}
                     </div>
                   </div>
@@ -489,7 +489,7 @@ export function TrafikskolaScreen() {
                           licenseType: activeStudent.licenseType,
                         });
                       }}
-                      className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#002f6c] dark:bg-blue-950/40 dark:text-blue-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-blue-200 dark:border-blue-900"
+                      className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#002f6c] dark:bg-blue-950/40 dark:text-blue-300 rounded-control text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-blue-200 dark:border-blue-900"
                       title="Visa mejldialog och inkomna svar från eleven"
                     >
                       <MessageSquare size={13} />
@@ -497,14 +497,14 @@ export function TrafikskolaScreen() {
                     </button>
                     <button
                       onClick={() => setShowCreateProtocolModal(true)}
-                      className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-control text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
                     >
                       <FileText size={13} />
                       <span>Nytt Lektionsprotokoll</span>
                     </button>
                     <button
                       onClick={handleAddLessonQuick}
-                      className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 text-gray-800 dark:text-gray-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                      className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 text-gray-800 dark:text-gray-200 rounded-control text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
                     >
                       <Plus size={13} />
                       <span>+1 Lektion</span>
@@ -514,30 +514,30 @@ export function TrafikskolaScreen() {
 
                 {/* Badges and Progress Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="p-3 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-200/80 dark:border-slate-800 text-center">
-                    <div className="text-[10px] uppercase font-bold text-gray-400">Genomförda Lektioner</div>
-                    <div className="text-lg font-black text-gray-900 dark:text-white mt-0.5">
+                  <div className="p-3 bg-gray-50 dark:bg-slate-800/60 rounded-control border border-gray-200/80 dark:border-slate-800 text-center">
+                    <div className="text-[11px] font-bold text-gray-400">Genomförda Lektioner</div>
+                    <div className="text-lg font-bold text-gray-900 dark:text-white mt-0.5">
                       {activeStudent.totalLessons} st
                     </div>
                   </div>
 
-                  <div className="p-3 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-200/80 dark:border-slate-800 text-center">
-                    <div className="text-[10px] uppercase font-bold text-gray-400">Planens Framsteg</div>
-                    <div className="text-lg font-black text-blue-600 dark:text-blue-400 mt-0.5">
+                  <div className="p-3 bg-gray-50 dark:bg-slate-800/60 rounded-control border border-gray-200/80 dark:border-slate-800 text-center">
+                    <div className="text-[11px] font-bold text-gray-400">Planens Framsteg</div>
+                    <div className="text-lg font-bold text-blue-600 dark:text-blue-400 mt-0.5">
                       {progressPercent}%
                     </div>
                   </div>
 
                   <div 
                     onClick={() => handleToggleRisk('risk1')}
-                    className={`p-3 rounded-xl border cursor-pointer select-none transition-all text-center ${
+                    className={`p-3 rounded-control border cursor-pointer select-none transition-all text-center ${
                       activeStudent.risk1 
                         ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 text-emerald-800 dark:text-emerald-300' 
                         : 'bg-gray-50 dark:bg-slate-800/60 border-gray-200 text-gray-400'
                     }`}
                   >
-                    <div className="text-[10px] uppercase font-bold">Riskettan (Alkohol/Trötthet)</div>
-                    <div className="text-xs font-black mt-1 flex items-center justify-center gap-1">
+                    <div className="text-[11px] font-bold">Riskettan (Alkohol/Trötthet)</div>
+                    <div className="text-xs font-bold mt-1 flex items-center justify-center gap-1">
                       {activeStudent.risk1 ? <Check size={14} /> : null}
                       {activeStudent.risk1 ? 'Genomförd' : 'Ej intygad'}
                     </div>
@@ -545,14 +545,14 @@ export function TrafikskolaScreen() {
 
                   <div 
                     onClick={() => handleToggleRisk('risk2')}
-                    className={`p-3 rounded-xl border cursor-pointer select-none transition-all text-center ${
+                    className={`p-3 rounded-control border cursor-pointer select-none transition-all text-center ${
                       activeStudent.risk2 
                         ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 text-emerald-800 dark:text-emerald-300' 
                         : 'bg-gray-50 dark:bg-slate-800/60 border-gray-200 text-gray-400'
                     }`}
                   >
-                    <div className="text-[10px] uppercase font-bold">Halkbana (Risk 2)</div>
-                    <div className="text-xs font-black mt-1 flex items-center justify-center gap-1">
+                    <div className="text-[11px] font-bold">Halkbana (Risk 2)</div>
+                    <div className="text-xs font-bold mt-1 flex items-center justify-center gap-1">
                       {activeStudent.risk2 ? <Check size={14} /> : null}
                       {activeStudent.risk2 ? 'Genomförd' : 'Ej intygad'}
                     </div>
@@ -561,9 +561,9 @@ export function TrafikskolaScreen() {
               </div>
 
               {/* Curriculum Step By Step */}
-              <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3">
+              <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-card p-5 shadow-sm space-y-3">
                 <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-slate-800">
-                  <h3 className="text-sm font-black uppercase tracking-wider text-gray-900 dark:text-white flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <Layers size={16} className="text-[#002f6c]" />
                     Utbildningsplanens 12 Grundmoment (Transportstyrelsens kursplan)
                   </h3>
@@ -580,10 +580,10 @@ export function TrafikskolaScreen() {
                     return (
                       <div 
                         key={step.id}
-                        className="p-3.5 bg-gray-50/70 dark:bg-slate-800/50 border border-gray-200/80 dark:border-slate-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                        className="p-3.5 bg-gray-50/70 dark:bg-slate-800/50 border border-gray-200/80 dark:border-slate-800 rounded-control flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                       >
                         <div className="flex items-start gap-3">
-                          <span className="w-6 h-6 rounded-lg bg-[#002f6c]/10 dark:bg-blue-950 text-[#002f6c] dark:text-blue-400 font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
+                          <span className="w-6 h-6 rounded-lg bg-[#002f6c]/10 dark:bg-blue-950 text-[#002f6c] dark:text-blue-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
                             {step.moment}
                           </span>
                           <div>
@@ -591,7 +591,7 @@ export function TrafikskolaScreen() {
                               <span className="text-xs font-bold text-gray-900 dark:text-white">
                                 {step.title}
                               </span>
-                              <span className="text-[9.5px] uppercase font-bold text-gray-400 px-1.5 py-0.2 rounded bg-gray-100 dark:bg-slate-800">
+                              <span className="text-[11px] font-bold text-gray-400 px-1.5 py-0.2 rounded bg-gray-100 dark:bg-slate-800">
                                 {step.category}
                               </span>
                             </div>
@@ -606,7 +606,7 @@ export function TrafikskolaScreen() {
                           <button
                             type="button"
                             onClick={() => handleStepStatusChange(step.id, 'Ej påbörjad')}
-                            className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-lg border transition-all cursor-pointer ${
+                            className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
                               step.status === 'Ej påbörjad' 
                                 ? 'bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-gray-200 border-gray-300' 
                                 : 'bg-transparent text-gray-400 border-transparent hover:bg-gray-100'
@@ -617,7 +617,7 @@ export function TrafikskolaScreen() {
                           <button
                             type="button"
                             onClick={() => handleStepStatusChange(step.id, 'Övad')}
-                            className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-lg border transition-all cursor-pointer ${
+                            className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
                               isPracticed 
                                 ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300' 
                                 : 'bg-transparent text-gray-400 border-transparent hover:bg-amber-50'
@@ -628,7 +628,7 @@ export function TrafikskolaScreen() {
                           <button
                             type="button"
                             onClick={() => handleStepStatusChange(step.id, 'Klar')}
-                            className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-lg border transition-all cursor-pointer ${
+                            className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
                               isDone 
                                 ? 'bg-emerald-600 text-white border-transparent shadow-xs' 
                                 : 'bg-transparent text-gray-400 border-transparent hover:bg-emerald-50'
@@ -654,15 +654,15 @@ export function TrafikskolaScreen() {
         <div className="space-y-4">
           
           {/* Header filter */}
-          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-card p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              <span className="text-xs font-bold text-gray-500 ">
                 Filtrera på elev:
               </span>
               <select
                 value={protocolFilterStudent}
                 onChange={(e) => setProtocolFilterStudent(e.target.value)}
-                className="h-9 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-bold text-gray-900 dark:text-white"
+                className="h-9 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs font-bold text-gray-900 dark:text-white"
               >
                 <option value="alla">Alla elever ({protocols.length} protokoll)</option>
                 {students.map(s => (
@@ -673,7 +673,7 @@ export function TrafikskolaScreen() {
 
             <button
               onClick={() => setShowCreateProtocolModal(true)}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-control transition-all shadow-sm flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
             >
               <Plus size={15} />
               <span>Skapa Nytt Lektionsprotokoll</span>
@@ -688,15 +688,15 @@ export function TrafikskolaScreen() {
                 <div
                   key={p.id}
                   onClick={() => setViewingProtocol(p)}
-                  className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 rounded-2xl p-4 shadow-sm transition-all hover:shadow-md cursor-pointer flex flex-col justify-between space-y-3"
+                  className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 rounded-card p-4 shadow-sm transition-all hover:shadow-md cursor-pointer flex flex-col justify-between space-y-3"
                 >
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded">
+                        <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded">
                           Lektion #{p.lektionNr} • {p.langdMinuter} min
                         </span>
-                        <h3 className="text-base font-black text-gray-900 dark:text-white mt-1">
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white mt-1">
                           {p.elevNamn}
                         </h3>
                         <p className="text-xs text-gray-500">
@@ -704,7 +704,7 @@ export function TrafikskolaScreen() {
                         </p>
                       </div>
 
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold border ${
                         p.betygHelhet === 'Bra genomfört' || p.betygHelhet === 'Utmärkt framsteg'
                           ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                           : p.betygHelhet === 'Godkänd nivå' || p.betygHelhet === 'Godkänd lektion'
@@ -726,12 +726,12 @@ export function TrafikskolaScreen() {
 
                     {/* Moments preview */}
                     <div className="pt-2 border-t border-gray-100 dark:border-slate-800">
-                      <div className="text-[10px] font-bold uppercase text-gray-400 mb-1">
+                      <div className="text-[11px] font-bold text-gray-400 mb-1">
                         Övade moment ({p.ovadeMoment.length}):
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {p.ovadeMoment.map(m => (
-                          <span key={m.momentNr} className="text-[10px] bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 px-1.5 py-0.5 rounded">
+                          <span key={m.momentNr} className="text-[11px] bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 px-1.5 py-0.5 rounded">
                             {m.momentNr}. {m.momentTitel} (Nivå {m.niva})
                           </span>
                         ))}
@@ -761,13 +761,13 @@ export function TrafikskolaScreen() {
 
       {/* TAB 3: SKOLPROFIL & FORDONSPARK */}
       {activeTab === 'skolprofil' && (
-        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm space-y-6">
+        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-card p-5 sm:p-6 shadow-sm space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100 dark:border-slate-800">
             <div>
-              <span className="text-[10px] font-black uppercase text-blue-600 tracking-wider">
+              <span className="text-[11px] font-bold text-blue-600 ">
                 Fiktiv Officiell Trafikskola
               </span>
-              <h2 className="text-xl font-black text-gray-900 dark:text-white mt-0.5">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mt-0.5">
                 {skola.name}
               </h2>
               <p className="text-xs text-gray-500">
@@ -775,7 +775,7 @@ export function TrafikskolaScreen() {
               </p>
             </div>
 
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-900 rounded-xl text-blue-900 dark:text-blue-200 text-xs font-bold">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-900 rounded-control text-blue-900 dark:text-blue-200 text-xs font-bold">
               <ShieldCheck size={16} className="text-blue-600" />
               <span>Auktoriserad Medlem i STR ({skola.strNumber})</span>
             </div>
@@ -783,20 +783,20 @@ export function TrafikskolaScreen() {
 
           {/* School Details Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-            <div className="p-4 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-200 dark:border-slate-800 space-y-1">
-              <div className="text-[10px] uppercase font-bold text-gray-400">Organisationsnummer</div>
-              <div className="font-mono font-bold text-gray-900 dark:text-white text-sm">{skola.orgNumber}</div>
+            <div className="p-4 bg-gray-50 dark:bg-slate-800/60 rounded-control border border-gray-200 dark:border-slate-800 space-y-1">
+              <div className="text-[11px] font-bold text-gray-400">Organisationsnummer</div>
+              <div className="tabular-nums font-bold text-gray-900 dark:text-white text-sm">{skola.orgNumber}</div>
               <div className="text-gray-500 mt-2 text-[11px]">Registrerad hos Bolagsverket & Transportstyrelsen</div>
             </div>
 
-            <div className="p-4 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-200 dark:border-slate-800 space-y-1">
-              <div className="text-[10px] uppercase font-bold text-gray-400">Utbildningsledare</div>
+            <div className="p-4 bg-gray-50 dark:bg-slate-800/60 rounded-control border border-gray-200 dark:border-slate-800 space-y-1">
+              <div className="text-[11px] font-bold text-gray-400">Utbildningsledare</div>
               <div className="font-bold text-gray-900 dark:text-white text-sm">{skola.utbildningsledare}</div>
               <div className="text-gray-500 mt-2 text-[11px]">Behörig Trafikskolechef & Leg. Trafiklärare</div>
             </div>
 
-            <div className="p-4 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-200 dark:border-slate-800 space-y-1">
-              <div className="text-[10px] uppercase font-bold text-gray-400">Kontakt & Besöksadress</div>
+            <div className="p-4 bg-gray-50 dark:bg-slate-800/60 rounded-control border border-gray-200 dark:border-slate-800 space-y-1">
+              <div className="text-[11px] font-bold text-gray-400">Kontakt & Besöksadress</div>
               <div className="font-bold text-gray-900 dark:text-white">{skola.address}, {skola.city}</div>
               <div className="text-gray-500 text-[11px]">Tel: {skola.phone} • {skola.email}</div>
             </div>
@@ -804,23 +804,23 @@ export function TrafikskolaScreen() {
 
           {/* Fleet Vehicles */}
           <div className="space-y-3 pt-2">
-            <h3 className="text-sm font-black uppercase tracking-wider text-gray-900 dark:text-white flex items-center gap-2">
+            <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <Car size={16} className="text-[#002f6c]" />
               Skolans Fordonspark ({skola.vehicles.length} fordon)
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {skola.vehicles.map(v => (
-                <div key={v.id} className="p-3.5 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-200 dark:border-slate-800 flex items-center justify-between">
+                <div key={v.id} className="p-3.5 bg-gray-50 dark:bg-slate-800/60 rounded-control border border-gray-200 dark:border-slate-800 flex items-center justify-between">
                   <div>
                     <div className="font-bold text-xs text-gray-900 dark:text-white">
                       {v.model}
                     </div>
-                    <div className="text-[10px] text-gray-500 font-mono mt-0.5">
+                    <div className="text-[11px] text-gray-500 tabular-nums mt-0.5">
                       {v.regNr} • {v.type} ({v.year})
                     </div>
                   </div>
-                  <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 text-[10px] font-black rounded">
+                  <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 text-[11px] font-bold rounded">
                     Klass {v.licenseCategory}
                   </span>
                 </div>
@@ -859,8 +859,8 @@ export function TrafikskolaScreen() {
       {/* MODAL: LÄGG TILL ELEV */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
-            <h3 className="text-lg font-black text-gray-900 dark:text-white">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-card w-full max-w-md p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
               Skriv in ny elev i utbildningsplanen
             </h3>
             
@@ -872,7 +872,7 @@ export function TrafikskolaScreen() {
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="Förnamn Efternamn"
-                  className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-bold"
+                  className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs font-bold"
                   required
                 />
               </div>
@@ -884,7 +884,7 @@ export function TrafikskolaScreen() {
                   value={newPnr}
                   onChange={(e) => setNewPnr(e.target.value)}
                   placeholder="ÅÅÅÅMMDD-XXXX"
-                  className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-mono font-bold"
+                  className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs tabular-nums font-bold"
                   required
                 />
               </div>
@@ -896,7 +896,7 @@ export function TrafikskolaScreen() {
                   value={newPhone}
                   onChange={(e) => setNewPhone(e.target.value)}
                   placeholder="07X-XXX XX XX"
-                  className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-bold"
+                  className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs font-bold"
                 />
               </div>
 
@@ -906,7 +906,7 @@ export function TrafikskolaScreen() {
                   <select
                     value={newLicense}
                     onChange={(e) => setNewLicense(e.target.value)}
-                    className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-bold"
+                    className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs font-bold"
                   >
                     <option value="B">B (Personbil)</option>
                     <option value="BE">BE (Släp)</option>
@@ -924,7 +924,7 @@ export function TrafikskolaScreen() {
                   <select
                     value={newTrans}
                     onChange={(e) => setNewTrans(e.target.value)}
-                    className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-xl text-xs font-bold"
+                    className="w-full h-10 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-control text-xs font-bold"
                   >
                     <option value="Manuell">Manuell</option>
                     <option value="Automat">Automat</option>
@@ -936,13 +936,13 @@ export function TrafikskolaScreen() {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-bold cursor-pointer"
+                  className="px-4 py-2 border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300 rounded-control text-xs font-bold cursor-pointer"
                 >
                   Avbryt
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#002f6c] text-white rounded-xl text-xs font-bold hover:bg-[#00224f] cursor-pointer"
+                  className="px-5 py-2 bg-[#002f6c] text-white rounded-control text-xs font-bold hover:bg-[#00224f] cursor-pointer"
                 >
                   Spara elev
                 </button>
